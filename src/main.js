@@ -1,6 +1,4 @@
 import axios from 'axios'
-import jquery from 'jquery'
-import * as tf from '@tensorflow/tfjs'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import VueAxios from 'vue-axios'
@@ -8,7 +6,6 @@ import VueMeta from 'vue-meta'
 import VueRouter from 'vue-router'
 import App from './App.vue'
 import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
-import Plotly from 'plotly.js-dist'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 
@@ -28,9 +25,6 @@ const router = new VueRouter({
   ]
 })
 
-global.tf = tf
-global.jquery = jquery
-global.Plotly = Plotly
 global.vue = new Vue({
   el: '#app',
   router,

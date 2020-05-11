@@ -2,6 +2,16 @@
   <div>
     <b-form class="toolbarButtons" inline>
       <div class="btn-toolbar">
+        <b-badge ref="fileBadge" style="width: 50px;">
+          <div
+            v-if="loading"
+            style="-webkit-animation: spinner-border .75s linear infinite; animation: spinner-border .75s linear infinite;"
+          >-</div>
+          <div v-if="!loading">{{ fileBadgeText }}</div>
+        </b-badge>
+      </div>
+
+      <div class="btn-toolbar">
         <b-button size="badge" @click="plugAction" :disabled="plugActionDisabled">
           <b-icon icon="plug" class="btn-icon"></b-icon>
         </b-button>
@@ -14,7 +24,7 @@
       </div>
 
       <div class="btn-toolbar">
-        <b-button size="badge" @click="eraseAction" :disabled="plugActionDisabled">
+        <b-button size="badge" @click="eraseAction" :disabled="indexMax===0">
           <b-icon icon="trash" class="btn-icon"></b-icon>
         </b-button>
       </div>
@@ -73,7 +83,7 @@
           v-model="layerSize"
           min="2"
           max="10"
-          :disabled="indexMax===0"
+          :disabled="plugActionDisabled"
           placeholder="--"
         ></b-form-spinbutton>
       </div>
@@ -104,7 +114,7 @@
           v-model="epochSize"
           min="1"
           max="100"
-          :disabled="indexMax===0"
+          :disabled="plugActionDisabled"
           placeholder="--"
         ></b-form-spinbutton>
       </div>
@@ -115,7 +125,7 @@
           v-model="batchSize"
           min="1"
           max="100"
-          :disabled="indexMax===0"
+          :disabled="plugActionDisabled"
           placeholder="--"
         ></b-form-spinbutton>
       </div>
@@ -127,7 +137,7 @@
           min="0.01"
           max="1.00"
           step="0.01"
-          :disabled="indexMax===0"
+          :disabled="plugActionDisabled"
           placeholder="--"
         ></b-form-spinbutton>
       </div>
@@ -150,7 +160,7 @@
             v-model="layerUnits[i-1]"
             min="1"
             :max="10"
-            :disabled="indexMax===0"
+            :disabled="plugActionDisabled"
             placeholder="--"
           ></b-form-spinbutton>
         </div>
@@ -196,45 +206,36 @@
 <script>
 import * as tf from '@tensorflow/tfjs'
 import ModelView from 'tfjs-model-view'
+import jquery from 'jquery'
 import { activationOptions } from '@tensorflow/tfjs-layers/dist/keras_format/activation_config.js'
-
-let jquery = null
 
 const store = {
   namespaced: true,
   state: {
-    indexTimestamp: null,
-    indexStart: null,
-    indexEnd: null,
-    indexLabel: null,
-    output: []
+    output: [],
+    loading: false
   },
   mutations: {
-    setIndexTimestamp(state, value) {
-      state.indexTimestamp = value
-    },
-    setIndexStart(state, value) {
-      state.indexStart = value
-    },
-    setIndexEnd(state, value) {
-      state.indexEnd = value
-    },
-    setIndexLabel(state, value) {
-      state.indexLabel = value
-    },
     setOutput(state, value) {
       state.output = value
+    },
+    setLoading(state, value) {
+      state.loading = value
     }
   }
 }
 
 export default {
   name: 'AutoencoderModel',
-  props: ['id', 'input_ref', 'input_index'],
-  components: {},
+  props: ['id', 'input_ref', 'input_index', 'loading_ref'],
   data() {
     return {
       input: [],
+      fileBadgeText: '-',
+      indexTimestamp: null,
+      indexStart: null,
+      indexEnd: null,
+      indexLabel: null,
       layerSize: 0,
       epochSize: 0,
       batchSize: 0,
@@ -257,7 +258,6 @@ export default {
     }
   },
   created() {
-    jquery = global.jquery
     if (!this.$store.state[this.id]) {
       this.$store.registerModule(this.id, store)
     }
@@ -266,7 +266,7 @@ export default {
       this.onInputChanged
     )
   },
-  mounted: function() {
+  mounted() {
     this.eraseAction(true)
   },
   computed: {
@@ -279,44 +279,20 @@ export default {
         return indexMax
       }
     },
-    indexTimestamp: {
-      get: function() {
-        return this.$store.state[this.id].indexTimestamp
-      },
-      set: function(value) {
-        this.$store.commit(this.id + '/setIndexTimestamp', value)
-      }
-    },
-    indexStart: {
-      get: function() {
-        return this.$store.state[this.id].indexStart
-      },
-      set: function(value) {
-        this.$store.commit(this.id + '/setIndexStart', value)
-      }
-    },
-    indexEnd: {
-      get: function() {
-        return this.$store.state[this.id].indexEnd
-      },
-      set: function(value) {
-        this.$store.commit(this.id + '/setIndexEnd', value)
-      }
-    },
-    indexLabel: {
-      get: function() {
-        return this.$store.state[this.id].indexLabel
-      },
-      set: function(value) {
-        this.$store.commit(this.id + '/setIndexLabel', value)
-      }
-    },
     output: {
       get: function() {
         return this.$store.state[this.id].output
       },
       set: function(value) {
         this.$store.commit(this.id + '/setOutput', value)
+      }
+    },
+    loading: {
+      get: function() {
+        return this.$store.state[this.id].loading
+      },
+      set: function(value) {
+        this.$store.commit(this.id + '/setLoading', value)
       }
     },
     showModalDisabled: function() {
@@ -327,6 +303,7 @@ export default {
     },
     plugActionDisabled: function() {
       let disabled = 0
+      disabled |= this.loading === true
       disabled |= this.indexStart === null
       disabled |= this.indexEnd === null
       disabled |= this.indexLabel === null
@@ -358,7 +335,7 @@ export default {
       if (event) {
         this.layerSize = 2
         this.epochSize = 5
-        this.batchSize = 15
+        this.batchSize = 20
         this.validationSpit = 0.1
         this.shuffleSelected = true
         this.compilerOptimizerSelected = 'sgd'
@@ -370,6 +347,8 @@ export default {
         this.kernelInitializerOptions = []
         this.biasInitializerSelected = []
         this.biasInitializerOptions = []
+        this.fileBadgeText = '-'
+        this.$refs['fileBadge'].className = 'badge badge-secondary'
       }
       if (this.input.length === 0) {
         this.indexTimestamp = this.indexStart = this.indexEnd = this.indexLabel = null
@@ -435,6 +414,7 @@ export default {
       }
     },
     async plugAction(event) {
+      this.loading = true
       let dataLength = this.indexEnd - this.indexStart + 1
       let dataSliced = this.input.map(x =>
         x.slice(this.indexStart, this.indexEnd + 1).map(y => parseFloat(y))
@@ -481,6 +461,9 @@ export default {
         output.push(row)
       }
       this.output = output
+      this.loading = false
+      this.fileBadgeText = 'ok'
+      this.$refs['fileBadge'].className = 'badge badge-success'
     }
   }
 }

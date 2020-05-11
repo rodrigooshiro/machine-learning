@@ -5,8 +5,8 @@
         v-model="localFile"
         ref="select-local-file"
         class="select-button"
-        placeholder="Choose a data source or drop it here..."
-        drop-placeholder="Drop file here..."
+        placeholder="Choose a data source..."
+        :no-drop="true"
         @change="selectLocalFile"
       ></b-form-file>
       <b-input-group-append>
@@ -26,23 +26,27 @@
 <script>
 import * as csv from 'csv-string'
 import path from 'path'
+const cors = process.env.VUE_APP_CORS_API
 
 const store = {
   namespaced: true,
   state: {
-    output: []
+    output: [],
+    loading: false
   },
   mutations: {
     setOutput(state, value) {
       state.output = value
+    },
+    setLoading(state, value) {
+      state.loading = value
     }
   }
 }
 
 export default {
   name: 'DatasetLoader',
-  props: ['id'],
-  components: {},
+  props: ['id', 'input_ref', 'input_index', 'loading_ref'],
   data() {
     return {
       localFile: null,
@@ -56,7 +60,6 @@ export default {
       this.$store.registerModule(this.id, store)
     }
   },
-  mounted() {},
   computed: {
     output: {
       get: function() {
@@ -65,13 +68,28 @@ export default {
       set: function(value) {
         this.$store.commit(this.id + '/setOutput', value)
       }
+    },
+    loading: {
+      get: function() {
+        return this.$store.state[this.id].loading
+      },
+      set: function(value) {
+        this.$store.commit(this.id + '/setLoading', value)
+      }
     }
   },
   methods: {
+    loadFileContent(content) {
+      let fileText = content.data.trim()
+      let fileTable = csv.parse(fileText)
+      this.output = [content.status === 200, this.fileName, fileText, fileTable]
+      this.loading = false
+    },
     selectLocalFile(event) {
       if (event instanceof MouseEvent) {
         this.$refs['select-local-file'].$el.children[0].click()
       } else if (event instanceof Event) {
+        this.loading = true
         let file = event.target.files[0]
         let reader = new FileReader()
         this.fileName = file.name
@@ -84,15 +102,11 @@ export default {
         })
       }
     },
-    loadFileContent(content) {
-      let fileText = content.data.trim()
-      let fileTable = csv.parse(fileText)
-      this.output = [content.status === 200, this.fileName, fileText, fileTable]
-    },
     selectRemoteFile() {
       let content = null
+      this.loading = true
       this.axios
-        .get('https://thingproxy.freeboard.io/fetch/' + this.remoteFile)
+        .get(cors + this.remoteFile)
         .then(response => {
           content = response
         })

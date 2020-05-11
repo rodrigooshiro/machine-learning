@@ -2,7 +2,13 @@
   <b-form-group>
     <b-form class="toolbarButtons" inline>
       <div class="btn-toolbar">
-        <b-badge ref="fileBadge" style="width: 50px;">-</b-badge>
+        <b-badge ref="fileBadge" style="width: 50px;">
+          <div
+            v-if="loading"
+            style="-webkit-animation: spinner-border .75s linear infinite; animation: spinner-border .75s linear infinite;"
+          >-</div>
+          <div v-if="!loading">{{ fileBadgeText }}</div>
+        </b-badge>
       </div>
       <div class="btn-toolbar">
         <b-button size="badge" :disabled="fileText===''" @click="downloadFileContent">
@@ -70,27 +76,31 @@
 </template>
 
 <script>
-let jquery = null
-let Plotly = null
+import jquery from 'jquery'
+import Plotly from 'plotly.js-dist'
 
 const store = {
   namespaced: true,
   state: {
-    output: []
+    output: [],
+    loading: false
   },
   mutations: {
     setOutput(state, value) {
       state.output = value
+    },
+    setLoading(state, value) {
+      state.loading = value
     }
   }
 }
 
 export default {
   name: 'DatasetViewer',
-  props: ['id', 'input_ref'],
-  components: {},
+  props: ['id', 'input_ref', 'input_index', 'loading_ref'],
   data() {
     return {
+      fileBadgeText: '-',
       fileMode: 'text',
       fileText: '',
       fileTable: [],
@@ -99,8 +109,6 @@ export default {
     }
   },
   created() {
-    jquery = global.jquery
-    Plotly = global.Plotly
     if (!this.$store.state[this.id]) {
       this.$store.registerModule(this.id, store)
     }
@@ -108,8 +116,14 @@ export default {
       () => this.$store.state[this.input_ref].output,
       this.onInputChanged
     )
+    this.$watch(
+      () => this.$store.state[this.loading_ref].loading,
+      this.onLoadingChanged
+    )
   },
-  mounted() {},
+  mounted() {
+    this.eraseAction(true)
+  },
   computed: {
     output: {
       get: function() {
@@ -117,6 +131,14 @@ export default {
       },
       set: function(value) {
         this.$store.commit(this.id + '/setOutput', value)
+      }
+    },
+    loading: {
+      get: function() {
+        return this.$store.state[this.id].loading
+      },
+      set: function(value) {
+        this.$store.commit(this.id + '/setLoading', value)
       }
     },
     showModalDisabled: function() {
@@ -135,10 +157,10 @@ export default {
       if (value.length === 4) {
         let [code, fileName, fileText, fileTable] = value
         if (code === true) {
-          this.$refs['fileBadge'].innerText = 'ok'
+          this.fileBadgeText = 'ok'
           this.$refs['fileBadge'].className = 'badge badge-success'
         } else {
-          this.$refs['fileBadge'].innerText = '-'
+          this.fileBadgeText = '-'
           this.$refs['fileBadge'].className = 'badge badge-danger'
         }
         this.fileName = fileName
@@ -147,16 +169,19 @@ export default {
         this.selectFileText()
       } else {
         if (value.length > 0) {
-          this.$refs['fileBadge'].innerText = 'ok'
+          this.fileBadgeText = 'ok'
           this.$refs['fileBadge'].className = 'badge badge-success'
         } else {
-          this.$refs['fileBadge'].innerText = '-'
+          this.fileBadgeText = '-'
           this.$refs['fileBadge'].className = 'badge badge-secondary'
         }
         this.fileName = this.id
         this.fileTable = value
         this.selectFileTable()
       }
+    },
+    onLoadingChanged(value) {
+      this.loading = value
     },
     onShowModal() {
       if (this.fileChart === false && !this.showModalDisabled) {
@@ -220,7 +245,7 @@ export default {
     async eraseAction(event) {
       if (event) {
         jquery(this.$refs['plot']).empty()
-        this.$refs['fileBadge'].innerText = '-'
+        this.fileBadgeText = '-'
         this.$refs['fileBadge'].className = 'badge badge-secondary'
         this.fileText = ''
         this.fileTable = []
