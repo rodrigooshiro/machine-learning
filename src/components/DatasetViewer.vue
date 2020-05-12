@@ -1,51 +1,39 @@
 <template>
   <b-form-group>
-    <b-form class="toolbarButtons" inline>
-      <div class="btn-toolbar">
-        <b-badge ref="fileBadge" style="width: 50px;">
-          <div
-            v-if="loading"
-            style="-webkit-animation: spinner-border .75s linear infinite; animation: spinner-border .75s linear infinite;"
-          >-</div>
-          <div v-if="!loading">{{ fileBadgeText }}</div>
-        </b-badge>
-      </div>
-      <div class="btn-toolbar">
-        <b-button size="badge" :disabled="fileText===''" @click="downloadFileContent">
-          <b-icon icon="download" class="btn-icon"></b-icon>
-          <a ref="downloadFileContent" style="display:none" />
-        </b-button>
-      </div>
-      <div class="btn-toolbar">
-        <b-button size="badge" @click="deleteFileContent" :class="fileName!=='' ? '': 'disabled'">
-          <b-icon icon="trash" class="btn-icon"></b-icon>
-        </b-button>
-      </div>
-      <div class="btn-toolbar">
-        <b-button size="badge" v-b-modal="'dataset-view-' + id" :disabled="showModalDisabled">
-          <b-icon icon="card-image" class="btn-icon"></b-icon>
-        </b-button>
-      </div>
-      <div class="btn-toolbar">
-        <b-button
-          size="badge"
-          @click="selectFileTable"
-          :class="fileMode==='table' ? '': 'disabled'"
-          :disabled="fileTable.length===0"
-        >
-          <b-icon icon="table" class="btn-icon"></b-icon>
-        </b-button>
-      </div>
-      <div class="btn-toolbar">
-        <b-button
-          size="badge"
-          @click="selectFileText"
-          :class="fileMode==='text' ? '': 'disabled'"
-          :disabled="fileText===''"
-        >
-          <b-icon icon="textarea" class="btn-icon"></b-icon>
-        </b-button>
-      </div>
+    <b-form class="form-toolbar-rtl" inline>
+      <b-badge ref="fileBadge" style="width: 50px;">
+        <div
+          v-if="loading"
+          style="-webkit-animation: spinner-border .75s linear infinite; animation: spinner-border .75s linear infinite;"
+        >-</div>
+        <div v-if="!loading">{{ fileBadgeText }}</div>
+      </b-badge>
+      <b-button size="badge" :disabled="fileText===''" @click="downloadFileContent">
+        <b-icon icon="download" class="btn-icon"></b-icon>
+        <a ref="downloadFileContent" style="display:none" />
+      </b-button>
+      <b-button size="badge" @click="deleteFileContent" :class="fileName!=='' ? '': 'disabled'">
+        <b-icon icon="trash" class="btn-icon"></b-icon>
+      </b-button>
+      <b-button size="badge" v-b-modal="'dataset-view-' + id" :disabled="showModalDisabled">
+        <b-icon icon="card-image" class="btn-icon"></b-icon>
+      </b-button>
+      <b-button
+        size="badge"
+        @click="selectFileTable"
+        :class="fileMode==='table' ? '': 'disabled'"
+        :disabled="fileTable.length===0"
+      >
+        <b-icon icon="table" class="btn-icon"></b-icon>
+      </b-button>
+      <b-button
+        size="badge"
+        @click="selectFileText"
+        :class="fileMode==='text' ? '': 'disabled'"
+        :disabled="fileText===''"
+      >
+        <b-icon icon="textarea" class="btn-icon"></b-icon>
+      </b-button>
     </b-form>
     <b-input-group class="mb-2">
       <b-form-textarea
@@ -60,6 +48,7 @@
         <b-table striped hover :items="fileTable"></b-table>
       </div>
     </b-input-group>
+    <ToolbarFooter :pipeline.sync="id" />
 
     <b-modal
       :id="'dataset-view-' + id"
@@ -76,30 +65,17 @@
 </template>
 
 <script>
+import ToolbarFooter from './ToolbarFooter.vue'
 import jquery from 'jquery'
 import Plotly from 'plotly.js-dist'
-
-const store = {
-  namespaced: true,
-  state: {
-    output: [],
-    loading: false
-  },
-  mutations: {
-    setOutput(state, value) {
-      state.output = value
-    },
-    setLoading(state, value) {
-      state.loading = value
-    }
-  }
-}
 
 export default {
   name: 'DatasetViewer',
   props: ['id', 'input_ref', 'input_index', 'loading_ref'],
+  components: { ToolbarFooter },
   data() {
     return {
+      watchers: [],
       fileBadgeText: '-',
       fileMode: 'text',
       fileText: '',
@@ -109,17 +85,44 @@ export default {
     }
   },
   created() {
+    let store = {
+      namespaced: true,
+      state: {
+        type: 'DatasetViewer',
+        output: [],
+        loading: false
+      },
+      mutations: {
+        setOutput(state, value) {
+          state.output = value
+        },
+        setLoading(state, value) {
+          state.loading = value
+        }
+      }
+    }
     if (!this.$store.state[this.id]) {
       this.$store.registerModule(this.id, store)
     }
-    this.$watch(
-      () => this.$store.state[this.input_ref].output,
-      this.onInputChanged
-    )
-    this.$watch(
-      () => this.$store.state[this.loading_ref].loading,
-      this.onLoadingChanged
-    )
+    if (this.input_ref && 'output' in this.$store.state[this.input_ref]) {
+      this.watchers.push(
+        this.$watch(
+          () => this.$store.state[this.input_ref].output,
+          this.onInputChanged
+        )
+      )
+    }
+    if (this.loading_ref && 'loading' in this.$store.state[this.loading_ref]) {
+      this.watchers.push(
+        this.$watch(
+          () => this.$store.state[this.loading_ref].loading,
+          this.onLoadingChanged
+        )
+      )
+    }
+  },
+  beforeDestroy() {
+    this.watchers.forEach(unwatch => unwatch())
   },
   mounted() {
     this.eraseAction(true)
@@ -150,6 +153,12 @@ export default {
       }
       return true
     }
+  },
+  watch: {
+    id: function(value) {},
+    input_index: function(value) {},
+    input_ref: function(value) {},
+    loading_ref: function(value) {}
   },
   methods: {
     onInputChanged(value) {

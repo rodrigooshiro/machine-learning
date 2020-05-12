@@ -20,35 +20,23 @@
         <b-button class="select-button" @click="selectRemoteFile">Select remote file</b-button>
       </b-input-group-append>
     </b-input-group>
+    <ToolbarFooter :pipeline.sync="id" />
   </b-form-group>
 </template>
 
 <script>
+import ToolbarFooter from './ToolbarFooter.vue'
 import * as csv from 'csv-string'
 import path from 'path'
 const cors = process.env.VUE_APP_CORS_API
 
-const store = {
-  namespaced: true,
-  state: {
-    output: [],
-    loading: false
-  },
-  mutations: {
-    setOutput(state, value) {
-      state.output = value
-    },
-    setLoading(state, value) {
-      state.loading = value
-    }
-  }
-}
-
 export default {
   name: 'DatasetLoader',
   props: ['id', 'input_ref', 'input_index', 'loading_ref'],
+  components: { ToolbarFooter },
   data() {
     return {
+      watchers: [],
       localFile: null,
       remoteFile:
         'https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data',
@@ -56,9 +44,28 @@ export default {
     }
   },
   created() {
+    let store = {
+      namespaced: true,
+      state: {
+        type: 'DatasetLoader',
+        output: [],
+        loading: false
+      },
+      mutations: {
+        setOutput(state, value) {
+          state.output = value
+        },
+        setLoading(state, value) {
+          state.loading = value
+        }
+      }
+    }
     if (!this.$store.state[this.id]) {
       this.$store.registerModule(this.id, store)
     }
+  },
+  beforeDestroy() {
+    this.watchers.forEach(unwatch => unwatch())
   },
   computed: {
     output: {
@@ -77,6 +84,12 @@ export default {
         this.$store.commit(this.id + '/setLoading', value)
       }
     }
+  },
+  watch: {
+    id: function(value) {},
+    input_index: function(value) {},
+    input_ref: function(value) {},
+    loading_ref: function(value) {}
   },
   methods: {
     loadFileContent(content) {

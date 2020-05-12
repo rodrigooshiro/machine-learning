@@ -1,33 +1,22 @@
 <template>
   <div>
-    <b-form class="toolbarButtons" inline>
-      <div class="btn-toolbar">
-        <b-badge ref="fileBadge" style="width: 50px;">
-          <div
-            v-if="loading"
-            style="-webkit-animation: spinner-border .75s linear infinite; animation: spinner-border .75s linear infinite;"
-          >-</div>
-          <div v-if="!loading">{{ fileBadgeText }}</div>
-        </b-badge>
-      </div>
-
-      <div class="btn-toolbar">
-        <b-button size="badge" @click="plugAction" :disabled="plugActionDisabled">
-          <b-icon icon="plug" class="btn-icon"></b-icon>
-        </b-button>
-      </div>
-
-      <div class="btn-toolbar">
-        <b-button size="badge" v-b-modal.model-view :disabled="showModalDisabled">
-          <b-icon icon="card-image" class="btn-icon"></b-icon>
-        </b-button>
-      </div>
-
-      <div class="btn-toolbar">
-        <b-button size="badge" @click="eraseAction" :disabled="indexMax===0">
-          <b-icon icon="trash" class="btn-icon"></b-icon>
-        </b-button>
-      </div>
+    <b-form class="form-toolbar-rtl" inline>
+      <b-badge ref="fileBadge" style="width: 50px;">
+        <div
+          v-if="loading"
+          style="-webkit-animation: spinner-border .75s linear infinite; animation: spinner-border .75s linear infinite;"
+        >-</div>
+        <div v-if="!loading">{{ fileBadgeText }}</div>
+      </b-badge>
+      <b-button size="badge" @click="plugAction" :disabled="plugActionDisabled">
+        <b-icon icon="plug" class="btn-icon"></b-icon>
+      </b-button>
+      <b-button size="badge" v-b-modal.model-view :disabled="showModalDisabled">
+        <b-icon icon="card-image" class="btn-icon"></b-icon>
+      </b-button>
+      <b-button size="badge" @click="eraseAction" :disabled="indexMax===0">
+        <b-icon icon="trash" class="btn-icon"></b-icon>
+      </b-button>
     </b-form>
 
     <b-form inline>
@@ -196,6 +185,8 @@
         </div>
       </b-form>
     </template>
+    <div style="margin-top: 8px;"></div>
+    <ToolbarFooter :pipeline.sync="id" />
 
     <b-modal id="model-view" title="Autoencoder Model View" :static="true">
       <div ref="mv"></div>
@@ -204,32 +195,19 @@
 </template>
 
 <script>
+import ToolbarFooter from './ToolbarFooter.vue'
 import * as tf from '@tensorflow/tfjs'
 import ModelView from 'tfjs-model-view'
 import jquery from 'jquery'
 import { activationOptions } from '@tensorflow/tfjs-layers/dist/keras_format/activation_config.js'
 
-const store = {
-  namespaced: true,
-  state: {
-    output: [],
-    loading: false
-  },
-  mutations: {
-    setOutput(state, value) {
-      state.output = value
-    },
-    setLoading(state, value) {
-      state.loading = value
-    }
-  }
-}
-
 export default {
   name: 'AutoencoderModel',
   props: ['id', 'input_ref', 'input_index', 'loading_ref'],
+  components: { ToolbarFooter },
   data() {
     return {
+      watchers: [],
       input: [],
       fileBadgeText: '-',
       indexTimestamp: null,
@@ -258,13 +236,36 @@ export default {
     }
   },
   created() {
+    let store = {
+      namespaced: true,
+      state: {
+        type: 'AutoencoderModel',
+        output: [],
+        loading: false
+      },
+      mutations: {
+        setOutput(state, value) {
+          state.output = value
+        },
+        setLoading(state, value) {
+          state.loading = value
+        }
+      }
+    }
     if (!this.$store.state[this.id]) {
       this.$store.registerModule(this.id, store)
     }
-    this.$watch(
-      () => this.$store.state[this.input_ref].output,
-      this.onInputChanged
-    )
+    if (this.input_ref && 'output' in this.$store.state[this.input_ref]) {
+      this.watchers.push(
+        this.$watch(
+          () => this.$store.state[this.input_ref].output,
+          this.onInputChanged
+        )
+      )
+    }
+  },
+  beforeDestroy() {
+    this.watchers.forEach(unwatch => unwatch())
   },
   mounted() {
     this.eraseAction(true)
@@ -314,6 +315,10 @@ export default {
     }
   },
   watch: {
+    id: function(value) {},
+    input_index: function(value) {},
+    input_ref: function(value) {},
+    loading_ref: function(value) {},
     layerSize: function(value) {
       this.eraseAction()
     }
