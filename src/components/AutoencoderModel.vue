@@ -1,5 +1,6 @@
 <template>
-  <div>
+  <b-form-group>
+    <h4 v-if="title" class="card-title">{{ title }}</h4>
     <b-form class="form-toolbar-rtl" inline>
       <b-badge ref="fileBadge" style="width: 50px;">
         <div
@@ -191,7 +192,7 @@
     <b-modal id="model-view" title="Autoencoder Model View" :static="true">
       <div ref="mv"></div>
     </b-modal>
-  </div>
+  </b-form-group>
 </template>
 
 <script>
@@ -203,7 +204,14 @@ import { activationOptions } from '@tensorflow/tfjs-layers/dist/keras_format/act
 
 export default {
   name: 'AutoencoderModel',
-  props: ['id', 'input_ref', 'input_index', 'loading_ref'],
+  props: [
+    'id',
+    'input_ref',
+    'input_index',
+    'loading_ref',
+    'title',
+    'description'
+  ],
   components: { ToolbarFooter },
   data() {
     return {

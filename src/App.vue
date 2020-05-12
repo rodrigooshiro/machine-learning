@@ -11,6 +11,8 @@
           :input_ref.sync="component.input_ref"
           :loading_ref.sync="component.loading_ref"
           :input_index.sync="component.input_index"
+          :title.sync="component.title"
+          :description.sync="component.description"
           v-on:onSetupComponent="onSetupComponent"
           v-on:onRemoveComponent="onRemoveComponent"
           v-on:onAddComponent="onAddComponent"
@@ -23,12 +25,27 @@
       <b-form-select v-model="componentSelected" :options="componentOptions"></b-form-select>
     </b-modal>
     <b-modal id="setupComponentModal" title="Setup Component" @ok="setupComponent">
+      <label>Title</label>
+      <b-form-input v-model="componentTitle"></b-form-input>
+      <label>Description</label>
+      <b-form-input v-model="componentDescription"></b-form-input>
       <label>Input Reference</label>
-      <b-form-select v-model="inputReferenceSelected" :options="inputReferenceOptions"></b-form-select>
+      <b-form-select
+        v-model="componentInputReferenceSelected"
+        :options="componentInputReferenceOptions"
+      ></b-form-select>
       <label>Input Index</label>
-      <b-form-spinbutton v-model="inputIndex" min="0" placeholder="--"></b-form-spinbutton>
+      <b-input-group>
+        <b-form-spinbutton v-model="componentInputIndex" min="0" placeholder="--"></b-form-spinbutton>
+        <b-button @click="componentInputIndex = null">
+          <b-icon icon="trash" class="btn-icon"></b-icon>
+        </b-button>
+      </b-input-group>
       <label>Loading Reference</label>
-      <b-form-select v-model="loadingReferenceSelected" :options="loadingReferenceOptions"></b-form-select>
+      <b-form-select
+        v-model="componentLoadingReferenceSelected"
+        :options="componentLoadingReferenceOptions"
+      ></b-form-select>
     </b-modal>
   </div>
 </template>
@@ -43,23 +60,24 @@ export default {
     DatasetViewer: () => import('./components/DatasetViewer'),
     AutoencoderModel: () => import('./components/AutoencoderModel')
   },
-  created() {
-    window.this = this
-  },
+  created() {},
   data() {
     return {
       index: null,
       componentSelected: 'DatasetViewer',
       componentOptions: ['DatasetLoader', 'DatasetViewer', 'AutoencoderModel'],
-      inputIndex: null,
-      inputReferenceSelected: null,
-      inputReferenceOptions: [],
-      loadingReferenceSelected: null,
-      loadingReferenceOptions: [],
+      componentTitle: null,
+      componentDescription: null,
+      componentInputIndex: null,
+      componentInputReferenceSelected: null,
+      componentInputReferenceOptions: [],
+      componentLoadingReferenceSelected: null,
+      componentLoadingReferenceOptions: [],
       pipeline: [
         {
           index: 'pipeline_0',
-          type: 'DatasetLoader'
+          type: 'DatasetLoader',
+          title: 'Dataset Loader'
         },
         {
           index: 'pipeline_1',
@@ -71,7 +89,8 @@ export default {
           index: 'pipeline_2',
           type: 'AutoencoderModel',
           input_ref: 'pipeline_0',
-          input_index: 3
+          input_index: 3,
+          title: 'Autoencoder Model'
         },
         {
           index: 'pipeline_3',
@@ -84,19 +103,25 @@ export default {
   },
   methods: {
     setupComponent() {
-      this.pipeline[this.index].input_index = this.inputIndex
-      this.pipeline[this.index].input_ref = this.inputReferenceSelected
-      this.pipeline[this.index].loading_ref = this.loadingReferenceSelected
+      this.pipeline[this.index].title = this.componentTitle
+      this.pipeline[this.index].description = this.componentDescription
+      this.pipeline[this.index].input_index = this.componentInputIndex
+      this.pipeline[this.index].input_ref = this.componentInputReferenceSelected
+      this.pipeline[this.index].loading_ref = this.componentLoadingReferenceSelected
+      this.pipeline[this.index] = this.pipeline[this.index]
+      this.inputReferenceOptions = []
     },
     onSetupComponent(pipeline) {
       this.index = this.pipeline.map(x => x.index).indexOf(pipeline)
-      this.inputIndex = this.pipeline[this.index].input_index
-      this.inputReferenceSelected = this.pipeline[this.index].input_ref
-      this.inputReferenceOptions = this.pipeline.map(x => x.index)
-      this.inputReferenceOptions.splice(0, 0, '')
-      this.loadingReferenceSelected = this.pipeline[this.index].loading_ref
-      this.loadingReferenceOptions = this.pipeline.map(x => x.index)
-      this.loadingReferenceOptions.splice(0, 0, '')
+      this.componentTitle = this.pipeline[this.index].title
+      this.componentDescription = this.pipeline[this.index].description
+      this.componentInputIndex = this.pipeline[this.index].input_index
+      this.componentInputReferenceSelected = this.pipeline[this.index].input_ref
+      this.componentInputReferenceOptions = this.pipeline.map(x => x.index)
+      this.componentInputReferenceOptions.splice(0, 0, '')
+      this.componentLoadingReferenceSelected = this.pipeline[this.index].loading_ref
+      this.componentLoadingReferenceOptions = this.pipeline.map(x => x.index)
+      this.componentLoadingReferenceOptions.splice(0, 0, '')
       this.$bvModal.show('setupComponentModal')
     },
     removeComponent() {

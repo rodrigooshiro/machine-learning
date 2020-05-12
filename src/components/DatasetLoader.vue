@@ -1,5 +1,6 @@
 <template>
   <b-form-group>
+    <h4 v-if="title" class="card-title">{{ title }}</h4>
     <b-input-group class="mb-2">
       <b-form-file
         v-model="localFile"
@@ -32,7 +33,14 @@ const cors = process.env.VUE_APP_CORS_API
 
 export default {
   name: 'DatasetLoader',
-  props: ['id', 'input_ref', 'input_index', 'loading_ref'],
+  props: [
+    'id',
+    'input_ref',
+    'input_index',
+    'loading_ref',
+    'title',
+    'description'
+  ],
   components: { ToolbarFooter },
   data() {
     return {
