@@ -1,21 +1,30 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="#">
+  <b-navbar toggleable="lg" type="dark" variant="secondary">
+    <b-navbar-brand href="/" style="padding: 0px !important;">
       <b-icon icon="eye-fill" style="width: 32px; height: 32px;"></b-icon>
-    </a>
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav mr-auto">
-        <li class="nav-item active">
-          <a class="nav-link" href="#">Home</a>
-        </li>
-      </ul>
-    </div>
-  </nav>
+    </b-navbar-brand>
+    <b-navbar-brand href="/">Home</b-navbar-brand>
+    <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
+    <b-collapse id="nav-collapse" is-nav>
+      <b-navbar-nav class="ml-auto">
+        <b-nav-item-dropdown right>
+          <template v-slot:button-content>Pipelines</template>
+          <b-dropdown-item @click="onLoadPipeline" :disabled="loading">Blank</b-dropdown-item>
+          <b-dropdown-item @click="onLoadPipeline" :disabled="loading">Autoencoder Tensorflow</b-dropdown-item>
+        </b-nav-item-dropdown>
+      </b-navbar-nav>
+    </b-collapse>
+  </b-navbar>
 </template>
 
 <script>
 export default {
-  name: 'Header'
+  props: ['loading'],
+  methods: {
+    onLoadPipeline(event) {
+      this.$emit('onLoadPipeline', event.target.text.trim())
+    }
+  }
 }
 </script>
 

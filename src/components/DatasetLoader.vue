@@ -1,6 +1,7 @@
 <template>
   <b-form-group>
     <h4 v-if="title" class="card-title">{{ title }}</h4>
+    <b-card-text v-if="description">{{ description }}</b-card-text>
     <b-input-group class="mb-2">
       <b-form-file
         v-model="localFile"
@@ -21,7 +22,7 @@
         <b-button class="select-button" @click="selectRemoteFile">Select remote file</b-button>
       </b-input-group-append>
     </b-input-group>
-    <ToolbarFooter :pipeline.sync="id" />
+    <ToolbarFooter :index.sync="index" :input_ref="input_ref" :length.sync="length" />
   </b-form-group>
 </template>
 
@@ -32,12 +33,11 @@ import path from 'path'
 const cors = process.env.VUE_APP_CORS_API
 
 export default {
-  name: 'DatasetLoader',
   props: [
-    'id',
+    'index',
+    'length',
     'input_ref',
     'input_index',
-    'loading_ref',
     'title',
     'description'
   ],
@@ -68,8 +68,8 @@ export default {
         }
       }
     }
-    if (!this.$store.state[this.id]) {
-      this.$store.registerModule(this.id, store)
+    if (!this.$store.state[this.index]) {
+      this.$store.registerModule(this.index, store)
     }
   },
   beforeDestroy() {
@@ -78,26 +78,25 @@ export default {
   computed: {
     output: {
       get: function() {
-        return this.$store.state[this.id].output
+        return this.$store.state[this.index].output
       },
       set: function(value) {
-        this.$store.commit(this.id + '/setOutput', value)
+        this.$store.commit(this.index + '/setOutput', value)
       }
     },
     loading: {
       get: function() {
-        return this.$store.state[this.id].loading
+        return this.$store.state[this.index].loading
       },
       set: function(value) {
-        this.$store.commit(this.id + '/setLoading', value)
+        this.$store.commit(this.index + '/setLoading', value)
       }
     }
   },
   watch: {
-    id: function(value) {},
+    index: function(value) {},
     input_index: function(value) {},
-    input_ref: function(value) {},
-    loading_ref: function(value) {}
+    input_ref: function(value) {}
   },
   methods: {
     loadFileContent(content) {

@@ -1,22 +1,32 @@
 <template>
   <b-form class="form-toolbar-ltr" inline>
+    <b-badge pill variant="light">
+      {{ slot }}
+      <b-icon v-if="reference !== null" icon="link"></b-icon>
+      {{ reference }}
+    </b-badge>
     <div class="b-icon-sup">
       <b-icon :icon="toggleIcon" @click="onToggleToolbar"></b-icon>
     </div>
     <b-collapse :visible="toggleIcon === 'caret-up'">
-      <b-button size="badge" @click="onSetupComponent">
+      <b-button v-if="length > 0" size="badge" @click="onSetupComponent">
         <b-icon icon="gear"></b-icon>
       </b-button>
-      <b-button size="badge" @click="onRemoveComponent">
+      <b-button v-if="length > 0" size="badge" @click="onRemoveComponent">
         <b-icon icon="dash-circle"></b-icon>
       </b-button>
       <b-button size="badge" @click="onAddComponent">
         <b-icon icon="plus-circle"></b-icon>
       </b-button>
-      <b-button size="badge" @click="onMoveDownComponent" :disabled="true">
+      <b-button
+        v-if="length > 0"
+        size="badge"
+        @click="onMoveDownComponent"
+        :disabled="slot === (length-1)"
+      >
         <b-icon icon="file-arrow-down"></b-icon>
       </b-button>
-      <b-button size="badge" @click="onMoveUpComponent" :disabled="true">
+      <b-button v-if="length > 0" size="badge" @click="onMoveUpComponent" :disabled="slot === 0">
         <b-icon icon="file-arrow-up"></b-icon>
       </b-button>
     </b-collapse>
@@ -25,8 +35,7 @@
 
 <script>
 export default {
-  name: 'ToolbarFooter',
-  props: ['pipeline'],
+  props: ['index', 'length', 'input_ref'],
   data() {
     return {
       toggleIcon: 'caret-down'
@@ -34,7 +43,21 @@ export default {
   },
   created() {},
   mounted() {},
-  computed: {},
+  computed: {
+    slot: {
+      get: function() {
+        return parseInt(this.index.split('_')[1])
+      }
+    },
+    reference: {
+      get: function() {
+        if (this.input_ref) {
+          return parseInt(this.input_ref.split('_')[1])
+        }
+        return null
+      }
+    }
+  },
   watch: {},
   methods: {
     onToggleToolbar() {
@@ -45,9 +68,9 @@ export default {
       }
     },
     onTriggerComponent(emit) {
-      let vm = this.$parent
+      let vm = this
       while (vm) {
-        vm.$emit(emit, this.pipeline)
+        vm.$emit(emit, this.index)
         vm = vm.$parent
       }
     },

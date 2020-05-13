@@ -1,6 +1,7 @@
 <template>
   <b-form-group>
     <h4 v-if="title" class="card-title">{{ title }}</h4>
+    <b-card-text v-if="description">{{ description }}</b-card-text>
     <b-form class="form-toolbar-rtl" inline>
       <b-badge ref="fileBadge" style="width: 50px;">
         <div
@@ -16,7 +17,7 @@
       <b-button size="badge" @click="deleteFileContent" :class="fileName!=='' ? '': 'disabled'">
         <b-icon icon="trash" class="btn-icon"></b-icon>
       </b-button>
-      <b-button size="badge" v-b-modal="'dataset-view-' + id" :disabled="showModalDisabled">
+      <b-button size="badge" v-b-modal="'dataset-view-' + index" :disabled="showModalDisabled">
         <b-icon icon="card-image" class="btn-icon"></b-icon>
       </b-button>
       <b-button
@@ -49,10 +50,10 @@
         <b-table striped hover :items="fileTable"></b-table>
       </div>
     </b-input-group>
-    <ToolbarFooter :pipeline.sync="id" />
+    <ToolbarFooter :index.sync="index" :input_ref="input_ref" :length.sync="length" />
 
     <b-modal
-      :id="'dataset-view-' + id"
+      :id="'dataset-view-' + index"
       title="Dataset View"
       :static="true"
       size="lg"
@@ -71,12 +72,11 @@ import jquery from 'jquery'
 import Plotly from 'plotly.js-dist'
 
 export default {
-  name: 'DatasetViewer',
   props: [
-    'id',
+    'index',
+    'length',
     'input_ref',
     'input_index',
-    'loading_ref',
     'title',
     'description'
   ],
@@ -109,8 +109,8 @@ export default {
         }
       }
     }
-    if (!this.$store.state[this.id]) {
-      this.$store.registerModule(this.id, store)
+    if (!this.$store.state[this.index]) {
+      this.$store.registerModule(this.index, store)
     }
     if (this.input_ref && 'output' in this.$store.state[this.input_ref]) {
       this.watchers.push(
@@ -120,10 +120,10 @@ export default {
         )
       )
     }
-    if (this.loading_ref && 'loading' in this.$store.state[this.loading_ref]) {
+    if (this.input_ref && 'loading' in this.$store.state[this.input_ref]) {
       this.watchers.push(
         this.$watch(
-          () => this.$store.state[this.loading_ref].loading,
+          () => this.$store.state[this.input_ref].loading,
           this.onLoadingChanged
         )
       )
@@ -138,18 +138,18 @@ export default {
   computed: {
     output: {
       get: function() {
-        return this.$store.state[this.id].output
+        return this.$store.state[this.index].output
       },
       set: function(value) {
-        this.$store.commit(this.id + '/setOutput', value)
+        this.$store.commit(this.index + '/setOutput', value)
       }
     },
     loading: {
       get: function() {
-        return this.$store.state[this.id].loading
+        return this.$store.state[this.index].loading
       },
       set: function(value) {
-        this.$store.commit(this.id + '/setLoading', value)
+        this.$store.commit(this.index + '/setLoading', value)
       }
     },
     showModalDisabled: function() {
@@ -163,39 +163,40 @@ export default {
     }
   },
   watch: {
-    id: function(value) {},
+    index: function(value) {},
     input_index: function(value) {},
-    input_ref: function(value) {},
-    loading_ref: function(value) {}
+    input_ref: function(value) {}
   },
   methods: {
     onInputChanged(value) {
       this.eraseAction(true)
       this.output = value
-      if (value.length === 4) {
-        let [code, fileName, fileText, fileTable] = value
-        if (code === true) {
-          this.fileBadgeText = 'ok'
-          this.$refs['fileBadge'].className = 'badge badge-success'
+      if (Array.isArray(value) && value.length > 0) {
+        if (value.length === 4) {
+          let [code, fileName, fileText, fileTable] = value
+          if (code === true) {
+            this.fileBadgeText = 'ok'
+            this.$refs['fileBadge'].className = 'badge badge-success'
+          } else {
+            this.fileBadgeText = '-'
+            this.$refs['fileBadge'].className = 'badge badge-danger'
+          }
+          this.fileName = fileName
+          this.fileText = fileText
+          this.fileTable = fileTable
+          this.selectFileText()
         } else {
-          this.fileBadgeText = '-'
-          this.$refs['fileBadge'].className = 'badge badge-danger'
+          if (value.length > 0) {
+            this.fileBadgeText = 'ok'
+            this.$refs['fileBadge'].className = 'badge badge-success'
+          } else {
+            this.fileBadgeText = '-'
+            this.$refs['fileBadge'].className = 'badge badge-secondary'
+          }
+          this.fileName = this.index
+          this.fileTable = value
+          this.selectFileTable()
         }
-        this.fileName = fileName
-        this.fileText = fileText
-        this.fileTable = fileTable
-        this.selectFileText()
-      } else {
-        if (value.length > 0) {
-          this.fileBadgeText = 'ok'
-          this.$refs['fileBadge'].className = 'badge badge-success'
-        } else {
-          this.fileBadgeText = '-'
-          this.$refs['fileBadge'].className = 'badge badge-secondary'
-        }
-        this.fileName = this.id
-        this.fileTable = value
-        this.selectFileTable()
       }
     },
     onLoadingChanged(value) {
@@ -268,6 +269,7 @@ export default {
         this.fileText = ''
         this.fileTable = []
         this.fileName = ''
+        this.fileMode = 'text'
         this.fileChart = false
       }
     },
@@ -279,7 +281,6 @@ export default {
     },
     deleteFileContent() {
       this.eraseAction(true)
-      this.$store.state[this.input_ref].output = []
     },
     downloadFileContent(event) {
       if (event.isTrusted) {

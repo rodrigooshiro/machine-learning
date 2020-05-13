@@ -1,6 +1,7 @@
 <template>
   <b-form-group>
     <h4 v-if="title" class="card-title">{{ title }}</h4>
+    <b-card-text v-if="description">{{ description }}</b-card-text>
     <b-form class="form-toolbar-rtl" inline>
       <b-badge ref="fileBadge" style="width: 50px;">
         <div
@@ -12,7 +13,11 @@
       <b-button size="badge" @click="plugAction" :disabled="plugActionDisabled">
         <b-icon icon="plug" class="btn-icon"></b-icon>
       </b-button>
-      <b-button size="badge" v-b-modal.model-view :disabled="showModalDisabled">
+      <b-button
+        size="badge"
+        @click="$bvModal.show('model-view-' + index)"
+        :disabled="showModalDisabled"
+      >
         <b-icon icon="card-image" class="btn-icon"></b-icon>
       </b-button>
       <b-button size="badge" @click="eraseAction" :disabled="indexMax===0">
@@ -187,9 +192,9 @@
       </b-form>
     </template>
     <div style="margin-top: 8px;"></div>
-    <ToolbarFooter :pipeline.sync="id" />
+    <ToolbarFooter :index.sync="index" :input_ref="input_ref" :length.sync="length" />
 
-    <b-modal id="model-view" title="Autoencoder Model View" :static="true">
+    <b-modal :id="'model-view-' + index" title="Autoencoder Model View" :static="true">
       <div ref="mv"></div>
     </b-modal>
   </b-form-group>
@@ -203,12 +208,11 @@ import jquery from 'jquery'
 import { activationOptions } from '@tensorflow/tfjs-layers/dist/keras_format/activation_config.js'
 
 export default {
-  name: 'AutoencoderModel',
   props: [
-    'id',
+    'index',
+    'length',
     'input_ref',
     'input_index',
-    'loading_ref',
     'title',
     'description'
   ],
@@ -260,8 +264,8 @@ export default {
         }
       }
     }
-    if (!this.$store.state[this.id]) {
-      this.$store.registerModule(this.id, store)
+    if (!this.$store.state[this.index]) {
+      this.$store.registerModule(this.index, store)
     }
     if (this.input_ref && 'output' in this.$store.state[this.input_ref]) {
       this.watchers.push(
@@ -290,18 +294,18 @@ export default {
     },
     output: {
       get: function() {
-        return this.$store.state[this.id].output
+        return this.$store.state[this.index].output
       },
       set: function(value) {
-        this.$store.commit(this.id + '/setOutput', value)
+        this.$store.commit(this.index + '/setOutput', value)
       }
     },
     loading: {
       get: function() {
-        return this.$store.state[this.id].loading
+        return this.$store.state[this.index].loading
       },
       set: function(value) {
-        this.$store.commit(this.id + '/setLoading', value)
+        this.$store.commit(this.index + '/setLoading', value)
       }
     },
     showModalDisabled: function() {
@@ -323,10 +327,9 @@ export default {
     }
   },
   watch: {
-    id: function(value) {},
+    index: function(value) {},
     input_index: function(value) {},
     input_ref: function(value) {},
-    loading_ref: function(value) {},
     layerSize: function(value) {
       this.eraseAction()
     }
@@ -346,6 +349,7 @@ export default {
     },
     async eraseAction(event) {
       if (event) {
+        this.output = []
         this.layerSize = 2
         this.epochSize = 5
         this.batchSize = 20
