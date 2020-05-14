@@ -1,6 +1,14 @@
 <template>
   <div id="app">
-    <Header v-on:onLoadPipeline="onLoadPipeline" :loading.sync="loading" />
+    <Header
+      v-on:onExportPipeline="onExportPipeline"
+      v-on:onImportPipeline="onImportPipeline"
+      v-on:onLoadPipeline="onLoadPipeline"
+      :loading.sync="loading"
+      :templates.sync="templates"
+    />
+    <a ref="export-pipeline" style="display:none" />
+    <b-form-file ref="import-pipeline" @change="onImportPipeline" style="display:none"></b-form-file>
     <b-card>
       <div v-if="loading" class="text-center">
         <b-spinner type="grow"></b-spinner>
@@ -16,6 +24,7 @@
           :input_index.sync="component.input_index"
           :title.sync="component.title"
           :description.sync="component.description"
+          :data="component.data"
           v-on:onSetupComponent="onSetupComponent"
           v-on:onRemoveComponent="onRemoveComponent"
           v-on:onAddComponent="onAddComponent"
@@ -88,8 +97,7 @@ export default {
     )
     Promise.all(promises).then(
       function(res) {
-        this.onLoadPipeline('Autoencoder Tensorflow')
-        this.loading = false
+        this.onLoadPipeline('Tensorflow: Autoencoder')
       }.bind(this)
     )
   },
@@ -106,6 +114,13 @@ export default {
       componentInputIndex: null,
       componentInputReferenceSelected: null,
       componentInputReferenceOptions: [],
+      templates: [
+        {
+          name: 'Tensorflow: Autoencoder',
+          key: Math.random(),
+          value: null
+        }
+      ],
       pipeline: []
     }
   },
@@ -114,7 +129,7 @@ export default {
       this.pipeline[this.index].key = Math.random()
       this.pipeline[this.index].title = this.componentTitle
       this.pipeline[this.index].description = this.componentDescription
-      this.pipeline[this.index].input_ref = this.componentInputReferenceSelected
+      this.pipeline[this.index].input_ref = this.componentInputReferenceSelected !== '' ? `pipeline_${this.componentInputReferenceSelected}` : undefined
       this.pipeline[this.index].input_index = this.componentInputIndex
       this.pipeline[this.index] = this.pipeline[this.index]
       if (!this.pipeline[this.index].input_ref) {
@@ -126,16 +141,40 @@ export default {
       this.index = this.pipeline.map(x => x.index).indexOf(index)
       this.componentTitle = this.pipeline[this.index].title
       this.componentDescription = this.pipeline[this.index].description
-      this.componentInputReferenceSelected = this.pipeline[this.index].input_ref
-      this.componentInputReferenceOptions = this.pipeline
-        .filter(x => x.index !== index)
-        .map(x => x.index)
+      this.componentInputReferenceSelected = this.pipeline[this.index].input_ref !== undefined ? this.pipeline[this.index].input_ref.replace(/pipeline_/g, '') : undefined
+      this.componentInputReferenceOptions = this.pipeline.filter(x => x.index !== index).map(x => x.index.replace(/pipeline_/g, ''))
       this.componentInputReferenceOptions.splice(0, 0, '')
       this.componentInputIndex = this.pipeline[this.index].input_index
       this.$bvModal.show('setup-component')
     },
     removeComponent() {
-      this.pipeline.splice(this.index, 1)
+      let index = this.index
+      this.pipeline.splice(index, 1)
+      for (let i = 0; i < this.pipeline.length; i++) {
+        let pipeline = this.pipeline[i]
+        let invalidate = false
+        if ('input_ref' in pipeline) {
+          let ref = parseInt(pipeline.input_ref.split('_')[1])
+          if (ref === index) {
+            invalidate = true
+            delete this.pipeline[i].input_ref
+          } else if (ref > index) {
+            invalidate = true
+            if (ref - 1 === -1) {
+              delete this.pipeline[i].input_ref
+            } else {
+              this.pipeline[i].input_ref = 'pipeline_' + (ref - 1)
+            }
+          }
+        }
+        if (i > index) {
+          invalidate = true
+          this.pipeline[i].index = 'pipeline_' + (parseInt(pipeline.index.split('_')[1]) - 1)
+        }
+        if (invalidate) {
+          pipeline.key = Math.random()
+        }
+      }
     },
     onRemoveComponent(index) {
       this.index = this.pipeline.map(x => x.index).indexOf(index)
@@ -154,15 +193,26 @@ export default {
       if (index > 0) {
         this.pipeline[index].input_ref = 'pipeline_' + (index - 1)
       }
-      for (let i = index + 1; i < this.pipeline.length; i++) {
+      for (let i = 0; i < this.pipeline.length; i++) {
         let pipeline = this.pipeline[i]
-        pipeline.key = Math.random()
+        let invalidate = false
         if ('input_ref' in pipeline) {
-          this.pipeline[i].input_ref =
-            'pipeline_' + (parseInt(pipeline.input_ref.split('_')[1]) + 1)
+          let ref = parseInt(pipeline.input_ref.split('_')[1])
+          if (ref === index) {
+            invalidate = true
+            delete this.pipeline[i].input_ref
+          } else if (ref > index) {
+            invalidate = true
+            this.pipeline[i].input_ref = 'pipeline_' + (ref + 1)
+          }
         }
-        this.pipeline[i].index =
-          'pipeline_' + (parseInt(pipeline.index.split('_')[1]) + 1)
+        if (i > index) {
+          invalidate = true
+          this.pipeline[i].index = 'pipeline_' + (parseInt(pipeline.index.split('_')[1]) + 1)
+        }
+        if (invalidate) {
+          pipeline.key = Math.random()
+        }
       }
       if (this.$refs['toolbarFooter']) {
         this.$refs['toolbarFooter'].toggleIcon = 'caret-down'
@@ -174,63 +224,96 @@ export default {
     },
     onMoveDownComponent(index) {
       this.index = this.pipeline.map(x => x.index).indexOf(index)
-      this.pipeline[this.index] = this.pipeline.splice(
-        this.index + 1,
-        1,
-        this.pipeline[this.index]
-      )[0]
+      this.pipeline[this.index] = this.pipeline.splice(this.index + 1, 1, this.pipeline[this.index])[0]
       for (let i = this.index; i < this.pipeline.length; i++) {
         let pipeline = this.pipeline[i]
         pipeline.index = 'pipeline_' + i
         pipeline.key = Math.random()
       }
+      delete this.pipeline[this.index].input_ref
+      delete this.pipeline[this.index].input_index
+      delete this.pipeline[this.index + 1].input_ref
+      delete this.pipeline[this.index + 1].input_index
     },
     onMoveUpComponent(index) {
       this.index = this.pipeline.map(x => x.index).indexOf(index)
-      this.pipeline[this.index] = this.pipeline.splice(
-        this.index - 1,
-        1,
-        this.pipeline[this.index]
-      )[0]
+      this.pipeline[this.index] = this.pipeline.splice(this.index - 1, 1, this.pipeline[this.index])[0]
       for (let i = this.index - 1; i < this.pipeline.length; i++) {
         let pipeline = this.pipeline[i]
         pipeline.index = 'pipeline_' + i
         pipeline.key = Math.random()
       }
+      delete this.pipeline[this.index].input_ref
+      delete this.pipeline[this.index].input_index
+      delete this.pipeline[this.index - 1].input_ref
+      delete this.pipeline[this.index - 1].input_index
     },
-    onLoadPipeline(template) {
-      if (template === 'Blank') {
-        this.pipeline = []
+    loadData(data) {
+      let pipeline = eval(data)
+      pipeline.forEach(p => {
+        p.key = Math.random()
+      })
+      this.pipeline = pipeline
+    },
+    onExportPipeline() {
+      let pipeline = []
+      this.pipeline.forEach(p => {
+        pipeline.push(this.$refs[p.index][0].exportData())
+      })
+      let blob = new Blob([JSON.stringify(pipeline, null, 2)], { type: 'application/json' })
+      let url = window.URL.createObjectURL(blob)
+      this.$refs['export-pipeline'].href = url
+      this.$refs['export-pipeline'].download = 'pipeline.json'
+      this.$refs['export-pipeline'].click()
+      window.URL.revokeObjectURL(url)
+    },
+    onImportPipeline(event) {
+      if (event === undefined) {
+        this.$refs['import-pipeline'].$el.children[0].click()
+      } else if (event instanceof Event) {
+        if (event.target.files.length) {
+          this.loading = true
+          this.pipeline = []
+          let file = event.target.files[0]
+          let reader = new FileReader()
+          this.fileName = file.name
+          reader.onload = e => this.onImportPipeline(e.target)
+          reader.readAsText(file)
+        }
+      } else if (event instanceof FileReader) {
+        if (event.error === null) {
+          this.templates.push({
+            name: `${this.templates.length}: ${this.fileName}`,
+            value: event.result
+          })
+          this.loadData(event.result)
+        }
+        this.loading = false
       }
-      if (template === 'Autoencoder Tensorflow') {
-        this.pipeline = [
-          {
-            key: Math.random(),
-            index: 'pipeline_0',
-            type: 'DatasetLoader',
-            title: 'Dataset Loader'
-          },
-          {
-            key: Math.random(),
-            index: 'pipeline_1',
-            type: 'DatasetViewer',
-            input_ref: 'pipeline_0'
-          },
-          {
-            key: Math.random(),
-            index: 'pipeline_2',
-            type: 'TSAutoencoder',
-            input_ref: 'pipeline_0',
-            input_index: 3,
-            title: 'Tensorflow Autoencoder'
-          },
-          {
-            key: Math.random(),
-            index: 'pipeline_3',
-            type: 'DatasetViewer',
-            input_ref: 'pipeline_2'
-          }
-        ]
+    },
+    onLoadPipeline(event) {
+      let template = this.templates.filter(template => template.name === event)
+      if (template.length && template[0].value === null) {
+        let name = event
+          .toLocaleLowerCase()
+          .replace(/:/g, '')
+          .replace(/\s/g, '-')
+        let file = `./pipelines/${name}.json`
+        this.loading = true
+        this.pipeline = []
+        this.axios
+          .get(file)
+          .then(response => {
+            template[0].value = response.data
+          })
+          .finally(() => {
+            this.loadData(template[0].value)
+            this.loading = false
+          })
+      } else if (template.length) {
+        this.loadData(template[0].value)
+      } else {
+        this.loadData('[]')
       }
     }
   }

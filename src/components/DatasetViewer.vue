@@ -68,22 +68,17 @@
 
 <script>
 import ToolbarFooter from './ToolbarFooter.vue'
+import { mixin } from './mixin'
 import jquery from 'jquery'
 import Plotly from 'plotly.js-dist'
 
 export default {
-  props: [
-    'index',
-    'length',
-    'input_ref',
-    'input_index',
-    'title',
-    'description'
-  ],
+  name: 'DatasetViewer',
   components: { ToolbarFooter },
+  mixins: [mixin],
   data() {
     return {
-      watchers: [],
+      serializable: ['fileBadgeText', 'fileMode', 'fileText', 'fileTable', 'fileName', 'fileChart'],
       fileBadgeText: '-',
       fileMode: 'text',
       fileText: '',
@@ -92,66 +87,7 @@ export default {
       fileChart: false
     }
   },
-  created() {
-    let store = {
-      namespaced: true,
-      state: {
-        type: 'DatasetViewer',
-        output: [],
-        loading: false
-      },
-      mutations: {
-        setOutput(state, value) {
-          state.output = value
-        },
-        setLoading(state, value) {
-          state.loading = value
-        }
-      }
-    }
-    if (!this.$store.state[this.index]) {
-      this.$store.registerModule(this.index, store)
-    }
-    if (this.input_ref && 'output' in this.$store.state[this.input_ref]) {
-      this.watchers.push(
-        this.$watch(
-          () => this.$store.state[this.input_ref].output,
-          this.onInputChanged
-        )
-      )
-    }
-    if (this.input_ref && 'loading' in this.$store.state[this.input_ref]) {
-      this.watchers.push(
-        this.$watch(
-          () => this.$store.state[this.input_ref].loading,
-          this.onLoadingChanged
-        )
-      )
-    }
-  },
-  beforeDestroy() {
-    this.watchers.forEach(unwatch => unwatch())
-  },
-  mounted() {
-    this.eraseAction(true)
-  },
   computed: {
-    output: {
-      get: function() {
-        return this.$store.state[this.index].output
-      },
-      set: function(value) {
-        this.$store.commit(this.index + '/setOutput', value)
-      }
-    },
-    loading: {
-      get: function() {
-        return this.$store.state[this.index].loading
-      },
-      set: function(value) {
-        this.$store.commit(this.index + '/setLoading', value)
-      }
-    },
     showModalDisabled: function() {
       if (this.fileTable.length) {
         let dimensionsSize = this.fileTable[0].length
@@ -162,17 +98,12 @@ export default {
       return true
     }
   },
-  watch: {
-    index: function(value) {},
-    input_index: function(value) {},
-    input_ref: function(value) {}
-  },
   methods: {
     onInputChanged(value) {
-      this.eraseAction(true)
-      this.output = value
+      this.eraseData(true)
       if (Array.isArray(value) && value.length > 0) {
         if (value.length === 4) {
+          this.output = value
           let [code, fileName, fileText, fileTable] = value
           if (code === true) {
             this.fileBadgeText = 'ok'
@@ -186,6 +117,7 @@ export default {
           this.fileTable = fileTable
           this.selectFileText()
         } else {
+          this.output = [null, this.index, null, value]
           if (value.length > 0) {
             this.fileBadgeText = 'ok'
             this.$refs['fileBadge'].className = 'badge badge-success'
@@ -250,8 +182,7 @@ export default {
           let keyLabels = Array.from(new Set(labels))
           let colorMap = {}
           keyLabels.forEach(label => {
-            colorMap[label] =
-              '#' + Math.floor(Math.random() * 16777215).toString(16)
+            colorMap[label] = '#' + Math.floor(Math.random() * 16777215).toString(16)
           })
           trace.text = labels
           trace.marker.line.color = labels.map(d => colorMap[d])
@@ -261,7 +192,7 @@ export default {
         this.fileChart = true
       }
     },
-    async eraseAction(event) {
+    async eraseData(event) {
       if (event) {
         jquery(this.$refs['plot']).empty()
         this.fileBadgeText = '-'
@@ -280,7 +211,7 @@ export default {
       this.fileMode = 'table'
     },
     deleteFileContent() {
-      this.eraseAction(true)
+      this.eraseData(true)
     },
     downloadFileContent(event) {
       if (event.isTrusted) {

@@ -1,8 +1,8 @@
-// const backend = require('./src/backend')
+const api = require('./src/api')
 
 module.exports = {
-  // devServer: {
-  //   before: backend
-  // },
+  devServer: {
+    before: api
+  },
   runtimeCompiler: true
 }

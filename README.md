@@ -1,6 +1,6 @@
-# visualization
+# machine-learning
 
-## Project setup
+## Project Setup
 ```
 npm install
 ```
@@ -8,6 +8,11 @@ npm install
 ### Compiles and hot-reloads for development
 ```
 npm run serve
+```
+
+### Compiles and runs only backend for development
+```
+npm run backend
 ```
 
 ### Compiles and minifies for production

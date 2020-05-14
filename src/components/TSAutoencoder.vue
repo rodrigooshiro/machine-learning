@@ -20,7 +20,7 @@
       >
         <b-icon icon="card-image" class="btn-icon"></b-icon>
       </b-button>
-      <b-button size="badge" @click="eraseAction" :disabled="indexMax===0">
+      <b-button size="badge" @click="eraseData" :disabled="indexMax===0">
         <b-icon icon="trash" class="btn-icon"></b-icon>
       </b-button>
     </b-form>
@@ -202,24 +202,19 @@
 
 <script>
 import ToolbarFooter from './ToolbarFooter.vue'
+import { mixin } from './mixin'
 import * as tf from '@tensorflow/tfjs'
 import ModelView from 'tfjs-model-view'
 import jquery from 'jquery'
 import { activationOptions } from '@tensorflow/tfjs-layers/dist/keras_format/activation_config.js'
 
 export default {
-  props: [
-    'index',
-    'length',
-    'input_ref',
-    'input_index',
-    'title',
-    'description'
-  ],
+  name: 'TSAutoencoder',
   components: { ToolbarFooter },
+  mixins: [mixin],
   data() {
     return {
-      watchers: [],
+      serializable: ['indexTimestamp', 'indexStart', 'indexEnd', 'indexLabel', 'layerSize', 'epochSize', 'batchSize', 'validationSpit', 'shuffleSelected', 'compilerOptimizerSelected', 'compilerLossSelected', 'layerUnits', 'activationSelected', 'activationOptions', 'kernelInitializerSelected', 'kernelInitializerOptions', 'biasInitializerSelected', 'biasInitializerOptions'],
       input: [],
       fileBadgeText: '-',
       indexTimestamp: null,
@@ -247,41 +242,6 @@ export default {
       biasInitializerOptions: []
     }
   },
-  created() {
-    let store = {
-      namespaced: true,
-      state: {
-        type: 'AutoencoderModel',
-        output: [],
-        loading: false
-      },
-      mutations: {
-        setOutput(state, value) {
-          state.output = value
-        },
-        setLoading(state, value) {
-          state.loading = value
-        }
-      }
-    }
-    if (!this.$store.state[this.index]) {
-      this.$store.registerModule(this.index, store)
-    }
-    if (this.input_ref && 'output' in this.$store.state[this.input_ref]) {
-      this.watchers.push(
-        this.$watch(
-          () => this.$store.state[this.input_ref].output,
-          this.onInputChanged
-        )
-      )
-    }
-  },
-  beforeDestroy() {
-    this.watchers.forEach(unwatch => unwatch())
-  },
-  mounted() {
-    this.eraseAction(true)
-  },
   computed: {
     indexMax: {
       get: function() {
@@ -290,22 +250,6 @@ export default {
           indexMax = this.input[0].length - 1
         }
         return indexMax
-      }
-    },
-    output: {
-      get: function() {
-        return this.$store.state[this.index].output
-      },
-      set: function(value) {
-        this.$store.commit(this.index + '/setOutput', value)
-      }
-    },
-    loading: {
-      get: function() {
-        return this.$store.state[this.index].loading
-      },
-      set: function(value) {
-        this.$store.commit(this.index + '/setLoading', value)
       }
     },
     showModalDisabled: function() {
@@ -321,17 +265,13 @@ export default {
       disabled |= this.indexEnd === null
       disabled |= this.indexLabel === null
       disabled |= this.indexEnd <= this.indexStart
-      disabled |=
-        this.indexLabel >= this.indexStart && this.indexLabel <= this.indexEnd
+      disabled |= this.indexLabel >= this.indexStart && this.indexLabel <= this.indexEnd
       return disabled === 1
     }
   },
   watch: {
-    index: function(value) {},
-    input_index: function(value) {},
-    input_ref: function(value) {},
     layerSize: function(value) {
-      this.eraseAction()
+      this.eraseData()
     }
   },
   methods: {
@@ -345,11 +285,11 @@ export default {
       } else {
         this.input = []
       }
-      this.eraseAction(true)
+      this.eraseData(true)
     },
-    async eraseAction(event) {
+    async eraseData(event) {
       if (event) {
-        this.output = []
+        // this.output = []
         this.layerSize = 2
         this.epochSize = 5
         this.batchSize = 20
@@ -387,11 +327,7 @@ export default {
       while (this.activationSelected.length < this.layerSize) {
         this.layerUnits.push(3)
         this.activationSelected.push('relu')
-        this.activationOptions.push(
-          activationOptions
-            .map(x => x.replace(/hard_sigmoid/g, 'hardSigmoid'))
-            .sort()
-        )
+        this.activationOptions.push(activationOptions.map(x => x.replace(/hard_sigmoid/g, 'hardSigmoid')).sort())
         this.kernelInitializerSelected.push('randomNormal')
         this.kernelInitializerOptions.push(Object.keys(tf.initializers).sort())
         this.biasInitializerSelected.push('ones')
@@ -433,9 +369,7 @@ export default {
     async plugAction(event) {
       this.loading = true
       let dataLength = this.indexEnd - this.indexStart + 1
-      let dataSliced = this.input.map(x =>
-        x.slice(this.indexStart, this.indexEnd + 1).map(y => parseFloat(y))
-      )
+      let dataSliced = this.input.map(x => x.slice(this.indexStart, this.indexEnd + 1).map(y => parseFloat(y)))
       let dataLabels = this.input.map(x => x[this.indexLabel])
       let autoencoder = await this.getAutoencoder(dataLength)
       let modelView = new ModelView(autoencoder.model, {

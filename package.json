@@ -1,10 +1,10 @@
 {
-  "name": "visualization",
+  "name": "machine-learning",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "backend": "node ./src/app.js",
+    "backend": "node ./src/backend.js",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
   },
@@ -64,14 +64,8 @@
       "sourceType": "module"
     },
     "rules": {
-      "space-before-function-paren": [
-        2,
-        {
-          "anonymous": "never",
-          "named": "never",
-          "asyncArrow": "never"
-        }
-      ],
+      "space-before-function-paren": 0,
+      "no-eval": 0,
       "arrow-parens": 0,
       "generator-star-spacing": 0
     }

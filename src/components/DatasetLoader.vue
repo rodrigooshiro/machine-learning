@@ -28,75 +28,22 @@
 
 <script>
 import ToolbarFooter from './ToolbarFooter.vue'
+import { mixin } from './mixin'
 import * as csv from 'csv-string'
 import path from 'path'
 const cors = process.env.VUE_APP_CORS_API
 
 export default {
-  props: [
-    'index',
-    'length',
-    'input_ref',
-    'input_index',
-    'title',
-    'description'
-  ],
+  name: 'DatasetLoader',
   components: { ToolbarFooter },
+  mixins: [mixin],
   data() {
     return {
-      watchers: [],
+      serializable: ['localFile', 'remoteFile', 'filename'],
       localFile: null,
-      remoteFile:
-        'https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data',
+      remoteFile: null,
       fileName: ''
     }
-  },
-  created() {
-    let store = {
-      namespaced: true,
-      state: {
-        type: 'DatasetLoader',
-        output: [],
-        loading: false
-      },
-      mutations: {
-        setOutput(state, value) {
-          state.output = value
-        },
-        setLoading(state, value) {
-          state.loading = value
-        }
-      }
-    }
-    if (!this.$store.state[this.index]) {
-      this.$store.registerModule(this.index, store)
-    }
-  },
-  beforeDestroy() {
-    this.watchers.forEach(unwatch => unwatch())
-  },
-  computed: {
-    output: {
-      get: function() {
-        return this.$store.state[this.index].output
-      },
-      set: function(value) {
-        this.$store.commit(this.index + '/setOutput', value)
-      }
-    },
-    loading: {
-      get: function() {
-        return this.$store.state[this.index].loading
-      },
-      set: function(value) {
-        this.$store.commit(this.index + '/setLoading', value)
-      }
-    }
-  },
-  watch: {
-    index: function(value) {},
-    input_index: function(value) {},
-    input_ref: function(value) {}
   },
   methods: {
     loadFileContent(content) {
@@ -109,12 +56,14 @@ export default {
       if (event instanceof MouseEvent) {
         this.$refs['select-local-file'].$el.children[0].click()
       } else if (event instanceof Event) {
-        this.loading = true
-        let file = event.target.files[0]
-        let reader = new FileReader()
-        this.fileName = file.name
-        reader.onload = e => this.selectLocalFile(e.target)
-        reader.readAsText(file)
+        if (event.target.files.length) {
+          this.loading = true
+          let file = event.target.files[0]
+          let reader = new FileReader()
+          this.fileName = file.name
+          reader.onload = e => this.selectLocalFile(e.target)
+          reader.readAsText(file)
+        }
       } else if (event instanceof FileReader) {
         this.loadFileContent({
           status: event.error === null ? 200 : -1,
