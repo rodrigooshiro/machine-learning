@@ -1,86 +1,131 @@
 export const mixin = {
-  props: ['index', 'length', 'input_ref', 'input_index', 'title', 'description', 'data'],
+  props: ['component', 'length'],
   data() {
     return {
       input: null,
-      watchers: [],
       serializable: []
     }
   },
-  created() {
-    let store = {
-      namespaced: true,
-      state: {
-        type: this.$options.name,
-        output: [],
-        loading: false
-      },
-      mutations: {
-        setOutput(state, value) {
-          state.output = value
-        },
-        setLoading(state, value) {
-          state.loading = value
-        }
-      }
-    }
-    if (!this.$store.state[this.index]) {
-      this.$store.registerModule(this.index, store)
-    }
-  },
-  beforeDestroy() {
-    this.watchers.forEach(unwatch => unwatch())
-  },
   beforeMount() {
-    this.eraseData(true)
+    this.registerStore()
     this.loadData()
-    if (this.input_ref && 'output' in this.$store.state[this.input_ref]) {
-      this.input = this.$store.state[this.input_ref]
-      if (this.onInputChanged) {
-        this.watchers.push(this.$watch(() => this.$store.state[this.input_ref].output, this.onInputChanged))
-      }
-    }
-    if (this.input_ref && 'loading' in this.$store.state[this.input_ref]) {
-      if (this.onLoadingChanged) {
-        this.watchers.push(this.$watch(() => this.$store.state[this.input_ref].loading, this.onLoadingChanged))
-      }
-    }
   },
   computed: {
     output: {
       get() {
-        return this.$store.state[this.index].output
+        if (this.component.index in this.$store.state) {
+          if ('output' in this.$store.state[this.component.index]) {
+            return this.$store.state[this.component.index].output
+          }
+        }
+        return []
       },
       set(value) {
-        this.$store.commit(this.index + '/setOutput', value)
+        if (this.component.index in this.$store.state) {
+          if ('output' in this.$store.state[this.component.index]) {
+            this.$store.commit(this.component.index + '/setOutput', value)
+          }
+        }
       }
     },
     loading: {
       get() {
-        return this.$store.state[this.index].loading
+        if (this.component.index in this.$store.state) {
+          if ('loading' in this.$store.state[this.component.index]) {
+            return this.$store.state[this.component.index].loading
+          }
+        }
+        return false
       },
       set(value) {
-        this.$store.commit(this.index + '/setLoading', value)
+        if (this.component.index in this.$store.state) {
+          if ('loading' in this.$store.state[this.component.index]) {
+            this.$store.commit(this.component.index + '/setLoading', value)
+          }
+        }
+      }
+    },
+    inputData: {
+      get() {
+        let data = null
+        if (this.component.index in this.$store.state) {
+          if (this.component.input_ref && 'output' in this.$store.state[this.component.input_ref]) {
+            if (this.component.input_index !== null && this.component.input_index !== undefined) {
+              data = this.$store.state[this.component.input_ref].output[this.component.input_index]
+            } else {
+              data = this.$store.state[this.component.input_ref].output
+            }
+          }
+        }
+        return data
+      },
+      set(value) {
+        if (this.component.index in this.$store.state) {
+          if (this.component.input_ref && 'output' in this.$store.state[this.component.input_ref]) {
+            if (this.component.input_index !== null && this.component.input_index !== undefined) {
+              this.$store.state[this.component.input_ref].output[this.component.input_index] = value
+            } else {
+              this.$store.state[this.component.input_ref].output = value
+            }
+          }
+        }
+      }
+    },
+    inputLoading: {
+      get() {
+        if (this.component.index in this.$store.state) {
+          if (this.component.input_ref && 'loading' in this.$store.state[this.component.input_ref]) {
+            return this.$store.state[this.component.input_ref].loading
+          }
+        }
+        return false
       }
     }
   },
   methods: {
-    async eraseData(event) {
+    registerStore() {
+      if (!('store' in this.component)) {
+        this.component.store = {
+          namespaced: true,
+          state: {
+            type: this.$options.name,
+            output: [],
+            loading: false
+          },
+          mutations: {
+            setOutput(state, value) {
+              state.output = value
+            },
+            setLoading(state, value) {
+              state.loading = value
+            }
+          }
+        }
+        if (this.$store.state[this.component.index]) {
+          this.unregisterStore()
+        }
+        this.$store.registerModule(this.component.index, this.component.store)
+      }
+    },
+    unregisterStore() {
+      if (this.$store.state[this.component.index]) {
+        this.$store.unregisterModule(this.component.index)
+      }
     },
     loadData() {
-      if (this.data) {
+      if (this.component.data) {
         this.serializable.concat(['output']).forEach(item => {
-          if (item in this.data) {
-            this[item] = this.data[item]
+          if (item in this.component.data) {
+            this[item] = this.component.data[item]
           }
         })
       }
     },
     importData(data) {
-      if (this.data) {
+      if (this.component.data) {
         data.serializable.forEach(item => {
-          if (item in this.data) {
-            data[item] = this.data[item]
+          if (item in this.component.data) {
+            data[item] = this.component.data[item]
           }
         })
       }
@@ -93,9 +138,9 @@ export const mixin = {
       }
       serializable = ['index', 'input_ref', 'input_index', 'title', 'description']
       serializable.forEach(item => {
-        if (item in this) {
-          if ((this[item] !== undefined) && (this[item] !== null)) {
-            data[item] = this[item]
+        if (item in this.component) {
+          if ((this.component[item] !== undefined) && (this.component[item] !== null)) {
+            data[item] = this.component[item]
           }
         }
       })

@@ -1,7 +1,7 @@
 <template>
   <b-form-group>
-    <h4 v-if="title" class="card-title">{{ title }}</h4>
-    <b-card-text v-if="description">{{ description }}</b-card-text>
+    <h4 v-if="component.title" class="card-title">{{ component.title }}</h4>
+    <b-card-text v-if="component.description">{{ component.description }}</b-card-text>
     <b-input-group class="mb-2">
       <b-form-file
         v-model="localFile"
@@ -23,8 +23,8 @@
       </b-input-group-append>
     </b-input-group>
     <ToolbarFooter
-      :index.sync="index"
-      :input_ref="input_ref"
+      :index.sync="component.index"
+      :input_ref="component.input_ref"
       :length.sync="length"
       :loading.sync="loading"
     />

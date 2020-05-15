@@ -1,7 +1,7 @@
 <template>
   <b-form-group>
-    <h4 v-if="title" class="card-title">{{ title }}</h4>
-    <b-card-text v-if="description">{{ description }}</b-card-text>
+    <h4 v-if="component.title" class="card-title">{{ component.title }}</h4>
+    <b-card-text v-if="component.description">{{ component.description }}</b-card-text>
     <b-form class="form-toolbar-rtl" inline>
       <b-button size="badge" :disabled="inputData===''" @click="downloadFileContent">
         <b-icon icon="download" class="btn-icon"></b-icon>
@@ -21,8 +21,8 @@
       ></b-form-textarea>
     </b-input-group>
     <ToolbarFooter
-      :index.sync="index"
-      :input_ref="input_ref"
+      :index.sync="component.index"
+      :input_ref="component.input_ref"
       :length.sync="length"
       :loading.sync="loading"
     />
@@ -43,24 +43,9 @@ export default {
     }
     return this.importData(data)
   },
-  computed: {
-    inputData: {
-      get() {
-        let data = ''
-        if (this.input !== null) {
-          let value = null
-          if (this.input_index !== null && this.input_index !== undefined) {
-            value = this.input.output[this.input_index]
-          } else {
-            value = this.input.output
-          }
-          if (typeof value === 'string' || value instanceof String) {
-            data = value
-            this.output = data
-          }
-        }
-        return data
-      }
+  watch: {
+    inputLoading(next, prev) {
+      this.loading = next
     }
   },
   methods: {
@@ -69,11 +54,8 @@ export default {
     },
     async eraseData(event) {
       if (event) {
-        this.inputText = ''
         this.output = []
-        if (this.input !== null) {
-          this.input.output = ''
-        }
+        this.inputData = ''
       }
     },
     deleteFileContent() {
@@ -81,10 +63,10 @@ export default {
     },
     downloadFileContent(event) {
       if (event.isTrusted) {
-        let blob = new Blob([this.inputText], { type: 'octet/stream' })
+        let blob = new Blob([this.inputData], { type: 'octet/stream' })
         let url = window.URL.createObjectURL(blob)
         this.$refs['downloadFileContent'].href = url
-        this.$refs['downloadFileContent'].download = this.index
+        this.$refs['downloadFileContent'].download = this.component.index
         this.$refs['downloadFileContent'].click()
         window.URL.revokeObjectURL(url)
       }

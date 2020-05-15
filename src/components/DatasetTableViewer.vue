@@ -1,20 +1,24 @@
 <template>
   <b-form-group>
-    <h4 v-if="title" class="card-title">{{ title }}</h4>
-    <b-card-text v-if="description">{{ description }}</b-card-text>
+    <h4 v-if="component.title" class="card-title">{{ component.title }}</h4>
+    <b-card-text v-if="component.description">{{ component.description }}</b-card-text>
     <b-form class="form-toolbar-rtl" inline>
-      <b-button size="badge" :disabled="inputData.length === 0" @click="downloadFileContent">
+      <b-button size="badge" :disabled="inputDataTable.length === 0" @click="downloadFileContent">
         <b-icon icon="download" class="btn-icon"></b-icon>
         <a ref="downloadFileContent" style="display:none" />
       </b-button>
       <b-button
         size="badge"
         @click="deleteFileContent"
-        :class="inputData.length === 0 ? 'disabled': ''"
+        :class="inputDataTable.length === 0 ? 'disabled': ''"
       >
         <b-icon icon="trash" class="btn-icon"></b-icon>
       </b-button>
-      <b-button size="badge" v-b-modal="'dataset-view-' + index" :disabled="showModalDisabled">
+      <b-button
+        size="badge"
+        v-b-modal="'dataset-view-' + component.index"
+        :disabled="showModalDisabled"
+      >
         <b-icon icon="card-image" class="btn-icon"></b-icon>
       </b-button>
       <b-button size="badge" @click="onToggleToolbar">
@@ -28,8 +32,8 @@
           <label>X axis column</label>
           <b-form-spinbutton
             v-model="xAxis"
-            min="0"
-            :max="indexMax+1"
+            min="-1"
+            :max="indexMax"
             :disabled="indexMax<1"
             :formatter-fn="indexFormatter"
           ></b-form-spinbutton>
@@ -38,8 +42,8 @@
           <label>Y axis column</label>
           <b-form-spinbutton
             v-model="yAxis"
-            min="0"
-            :max="indexMax+1"
+            min="-1"
+            :max="indexMax"
             :disabled="indexMax<2"
             :formatter-fn="indexFormatter"
           ></b-form-spinbutton>
@@ -48,8 +52,8 @@
           <label>Z axis column</label>
           <b-form-spinbutton
             v-model="zAxis"
-            min="0"
-            :max="indexMax+1"
+            min="-1"
+            :max="indexMax"
             :disabled="indexMax<3"
             :formatter-fn="indexFormatter"
           ></b-form-spinbutton>
@@ -58,8 +62,8 @@
           <label>Label column</label>
           <b-form-spinbutton
             v-model="lAxis"
-            min="0"
-            :max="indexMax+1"
+            min="-1"
+            :max="indexMax"
             :disabled="indexMax<3"
             :formatter-fn="indexFormatter"
           ></b-form-spinbutton>
@@ -70,18 +74,18 @@
 
     <b-input-group class="mb-2">
       <div class="fileTable">
-        <b-table striped hover :items="inputData"></b-table>
+        <b-table striped hover :items="inputDataTable"></b-table>
       </div>
     </b-input-group>
     <ToolbarFooter
-      :index.sync="index"
-      :input_ref="input_ref"
+      :index.sync="component.index"
+      :input_ref="component.input_ref"
       :length.sync="length"
-      :loading.sync="loading"
+      :loading.sync="inputLoading"
     />
 
     <b-modal
-      :id="'dataset-view-' + index"
+      :id="'dataset-view-' + component.index"
       title="Dataset View"
       :static="true"
       size="lg"
@@ -108,26 +112,21 @@ export default {
   data() {
     let data = {
       serializable: ['xAxis', 'yAxis', 'zAxis', 'lAxis'],
-      xAxis: 0,
-      yAxis: 0,
-      zAxis: 0,
-      lAxis: 0,
+      xAxis: -1,
+      yAxis: -1,
+      zAxis: -1,
+      lAxis: -1,
       toggleIcon: 'caret-down',
       fileChart: false
     }
     return this.importData(data)
   },
   computed: {
-    inputData: {
+    inputDataTable: {
       get() {
         let data = []
-        if (this.input !== null) {
-          let value = null
-          if (this.input_index !== null && this.input_index !== undefined) {
-            value = this.input.output[this.input_index]
-          } else {
-            value = this.input.output
-          }
+        if (this.inputData !== null) {
+          let value = this.inputData
           if (typeof value === 'string' || value instanceof String) {
             if (value.length > 0) {
               value = csv.parse(value)
@@ -144,34 +143,39 @@ export default {
     indexMax: {
       get() {
         let indexMax = 0
-        if (this.inputData.length > 0) {
-          indexMax = this.inputData[0].length - 1
+        if (this.inputDataTable.length > 0) {
+          indexMax = this.inputDataTable[0].length - 1
         }
         return indexMax
       }
     },
     showModalDisabled() {
-      let disabled = 0
-      disabled |= this.xAxis === 0
-      disabled |= this.yAxis === 0
+      let disabled = this.indexMax === 0
+      disabled |= this.xAxis === -1
+      disabled |= this.yAxis === -1
       disabled |= this.xAxis === this.yAxis
       disabled |= this.xAxis === this.zAxis
       disabled |= this.xAxis === this.lAxis
       disabled |= this.yAxis === this.lAxis
-      if (this.zAxis !== 0) {
+      if (this.zAxis !== -1) {
         disabled |= this.yAxis === this.zAxis
         disabled |= this.zAxis === this.lAxis
       }
       return disabled === 1
     }
   },
+  watch: {
+    inputLoading(next, prev) {
+      this.loading = next
+    }
+  },
   methods: {
     indexFormatter(value) {
       this.fileChart = false
-      if (value === 0) {
+      if (value === -1) {
         return '--'
       } else {
-        return value - 1
+        return value
       }
     },
     onToggleToolbar() {
@@ -188,11 +192,11 @@ export default {
       if (this.fileChart === false && !this.showModalDisabled) {
         let dimensions = []
         for (let i = 0; i <= this.indexMax; i++) {
-          dimensions.push(this.inputData.map(x => x[i]))
+          dimensions.push(this.inputDataTable.map(x => x[i]))
         }
         let trace = {
-          x: dimensions[this.xAxis - 1],
-          y: dimensions[this.yAxis - 1],
+          x: dimensions[this.xAxis],
+          y: dimensions[this.yAxis],
           mode: 'markers',
           marker: {
             size: 12,
@@ -218,20 +222,21 @@ export default {
         }
 
         if (this.zAxis !== 0) {
-          trace.z = dimensions[this.zAxis - 1]
+          trace.z = dimensions[this.zAxis]
           trace.type = 'scatter3d'
           layout.scene.zaxis = { title: 'Z axis' }
         }
 
         if (this.lAxis !== 0) {
-          let labels = dimensions[this.lAxis - 1]
+          let labels = dimensions[this.lAxis]
           let keyLabels = Array.from(new Set(labels))
           let colorMap = {}
           keyLabels.forEach(label => {
             colorMap[label] = '#' + Math.floor(Math.random() * 16777215).toString(16)
           })
           trace.text = labels
-          trace.marker.line.color = labels.map(d => colorMap[d])
+          trace.marker.color = labels.map(d => colorMap[d])
+          trace.marker.line.color = '#000000'
         }
 
         Plotly.newPlot(this.$refs['plot'], [trace], layout)
@@ -243,9 +248,7 @@ export default {
         jquery(this.$refs['plot']).empty()
         this.fileChart = false
         this.output = []
-        if (this.input !== null) {
-          this.input.output = ''
-        }
+        this.inputData = ''
         this.xAxis = this.yAxis = this.zAxis = this.lAxis = 0
       }
     },
@@ -254,10 +257,10 @@ export default {
     },
     downloadFileContent(event) {
       if (event.isTrusted) {
-        let blob = new Blob([this.inputData.join('\n')], { type: 'octet/stream' })
+        let blob = new Blob([this.inputDataTable.join('\n')], { type: 'octet/stream' })
         let url = window.URL.createObjectURL(blob)
         this.$refs['downloadFileContent'].href = url
-        this.$refs['downloadFileContent'].download = this.index
+        this.$refs['downloadFileContent'].download = this.component.index
         this.$refs['downloadFileContent'].click()
         window.URL.revokeObjectURL(url)
       }

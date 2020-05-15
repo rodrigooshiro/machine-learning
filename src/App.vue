@@ -18,13 +18,8 @@
           :ref="component.index"
           v-bind:key="component.key"
           v-bind:is="component.type"
+          :component.sync="component"
           :length.sync="pipeline.length"
-          :index.sync="component.index"
-          :input_ref.sync="component.input_ref"
-          :input_index.sync="component.input_index"
-          :title.sync="component.title"
-          :description.sync="component.description"
-          :data="component.data"
           v-on:onSetupComponent="onSetupComponent"
           v-on:onRemoveComponent="onRemoveComponent"
           v-on:onAddComponent="onAddComponent"
@@ -78,6 +73,7 @@
 <script>
 import Header from './components/Header'
 import ToolbarFooter from './components/ToolbarFooter.vue'
+import templates from './templates/index.js'
 
 export default {
   name: 'App',
@@ -103,7 +99,7 @@ export default {
     )
   },
   data() {
-    return {
+    let data = {
       template: 'pipeline_0',
       index: null,
       loading: true,
@@ -114,15 +110,14 @@ export default {
       componentInputIndex: null,
       componentInputReferenceSelected: null,
       componentInputReferenceOptions: [],
-      templates: [
-        {
-          name: 'Tensorflow: Autoencoder',
-          key: Math.random(),
-          value: null
-        }
-      ],
+      templates: [],
       pipeline: []
     }
+    templates.forEach(item => {
+      let template = { ...item, value: null }
+      data.templates.push(template)
+    })
+    return data
   },
   methods: {
     setupComponent() {
@@ -167,7 +162,7 @@ export default {
             }
           }
         }
-        if (i > index) {
+        if (i >= index) {
           invalidate = true
           this.pipeline[i].index = 'pipeline_' + (parseInt(pipeline.index.split('_')[1]) - 1)
         }
@@ -248,13 +243,6 @@ export default {
       delete this.pipeline[this.index - 1].input_ref
       delete this.pipeline[this.index - 1].input_index
     },
-    loadData(data) {
-      let pipeline = eval(data)
-      pipeline.forEach(p => {
-        p.key = Math.random()
-      })
-      this.pipeline = pipeline
-    },
     onExportPipeline() {
       let pipeline = []
       this.pipeline.forEach(p => {
@@ -282,38 +270,46 @@ export default {
         }
       } else if (event instanceof FileReader) {
         if (event.error === null) {
-          this.templates.push({
+          let value = JSON.parse(event.result)
+          let template = {
             name: `${this.templates.length}: ${this.fileName}`,
-            value: event.result
+            value: event.result,
+            key: Math.random()
+          }
+          value.forEach(p => {
+            p.key = Math.random()
           })
-          this.loadData(event.result)
+          this.templates.push(template)
+          this.pipeline = value
         }
         this.loading = false
       }
     },
     onLoadPipeline(event) {
-      let template = this.templates.filter(template => template.name === event)
-      if (template.length && template[0].value === null) {
-        let name = event
-          .toLocaleLowerCase()
-          .replace(/:/g, '')
-          .replace(/\s/g, '-')
-        let file = `./pipelines/${name}.json`
+      let templates = this.templates.filter(template => template.name === event)
+      if (templates.length && templates[0].value === null) {
         this.loading = true
         this.pipeline = []
-        this.axios
-          .get(file)
-          .then(response => {
-            template[0].value = response.data
+        let module = () => import('./templates/' + templates[0].js)
+        module().then(data => {
+          let value = data.default
+          value.forEach(p => {
+            p.key = Math.random()
           })
-          .finally(() => {
-            this.loadData(template[0].value)
-            this.loading = false
-          })
-      } else if (template.length) {
-        this.loadData(template[0].value)
+          templates[0].key = Math.random()
+          templates[0].value = JSON.stringify(value)
+          this.pipeline = value
+          this.loading = false
+        })
+      } else if (templates.length && templates[0].value !== null) {
+        let value = JSON.parse(templates[0].value)
+        value.forEach(p => {
+          p.key = Math.random()
+        })
+        templates[0].key = Math.random()
+        this.pipeline = value
       } else {
-        this.loadData('[]')
+        this.pipeline = []
       }
     }
   }
@@ -321,6 +317,9 @@ export default {
 </script>
 
 <style>
+.nav-link:focus {
+  outline: none !important;
+}
 .form-toolbar-rtl {
   direction: rtl;
   float: right;

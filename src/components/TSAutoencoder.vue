@@ -1,7 +1,7 @@
 <template>
   <b-form-group>
-    <h4 v-if="title" class="card-title">{{ title }}</h4>
-    <b-card-text v-if="description">{{ description }}</b-card-text>
+    <h4 v-if="component.title" class="card-title">{{ component.title }}</h4>
+    <b-card-text v-if="component.description">{{ component.description }}</b-card-text>
     <b-form class="form-toolbar-rtl" inline>
       <b-button size="badge" @click="plugAction" :disabled="plugActionDisabled">
         <b-icon icon="plug" class="btn-icon"></b-icon>
@@ -11,7 +11,7 @@
       </b-button>
       <b-button
         size="badge"
-        @click="$bvModal.show('model-view-' + index)"
+        @click="$bvModal.show('model-view-' + component.index)"
         :disabled="showModalDisabled"
       >
         <b-icon icon="card-image" class="btn-icon"></b-icon>
@@ -191,13 +191,13 @@
     </b-collapse>
     <div style="margin-top: 8px;"></div>
     <ToolbarFooter
-      :index.sync="index"
-      :input_ref="input_ref"
+      :index.sync="component.index"
+      :input_ref="component.input_ref"
       :length.sync="length"
       :loading.sync="loading"
     />
 
-    <b-modal :id="'model-view-' + index" title="Autoencoder Model View" :static="true">
+    <b-modal :id="'model-view-' + component.index" title="Autoencoder Model View" :static="true">
       <div ref="mv"></div>
     </b-modal>
   </b-form-group>
@@ -241,35 +241,23 @@ export default {
       kernelInitializerSelected: [],
       kernelInitializerOptions: [],
       biasInitializerSelected: [],
-      biasInitializerOptions: []
+      biasInitializerOptions: [],
+      autoencoder: null
     }
     return this.importData(data)
   },
   computed: {
-    inputData: {
-      get() {
-        let data = []
-        if (this.input !== null) {
-          if (this.input_index !== null && this.input_index !== undefined) {
-            data = this.input.output[this.input_index]
-          } else {
-            data = this.input.output
-          }
-        }
-        return data
-      }
-    },
     indexMax: {
       get() {
         let indexMax = 0
-        if (this.inputData.length > 0) {
+        if (this.inputData && this.inputData.length > 0) {
           indexMax = this.inputData[0].length - 1
         }
         return indexMax
       }
     },
     showModalDisabled() {
-      if (this.output.length) {
+      if (this.autoencoder !== null) {
         return false
       }
       return true
@@ -286,8 +274,13 @@ export default {
     }
   },
   watch: {
-    layerSize(prev, next) {
+    layerSize(next, prev) {
       this.eraseData()
+    },
+    inputLoading(next, prev) {
+      if (next === false) {
+        this.eraseData(true)
+      }
     }
   },
   methods: {
@@ -297,9 +290,6 @@ export default {
       } else if (this.toggleIcon === 'caret-down') {
         this.toggleIcon = 'caret-up'
       }
-    },
-    onInputChanged(value) {
-      this.eraseData(true)
     },
     async eraseData(event) {
       if (event) {
@@ -318,6 +308,7 @@ export default {
         this.kernelInitializerOptions = []
         this.biasInitializerSelected = []
         this.biasInitializerOptions = []
+        this.autoencoder = null
       }
       if (this.inputData.length === 0) {
         this.indexTimestamp = this.indexStart = this.indexEnd = this.indexLabel = null
@@ -346,7 +337,7 @@ export default {
         this.biasInitializerOptions.push(Object.keys(tf.initializers).sort())
       }
     },
-    async getAutoencoder(dataLength) {
+    async setupAutoencoder(dataLength) {
       const model = tf.sequential()
       const encoders = []
       let inputShape = dataLength
@@ -372,7 +363,7 @@ export default {
         optimizer: this.compilerOptimizerSelected,
         loss: this.compilerLossSelected
       })
-      return {
+      this.autoencoder = {
         model: model,
         encoder: encoders,
         decoder: decoder
@@ -383,8 +374,9 @@ export default {
       let dataLength = this.indexEnd - this.indexStart + 1
       let dataSliced = this.inputData.map(x => x.slice(this.indexStart, this.indexEnd + 1).map(y => parseFloat(y)))
       let dataLabels = this.inputData.map(x => x[this.indexLabel])
-      let autoencoder = await this.getAutoencoder(dataLength)
-      let modelView = new ModelView(autoencoder.model, {
+      await this.setupAutoencoder(dataLength)
+
+      let modelView = new ModelView(this.autoencoder.model, {
         height: 465,
         width: 465,
         appendImmediately: false,
@@ -396,8 +388,9 @@ export default {
       })
       jquery(this.$refs['mv']).empty()
       this.$refs['mv'].appendChild(modelView.getDOMElement())
+
       const xs = tf.tensor2d(dataSliced)
-      autoencoder.train = await autoencoder.model.fit(xs, xs, {
+      this.autoencoder.train = await this.autoencoder.model.fit(xs, xs, {
         epochs: this.epochSize,
         batchSize: this.batchSize,
         shuffle: this.shuffleSelected,
@@ -406,7 +399,7 @@ export default {
       xs.dispose()
       const tidyWrapper = tf.tidy(() => {
         const predictor = tf.sequential()
-        autoencoder.encoder.forEach(encoder => predictor.add(encoder))
+        this.autoencoder.encoder.forEach(encoder => predictor.add(encoder))
         let xs = tf.tensor2d(dataSliced)
         let ret = predictor.predict(xs)
         xs.dispose()
