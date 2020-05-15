@@ -16,174 +16,179 @@
       >
         <b-icon icon="card-image" class="btn-icon"></b-icon>
       </b-button>
+      <b-button size="badge" @click="onToggleToolbar">
+        <b-icon :icon="toggleIcon"></b-icon>
+      </b-button>
     </b-form>
 
-    <b-form inline>
-      <div class="indexInput">
-        <label>Input Index (Timestamp)</label>
-        <b-form-spinbutton
-          v-model="indexTimestamp"
-          min="0"
-          :max="indexMax"
-          :disabled="indexMax===0"
-          placeholder="--"
-        ></b-form-spinbutton>
-      </div>
-
-      <div class="indexInput">
-        <label>Input Index (Start)</label>
-        <b-form-spinbutton
-          v-model="indexStart"
-          min="0"
-          :max="indexMax"
-          :disabled="indexMax===0"
-          placeholder="--"
-        ></b-form-spinbutton>
-      </div>
-
-      <div class="indexInput">
-        <label>Input Index (End)</label>
-        <b-form-spinbutton
-          v-model="indexEnd"
-          min="0"
-          :max="indexMax"
-          :disabled="indexMax===0"
-          placeholder="--"
-        ></b-form-spinbutton>
-      </div>
-
-      <div class="indexInput">
-        <label>Input Index (Label)</label>
-        <b-form-spinbutton
-          v-model="indexLabel"
-          min="0"
-          :max="indexMax"
-          :disabled="indexMax===0"
-          placeholder="--"
-        ></b-form-spinbutton>
-      </div>
-    </b-form>
-
-    <b-form inline>
-      <div class="indexInput">
-        <label>Total Layers</label>
-        <b-form-spinbutton
-          v-model="layerSize"
-          min="2"
-          max="10"
-          :disabled="plugActionDisabled"
-          placeholder="--"
-        ></b-form-spinbutton>
-      </div>
-
-      <div class="indexInput">
-        <label>Compiler Optimizer</label>
-        <b-form-select
-          v-model="compilerOptimizerSelected"
-          :options="compilerOptimizerOptions"
-          :disabled="plugActionDisabled"
-        ></b-form-select>
-      </div>
-
-      <div class="indexInput">
-        <label>Compiler Loss</label>
-        <b-form-select
-          v-model="compilerLossSelected"
-          :options="compilerLossOptions"
-          :disabled="plugActionDisabled"
-        ></b-form-select>
-      </div>
-    </b-form>
-
-    <b-form inline>
-      <div class="indexInput">
-        <label>Epochs</label>
-        <b-form-spinbutton
-          v-model="epochSize"
-          min="1"
-          max="100"
-          :disabled="plugActionDisabled"
-          placeholder="--"
-        ></b-form-spinbutton>
-      </div>
-
-      <div class="indexInput">
-        <label>Batch Size</label>
-        <b-form-spinbutton
-          v-model="batchSize"
-          min="1"
-          max="100"
-          :disabled="plugActionDisabled"
-          placeholder="--"
-        ></b-form-spinbutton>
-      </div>
-
-      <div class="indexInput">
-        <label>Validation Spit</label>
-        <b-form-spinbutton
-          v-model="validationSpit"
-          min="0.01"
-          max="1.00"
-          step="0.01"
-          :disabled="plugActionDisabled"
-          placeholder="--"
-        ></b-form-spinbutton>
-      </div>
-
-      <div class="indexInput">
-        <label>Shuffle</label>
-        <b-form-select
-          v-model="shuffleSelected"
-          :options="shuffleOptions"
-          :disabled="plugActionDisabled"
-        ></b-form-select>
-      </div>
-    </b-form>
-
-    <template v-for="i in layerSize">
-      <b-form v-bind:key="i" inline>
-        <div v-if="i<layerSize" class="indexInput">
-          <label>Encoder (units)</label>
+    <b-collapse :visible="toggleIcon === 'caret-up'">
+      <b-form inline>
+        <div class="indexInput">
+          <label>Input Index (Timestamp)</label>
           <b-form-spinbutton
-            v-model="layerUnits[i-1]"
-            min="1"
-            :max="10"
+            v-model="indexTimestamp"
+            min="0"
+            :max="indexMax"
+            :disabled="indexMax===0"
+            placeholder="--"
+          ></b-form-spinbutton>
+        </div>
+
+        <div class="indexInput">
+          <label>Input Index (Start)</label>
+          <b-form-spinbutton
+            v-model="indexStart"
+            min="0"
+            :max="indexMax"
+            :disabled="indexMax===0"
+            placeholder="--"
+          ></b-form-spinbutton>
+        </div>
+
+        <div class="indexInput">
+          <label>Input Index (End)</label>
+          <b-form-spinbutton
+            v-model="indexEnd"
+            min="0"
+            :max="indexMax"
+            :disabled="indexMax===0"
+            placeholder="--"
+          ></b-form-spinbutton>
+        </div>
+
+        <div class="indexInput">
+          <label>Input Index (Label)</label>
+          <b-form-spinbutton
+            v-model="indexLabel"
+            min="0"
+            :max="indexMax"
+            :disabled="indexMax===0"
+            placeholder="--"
+          ></b-form-spinbutton>
+        </div>
+      </b-form>
+
+      <b-form inline>
+        <div class="indexInput">
+          <label>Total Layers</label>
+          <b-form-spinbutton
+            v-model="layerSize"
+            min="2"
+            max="10"
             :disabled="plugActionDisabled"
             placeholder="--"
           ></b-form-spinbutton>
         </div>
 
         <div class="indexInput">
-          <label>
-            <span v-if="i<layerSize">Encoder (activation)</span>
-            <span v-if="i==layerSize">Decoder (activation)</span>
-          </label>
+          <label>Compiler Optimizer</label>
           <b-form-select
-            v-model="activationSelected[i-1]"
-            :options="activationOptions[i-1]"
+            v-model="compilerOptimizerSelected"
+            :options="compilerOptimizerOptions"
             :disabled="plugActionDisabled"
           ></b-form-select>
         </div>
 
-        <div v-if="i<layerSize" class="indexInput">
-          <label>Encoder (kernel initializer)</label>
+        <div class="indexInput">
+          <label>Compiler Loss</label>
           <b-form-select
-            v-model="kernelInitializerSelected[i-1]"
-            :options="kernelInitializerOptions[i-1]"
-            :disabled="plugActionDisabled"
-          ></b-form-select>
-        </div>
-
-        <div v-if="i<layerSize" class="indexInput">
-          <label>Encoder (bias initializer)</label>
-          <b-form-select
-            v-model="biasInitializerSelected[i-1]"
-            :options="biasInitializerOptions[i-1]"
+            v-model="compilerLossSelected"
+            :options="compilerLossOptions"
             :disabled="plugActionDisabled"
           ></b-form-select>
         </div>
       </b-form>
-    </template>
+
+      <b-form inline>
+        <div class="indexInput">
+          <label>Epochs</label>
+          <b-form-spinbutton
+            v-model="epochSize"
+            min="1"
+            max="100"
+            :disabled="plugActionDisabled"
+            placeholder="--"
+          ></b-form-spinbutton>
+        </div>
+
+        <div class="indexInput">
+          <label>Batch Size</label>
+          <b-form-spinbutton
+            v-model="batchSize"
+            min="1"
+            max="100"
+            :disabled="plugActionDisabled"
+            placeholder="--"
+          ></b-form-spinbutton>
+        </div>
+
+        <div class="indexInput">
+          <label>Validation Spit</label>
+          <b-form-spinbutton
+            v-model="validationSpit"
+            min="0.01"
+            max="1.00"
+            step="0.01"
+            :disabled="plugActionDisabled"
+            placeholder="--"
+          ></b-form-spinbutton>
+        </div>
+
+        <div class="indexInput">
+          <label>Shuffle</label>
+          <b-form-select
+            v-model="shuffleSelected"
+            :options="shuffleOptions"
+            :disabled="plugActionDisabled"
+          ></b-form-select>
+        </div>
+      </b-form>
+
+      <template v-for="i in layerSize">
+        <b-form v-bind:key="i" inline>
+          <div v-if="i<layerSize" class="indexInput">
+            <label>Encoder (units)</label>
+            <b-form-spinbutton
+              v-model="layerUnits[i-1]"
+              min="1"
+              :max="10"
+              :disabled="plugActionDisabled"
+              placeholder="--"
+            ></b-form-spinbutton>
+          </div>
+
+          <div class="indexInput">
+            <label>
+              <span v-if="i<layerSize">Encoder (activation)</span>
+              <span v-if="i==layerSize">Decoder (activation)</span>
+            </label>
+            <b-form-select
+              v-model="activationSelected[i-1]"
+              :options="activationOptions[i-1]"
+              :disabled="plugActionDisabled"
+            ></b-form-select>
+          </div>
+
+          <div v-if="i<layerSize" class="indexInput">
+            <label>Encoder (kernel initializer)</label>
+            <b-form-select
+              v-model="kernelInitializerSelected[i-1]"
+              :options="kernelInitializerOptions[i-1]"
+              :disabled="plugActionDisabled"
+            ></b-form-select>
+          </div>
+
+          <div v-if="i<layerSize" class="indexInput">
+            <label>Encoder (bias initializer)</label>
+            <b-form-select
+              v-model="biasInitializerSelected[i-1]"
+              :options="biasInitializerOptions[i-1]"
+              :disabled="plugActionDisabled"
+            ></b-form-select>
+          </div>
+        </b-form>
+      </template>
+    </b-collapse>
     <div style="margin-top: 8px;"></div>
     <ToolbarFooter
       :index.sync="index"
@@ -213,6 +218,7 @@ export default {
   data() {
     let data = {
       serializable: ['indexTimestamp', 'indexStart', 'indexEnd', 'indexLabel', 'layerSize', 'epochSize', 'batchSize', 'validationSpit', 'shuffleSelected', 'compilerOptimizerSelected', 'compilerLossSelected', 'layerUnits', 'activationSelected', 'activationOptions', 'kernelInitializerSelected', 'kernelInitializerOptions', 'biasInitializerSelected', 'biasInitializerOptions'],
+      toggleIcon: 'caret-down',
       indexTimestamp: null,
       indexStart: null,
       indexEnd: null,
@@ -285,6 +291,13 @@ export default {
     }
   },
   methods: {
+    onToggleToolbar() {
+      if (this.toggleIcon === 'caret-up') {
+        this.toggleIcon = 'caret-down'
+      } else if (this.toggleIcon === 'caret-down') {
+        this.toggleIcon = 'caret-up'
+      }
+    },
     onInputChanged(value) {
       this.eraseData(true)
     },
@@ -418,15 +431,4 @@ export default {
 </script>
 
 <style scoped>
-.indexInput {
-  padding-right: 10px;
-  width: 220px;
-}
-.indexInput select {
-  width: 210px;
-}
-.indexInput label {
-  justify-content: flex-start;
-  padding-left: 10px;
-}
 </style>

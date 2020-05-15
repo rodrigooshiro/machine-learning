@@ -17,7 +17,57 @@
       <b-button size="badge" v-b-modal="'dataset-view-' + index" :disabled="showModalDisabled">
         <b-icon icon="card-image" class="btn-icon"></b-icon>
       </b-button>
+      <b-button size="badge" @click="onToggleToolbar">
+        <b-icon :icon="toggleIcon"></b-icon>
+      </b-button>
     </b-form>
+
+    <b-collapse :visible="toggleIcon === 'caret-up'">
+      <b-form inline>
+        <div class="indexInput">
+          <label>X axis column</label>
+          <b-form-spinbutton
+            v-model="xAxis"
+            min="0"
+            :max="indexMax+1"
+            :disabled="indexMax<1"
+            :formatter-fn="indexFormatter"
+          ></b-form-spinbutton>
+        </div>
+        <div class="indexInput">
+          <label>Y axis column</label>
+          <b-form-spinbutton
+            v-model="yAxis"
+            min="0"
+            :max="indexMax+1"
+            :disabled="indexMax<2"
+            :formatter-fn="indexFormatter"
+          ></b-form-spinbutton>
+        </div>
+        <div class="indexInput">
+          <label>Z axis column</label>
+          <b-form-spinbutton
+            v-model="zAxis"
+            min="0"
+            :max="indexMax+1"
+            :disabled="indexMax<3"
+            :formatter-fn="indexFormatter"
+          ></b-form-spinbutton>
+        </div>
+        <div class="indexInput">
+          <label>Label column</label>
+          <b-form-spinbutton
+            v-model="lAxis"
+            min="0"
+            :max="indexMax+1"
+            :disabled="indexMax<3"
+            :formatter-fn="indexFormatter"
+          ></b-form-spinbutton>
+        </div>
+      </b-form>
+      <div style="margin-top: 8px;"></div>
+    </b-collapse>
+
     <b-input-group class="mb-2">
       <div class="fileTable">
         <b-table striped hover :items="inputData"></b-table>
@@ -57,7 +107,12 @@ export default {
   mixins: [mixin],
   data() {
     let data = {
-      serializable: [],
+      serializable: ['xAxis', 'yAxis', 'zAxis', 'lAxis'],
+      xAxis: 0,
+      yAxis: 0,
+      zAxis: 0,
+      lAxis: 0,
+      toggleIcon: 'caret-down',
       fileChart: false
     }
     return this.importData(data)
@@ -86,33 +141,58 @@ export default {
         return data
       }
     },
-    showModalDisabled() {
-      if (this.inputData.length) {
-        let dimensionsSize = this.inputData[0].length
-        if (dimensionsSize > 1) {
-          return false
+    indexMax: {
+      get() {
+        let indexMax = 0
+        if (this.inputData.length > 0) {
+          indexMax = this.inputData[0].length - 1
         }
+        return indexMax
       }
-      return true
+    },
+    showModalDisabled() {
+      let disabled = 0
+      disabled |= this.xAxis === 0
+      disabled |= this.yAxis === 0
+      disabled |= this.xAxis === this.yAxis
+      disabled |= this.xAxis === this.zAxis
+      disabled |= this.xAxis === this.lAxis
+      disabled |= this.yAxis === this.lAxis
+      if (this.zAxis !== 0) {
+        disabled |= this.yAxis === this.zAxis
+        disabled |= this.zAxis === this.lAxis
+      }
+      return disabled === 1
     }
   },
   methods: {
+    indexFormatter(value) {
+      this.fileChart = false
+      if (value === 0) {
+        return '--'
+      } else {
+        return value - 1
+      }
+    },
+    onToggleToolbar() {
+      if (this.toggleIcon === 'caret-up') {
+        this.toggleIcon = 'caret-down'
+      } else if (this.toggleIcon === 'caret-down') {
+        this.toggleIcon = 'caret-up'
+      }
+    },
     onLoadingChanged(value) {
       this.loading = value
     },
     onShowModal() {
       if (this.fileChart === false && !this.showModalDisabled) {
-        let dimensionsSize = this.inputData[0].length
         let dimensions = []
-        for (let i = 0; i <= dimensionsSize; i++) {
+        for (let i = 0; i <= this.indexMax; i++) {
           dimensions.push(this.inputData.map(x => x[i]))
         }
-        let hasLabels = typeof dimensions[dimensionsSize - 1][0] === 'string'
-        let zAxis = hasLabels ? dimensionsSize - 2 : dimensionsSize - 1
-
         let trace = {
-          x: dimensions[0],
-          y: dimensions[1],
+          x: dimensions[this.xAxis - 1],
+          y: dimensions[this.yAxis - 1],
           mode: 'markers',
           marker: {
             size: 12,
@@ -137,14 +217,14 @@ export default {
           }
         }
 
-        if (zAxis > 1) {
-          trace.z = dimensions[2]
+        if (this.zAxis !== 0) {
+          trace.z = dimensions[this.zAxis - 1]
           trace.type = 'scatter3d'
           layout.scene.zaxis = { title: 'Z axis' }
         }
 
-        if (hasLabels) {
-          let labels = dimensions[dimensionsSize - 1]
+        if (this.lAxis !== 0) {
+          let labels = dimensions[this.lAxis - 1]
           let keyLabels = Array.from(new Set(labels))
           let colorMap = {}
           keyLabels.forEach(label => {
@@ -166,6 +246,7 @@ export default {
         if (this.input !== null) {
           this.input.output = ''
         }
+        this.xAxis = this.yAxis = this.zAxis = this.lAxis = 0
       }
     },
     deleteFileContent() {

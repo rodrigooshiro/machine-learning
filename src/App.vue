@@ -364,6 +364,17 @@ export default {
   line-height: 0 !important;
   margin-bottom: 0.1rem;
 }
+.indexInput {
+  padding-right: 10px;
+  width: 220px;
+}
+.indexInput select {
+  width: 210px;
+}
+.indexInput label {
+  justify-content: flex-start;
+  padding-left: 10px;
+}
 </style>
 <style scoped>
 </style>

@@ -10,7 +10,13 @@
   {
     index: 'pipeline_1',
     type: 'DatasetTableViewer',
-    input_ref: 'pipeline_0'
+    input_ref: 'pipeline_0',
+    data: {
+      xAxis: 1,
+      yAxis: 2,
+      zAxis: 3,
+      lAxis: 5
+    }
   },
   {
     index: 'pipeline_2',
@@ -21,6 +27,12 @@
   {
     index: 'pipeline_3',
     type: 'DatasetTableViewer',
-    input_ref: 'pipeline_2'
+    input_ref: 'pipeline_2',
+    data: {
+      xAxis: 1,
+      yAxis: 2,
+      zAxis: 3,
+      lAxis: 4
+    }
   }
 ]

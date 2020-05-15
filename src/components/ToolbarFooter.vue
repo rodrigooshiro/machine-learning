@@ -1,40 +1,42 @@
 <template>
-  <div style="background:red;">
-  <b-form class="form-toolbar-ltr" inline>
-    <b-badge pill variant="light">
-      {{ slot }}
-      <b-icon v-if="reference !== null" icon="link"></b-icon>
-      {{ reference }}
-    </b-badge>
-    <div class="b-icon-sup">
-      <b-icon :icon="toggleIcon" @click="onToggleToolbar"></b-icon>
-    </div>
-    <b-collapse :visible="toggleIcon === 'caret-up'">
-      <b-button v-if="length > 0" size="badge" @click="onSetupComponent">
-        <b-icon icon="gear"></b-icon>
-      </b-button>
-      <b-button v-if="length > 0" size="badge" @click="onRemoveComponent">
-        <b-icon icon="dash-circle"></b-icon>
-      </b-button>
-      <b-button size="badge" @click="onAddComponent">
-        <b-icon icon="plus-circle"></b-icon>
-      </b-button>
-      <b-button
-        v-if="length > 0"
-        size="badge"
-        @click="onMoveDownComponent"
-        :disabled="slot === (length-1)"
-      >
-        <b-icon icon="file-arrow-down"></b-icon>
-      </b-button>
-      <b-button v-if="length > 0" size="badge" @click="onMoveUpComponent" :disabled="slot === 0">
-        <b-icon icon="file-arrow-up"></b-icon>
-      </b-button>
-    </b-collapse>
-  </b-form>
-  <b-form class="form-toolbar-rtl" inline>
-    <b-spinner v-if="loading" small type="grow"></b-spinner>
-  </b-form>
+  <div>
+    <b-form class="form-toolbar-ltr" inline>
+      <b-badge pill variant="light">
+        {{ slot }}
+        <b-icon v-if="reference !== null" icon="link"></b-icon>
+        {{ reference }}
+      </b-badge>
+      <div class="b-icon-sup">
+        <b-icon :icon="toggleIcon" @click="onToggleToolbar"></b-icon>
+      </div>
+      <b-collapse :visible="toggleIcon === 'caret-up'">
+        <b-button v-if="length > 0" size="badge" @click="onSetupComponent">
+          <b-icon icon="gear"></b-icon>
+        </b-button>
+        <b-button v-if="length > 0" size="badge" @click="onRemoveComponent">
+          <b-icon icon="dash-circle"></b-icon>
+        </b-button>
+        <b-button size="badge" @click="onAddComponent">
+          <b-icon icon="plus-circle"></b-icon>
+        </b-button>
+        <b-button
+          v-if="length > 0"
+          size="badge"
+          @click="onMoveDownComponent"
+          :disabled="slot === (length-1)"
+        >
+          <b-icon icon="file-arrow-down"></b-icon>
+        </b-button>
+        <b-button v-if="length > 0" size="badge" @click="onMoveUpComponent" :disabled="slot === 0">
+          <b-icon icon="file-arrow-up"></b-icon>
+        </b-button>
+      </b-collapse>
+    </b-form>
+    <b-form class="form-toolbar-rtl" inline>
+      <div v-if="loading">
+        <b-spinner small type="grow"></b-spinner>
+      </div>
+    </b-form>
   </div>
 </template>
 
