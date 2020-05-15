@@ -3,15 +3,11 @@
     <h4 v-if="title" class="card-title">{{ title }}</h4>
     <b-card-text v-if="description">{{ description }}</b-card-text>
     <b-form class="form-toolbar-rtl" inline>
-      <b-badge ref="fileBadge" style="width: 50px;">
-        <div
-          v-if="loading"
-          style="-webkit-animation: spinner-border .75s linear infinite; animation: spinner-border .75s linear infinite;"
-        >-</div>
-        <div v-if="!loading">{{ fileBadgeText }}</div>
-      </b-badge>
       <b-button size="badge" @click="plugAction" :disabled="plugActionDisabled">
         <b-icon icon="plug" class="btn-icon"></b-icon>
+      </b-button>
+      <b-button size="badge" @click="eraseData" :disabled="indexMax===0">
+        <b-icon icon="trash" class="btn-icon"></b-icon>
       </b-button>
       <b-button
         size="badge"
@@ -19,9 +15,6 @@
         :disabled="showModalDisabled"
       >
         <b-icon icon="card-image" class="btn-icon"></b-icon>
-      </b-button>
-      <b-button size="badge" @click="eraseData" :disabled="indexMax===0">
-        <b-icon icon="trash" class="btn-icon"></b-icon>
       </b-button>
     </b-form>
 
@@ -192,7 +185,12 @@
       </b-form>
     </template>
     <div style="margin-top: 8px;"></div>
-    <ToolbarFooter :index.sync="index" :input_ref="input_ref" :length.sync="length" />
+    <ToolbarFooter
+      :index.sync="index"
+      :input_ref="input_ref"
+      :length.sync="length"
+      :loading.sync="loading"
+    />
 
     <b-modal :id="'model-view-' + index" title="Autoencoder Model View" :static="true">
       <div ref="mv"></div>
@@ -213,10 +211,8 @@ export default {
   components: { ToolbarFooter },
   mixins: [mixin],
   data() {
-    return {
+    let data = {
       serializable: ['indexTimestamp', 'indexStart', 'indexEnd', 'indexLabel', 'layerSize', 'epochSize', 'batchSize', 'validationSpit', 'shuffleSelected', 'compilerOptimizerSelected', 'compilerLossSelected', 'layerUnits', 'activationSelected', 'activationOptions', 'kernelInitializerSelected', 'kernelInitializerOptions', 'biasInitializerSelected', 'biasInitializerOptions'],
-      input: [],
-      fileBadgeText: '-',
       indexTimestamp: null,
       indexStart: null,
       indexEnd: null,
@@ -241,24 +237,38 @@ export default {
       biasInitializerSelected: [],
       biasInitializerOptions: []
     }
+    return this.importData(data)
   },
   computed: {
+    inputData: {
+      get() {
+        let data = []
+        if (this.input !== null) {
+          if (this.input_index !== null && this.input_index !== undefined) {
+            data = this.input.output[this.input_index]
+          } else {
+            data = this.input.output
+          }
+        }
+        return data
+      }
+    },
     indexMax: {
-      get: function() {
+      get() {
         let indexMax = 0
-        if (this.input.length) {
-          indexMax = this.input[0].length - 1
+        if (this.inputData.length > 0) {
+          indexMax = this.inputData[0].length - 1
         }
         return indexMax
       }
     },
-    showModalDisabled: function() {
+    showModalDisabled() {
       if (this.output.length) {
         return false
       }
       return true
     },
-    plugActionDisabled: function() {
+    plugActionDisabled() {
       let disabled = 0
       disabled |= this.loading === true
       disabled |= this.indexStart === null
@@ -270,26 +280,17 @@ export default {
     }
   },
   watch: {
-    layerSize: function(value) {
+    layerSize(prev, next) {
       this.eraseData()
     }
   },
   methods: {
     onInputChanged(value) {
-      if (value.length === 4) {
-        if (Array.isArray(value)) {
-          this.input = value[this.input_index]
-        } else {
-          this.input = value
-        }
-      } else {
-        this.input = []
-      }
       this.eraseData(true)
     },
     async eraseData(event) {
       if (event) {
-        // this.output = []
+        this.output = []
         this.layerSize = 2
         this.epochSize = 5
         this.batchSize = 20
@@ -304,10 +305,8 @@ export default {
         this.kernelInitializerOptions = []
         this.biasInitializerSelected = []
         this.biasInitializerOptions = []
-        this.fileBadgeText = '-'
-        this.$refs['fileBadge'].className = 'badge badge-secondary'
       }
-      if (this.input.length === 0) {
+      if (this.inputData.length === 0) {
         this.indexTimestamp = this.indexStart = this.indexEnd = this.indexLabel = null
       } else {
         this.indexTimestamp = null
@@ -369,8 +368,8 @@ export default {
     async plugAction(event) {
       this.loading = true
       let dataLength = this.indexEnd - this.indexStart + 1
-      let dataSliced = this.input.map(x => x.slice(this.indexStart, this.indexEnd + 1).map(y => parseFloat(y)))
-      let dataLabels = this.input.map(x => x[this.indexLabel])
+      let dataSliced = this.inputData.map(x => x.slice(this.indexStart, this.indexEnd + 1).map(y => parseFloat(y)))
+      let dataLabels = this.inputData.map(x => x[this.indexLabel])
       let autoencoder = await this.getAutoencoder(dataLength)
       let modelView = new ModelView(autoencoder.model, {
         height: 465,
@@ -413,8 +412,6 @@ export default {
       }
       this.output = output
       this.loading = false
-      this.fileBadgeText = 'ok'
-      this.$refs['fileBadge'].className = 'badge badge-success'
     }
   }
 }

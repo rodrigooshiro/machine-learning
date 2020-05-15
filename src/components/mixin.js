@@ -2,6 +2,7 @@ export const mixin = {
   props: ['index', 'length', 'input_ref', 'input_index', 'title', 'description', 'data'],
   data() {
     return {
+      input: null,
       watchers: [],
       serializable: []
     }
@@ -26,7 +27,15 @@ export const mixin = {
     if (!this.$store.state[this.index]) {
       this.$store.registerModule(this.index, store)
     }
+  },
+  beforeDestroy() {
+    this.watchers.forEach(unwatch => unwatch())
+  },
+  beforeMount() {
+    this.eraseData(true)
+    this.loadData()
     if (this.input_ref && 'output' in this.$store.state[this.input_ref]) {
+      this.input = this.$store.state[this.input_ref]
       if (this.onInputChanged) {
         this.watchers.push(this.$watch(() => this.$store.state[this.input_ref].output, this.onInputChanged))
       }
@@ -37,27 +46,20 @@ export const mixin = {
       }
     }
   },
-  beforeDestroy() {
-    this.watchers.forEach(unwatch => unwatch())
-  },
-  mounted() {
-    this.eraseData(true)
-    this.importData(this.data)
-  },
   computed: {
     output: {
-      get: function () {
+      get() {
         return this.$store.state[this.index].output
       },
-      set: function (value) {
+      set(value) {
         this.$store.commit(this.index + '/setOutput', value)
       }
     },
     loading: {
-      get: function () {
+      get() {
         return this.$store.state[this.index].loading
       },
-      set: function (value) {
+      set(value) {
         this.$store.commit(this.index + '/setLoading', value)
       }
     }
@@ -65,16 +67,24 @@ export const mixin = {
   methods: {
     async eraseData(event) {
     },
-    importData(data) {
-      if (data) {
-        let serializable = null
-        serializable = this.serializable.concat(['output'])
-        serializable.forEach(item => {
-          if (item in data) {
-            this[item] = data[item]
+    loadData() {
+      if (this.data) {
+        this.serializable.concat(['output']).forEach(item => {
+          if (item in this.data) {
+            this[item] = this.data[item]
           }
         })
       }
+    },
+    importData(data) {
+      if (this.data) {
+        data.serializable.forEach(item => {
+          if (item in this.data) {
+            data[item] = this.data[item]
+          }
+        })
+      }
+      return data
     },
     exportData() {
       let serializable = null

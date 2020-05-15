@@ -22,14 +22,18 @@
         <b-button class="select-button" @click="selectRemoteFile">Select remote file</b-button>
       </b-input-group-append>
     </b-input-group>
-    <ToolbarFooter :index.sync="index" :input_ref="input_ref" :length.sync="length" />
+    <ToolbarFooter
+      :index.sync="index"
+      :input_ref="input_ref"
+      :length.sync="length"
+      :loading.sync="loading"
+    />
   </b-form-group>
 </template>
 
 <script>
 import ToolbarFooter from './ToolbarFooter.vue'
 import { mixin } from './mixin'
-import * as csv from 'csv-string'
 import path from 'path'
 const cors = process.env.VUE_APP_CORS_API
 
@@ -38,18 +42,17 @@ export default {
   components: { ToolbarFooter },
   mixins: [mixin],
   data() {
-    return {
+    let data = {
       serializable: ['localFile', 'remoteFile', 'filename'],
       localFile: null,
       remoteFile: null,
       fileName: ''
     }
+    return this.importData(data)
   },
   methods: {
     loadFileContent(content) {
-      let fileText = content.data.trim()
-      let fileTable = csv.parse(fileText)
-      this.output = [content.status === 200, this.fileName, fileText, fileTable]
+      this.output = content.data.trim()
       this.loading = false
     },
     selectLocalFile(event) {

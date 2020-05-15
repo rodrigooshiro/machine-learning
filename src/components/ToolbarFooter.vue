@@ -1,4 +1,5 @@
 <template>
+  <div style="background:red;">
   <b-form class="form-toolbar-ltr" inline>
     <b-badge pill variant="light">
       {{ slot }}
@@ -31,11 +32,15 @@
       </b-button>
     </b-collapse>
   </b-form>
+  <b-form class="form-toolbar-rtl" inline>
+    <b-spinner v-if="loading" small type="grow"></b-spinner>
+  </b-form>
+  </div>
 </template>
 
 <script>
 export default {
-  props: ['index', 'length', 'input_ref'],
+  props: ['index', 'length', 'input_ref', 'loading'],
   data() {
     return {
       toggleIcon: 'caret-down'

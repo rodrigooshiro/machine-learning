@@ -9,19 +9,18 @@
   },
   {
     index: 'pipeline_1',
-    type: 'DatasetViewer',
+    type: 'DatasetTableViewer',
     input_ref: 'pipeline_0'
   },
   {
     index: 'pipeline_2',
     type: 'TSAutoencoder',
-    input_ref: 'pipeline_0',
-    input_index: 3,
+    input_ref: 'pipeline_1',
     title: 'Tensorflow: Autoencoder'
   },
   {
     index: 'pipeline_3',
-    type: 'DatasetViewer',
+    type: 'DatasetTableViewer',
     input_ref: 'pipeline_2'
   }
 ]

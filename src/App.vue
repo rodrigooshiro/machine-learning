@@ -86,7 +86,8 @@ export default {
     Header,
     ToolbarFooter,
     DatasetLoader: () => import('./components/DatasetLoader'),
-    DatasetViewer: () => import('./components/DatasetViewer'),
+    DatasetTextViewer: () => import('./components/DatasetTextViewer'),
+    DatasetTableViewer: () => import('./components/DatasetTableViewer'),
     TSAutoencoder: () => import('./components/TSAutoencoder')
   },
   created() {
@@ -101,14 +102,13 @@ export default {
       }.bind(this)
     )
   },
-  mounted() {},
   data() {
     return {
       template: 'pipeline_0',
       index: null,
       loading: true,
       componentSelected: 'DatasetLoader',
-      componentOptions: ['DatasetLoader', 'DatasetViewer', 'TSAutoencoder'],
+      componentOptions: ['DatasetLoader', 'DatasetTextViewer', 'DatasetTableViewer', 'TSAutoencoder'],
       componentTitle: null,
       componentDescription: null,
       componentInputIndex: null,
@@ -323,6 +323,10 @@ export default {
 <style>
 .form-toolbar-rtl {
   direction: rtl;
+  float: right;
+}
+.form-float-right {
+  float: right;
 }
 .form-toolbar-rtl .btn,
 .form-toolbar-rtl .badge {
@@ -330,6 +334,10 @@ export default {
 }
 .form-toolbar-ltr {
   direction: ltr;
+  float: left;
+}
+.form-float-left {
+  float: left;
 }
 .form-toolbar-ltr .btn,
 .form-toolbar-ltr .badge {
