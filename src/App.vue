@@ -369,7 +369,7 @@ export default {
   width: 220px;
 }
 .indexInput select {
-  width: 210px;
+  width: 210px !important;
 }
 .indexInput label {
   justify-content: flex-start;
