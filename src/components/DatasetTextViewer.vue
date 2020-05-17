@@ -1,13 +1,13 @@
 <template>
   <b-form-group>
-    <h4 v-if="component.title" class="card-title">{{ component.title }}</h4>
-    <b-card-text v-if="component.description">{{ component.description }}</b-card-text>
+    <h4 v-if="component.title" class="card-title" v-html="component.title"></h4>
+    <b-card-text v-if="component.description" v-html="component.description"></b-card-text>
     <b-form class="form-toolbar-rtl" inline>
-      <b-button size="badge" :disabled="inputData===''" @click="downloadFileContent">
+      <b-button size="badge" @click="downloadAction" :disabled="downloadActionDisabled">
         <b-icon icon="download" class="btn-icon"></b-icon>
         <a ref="downloadFileContent" style="display:none" />
       </b-button>
-      <b-button size="badge" @click="deleteFileContent" :class="inputData==='disabled' ? '': ''">
+      <b-button size="badge" @click="trashAction" :disabled="trashActionDisabled">
         <b-icon icon="trash" class="btn-icon"></b-icon>
       </b-button>
     </b-form>
@@ -43,25 +43,32 @@ export default {
     }
     return this.importData(data)
   },
+  computed: {
+    downloadActionDisabled() {
+      let disabled = 0
+      disabled |= this.inputData === null || this.inputData.length === 0
+      return disabled === 1
+    },
+    trashActionDisabled() {
+      return this.downloadActionDisabled
+    }
+  },
   watch: {
     inputLoading(next, prev) {
       this.loading = next
+      if (this.loading === false) {
+        this.output = this.inputData
+      }
     }
   },
   methods: {
-    onLoadingChanged(value) {
-      this.loading = value
+    trashAction(event) {
+      this.inputData = ''
+      this.output = null
+      this.loadData(this.data)
+      this.loadData(this.component.data)
     },
-    async eraseData(event) {
-      if (event) {
-        this.output = []
-        this.inputData = ''
-      }
-    },
-    deleteFileContent() {
-      this.eraseData(true)
-    },
-    downloadFileContent(event) {
+    downloadAction(event) {
       if (event.isTrusted) {
         let blob = new Blob([this.inputData], { type: 'octet/stream' })
         let url = window.URL.createObjectURL(blob)

@@ -1,3 +1,5 @@
+const lodash = require('lodash')
+
 export const mixin = {
   props: ['component', 'length'],
   data() {
@@ -8,9 +10,24 @@ export const mixin = {
   },
   beforeMount() {
     this.registerStore()
-    this.loadData()
+    this.loadData(this.component.data)
   },
   computed: {
+    editActionDisabled() {
+      return true
+    },
+    downloadActionDisabled() {
+      return true
+    },
+    trashActionDisabled() {
+      return true
+    },
+    plugActionDisabled() {
+      return true
+    },
+    imageActionDisabled() {
+      return true
+    },
     output: {
       get() {
         if (this.component.index in this.$store.state) {
@@ -18,7 +35,7 @@ export const mixin = {
             return this.$store.state[this.component.index].output
           }
         }
-        return []
+        return null
       },
       set(value) {
         if (this.component.index in this.$store.state) {
@@ -49,11 +66,13 @@ export const mixin = {
       get() {
         let data = null
         if (this.component.index in this.$store.state) {
-          if (this.component.input_ref && 'output' in this.$store.state[this.component.input_ref]) {
-            if (this.component.input_index !== null && this.component.input_index !== undefined) {
-              data = this.$store.state[this.component.input_ref].output[this.component.input_index]
-            } else {
-              data = this.$store.state[this.component.input_ref].output
+          if (this.$store.state[this.component.input_ref]) {
+            if (this.component.input_ref && 'output' in this.$store.state[this.component.input_ref]) {
+              if (this.component.input_index !== null && this.component.input_index !== undefined) {
+                data = this.$store.state[this.component.input_ref].output[this.component.input_index]
+              } else {
+                data = this.$store.state[this.component.input_ref].output
+              }
             }
           }
         }
@@ -74,8 +93,10 @@ export const mixin = {
     inputLoading: {
       get() {
         if (this.component.index in this.$store.state) {
-          if (this.component.input_ref && 'loading' in this.$store.state[this.component.input_ref]) {
-            return this.$store.state[this.component.input_ref].loading
+          if (this.$store.state[this.component.input_ref]) {
+            if (this.component.input_ref && 'loading' in this.$store.state[this.component.input_ref]) {
+              return this.$store.state[this.component.input_ref].loading
+            }
           }
         }
         return false
@@ -83,13 +104,20 @@ export const mixin = {
     }
   },
   methods: {
+    indexFormatter(value) {
+      if (value === -1) {
+        return '--'
+      } else {
+        return value
+      }
+    },
     registerStore() {
       if (!('store' in this.component)) {
         this.component.store = {
           namespaced: true,
           state: {
             type: this.$options.name,
-            output: [],
+            output: null,
             loading: false
           },
           mutations: {
@@ -112,20 +140,21 @@ export const mixin = {
         this.$store.unregisterModule(this.component.index)
       }
     },
-    loadData() {
-      if (this.component.data) {
+    loadData(data) {
+      if (data) {
         this.serializable.concat(['output']).forEach(item => {
-          if (item in this.component.data) {
-            this[item] = this.component.data[item]
+          if (item in data) {
+            this[item] = lodash.cloneDeep(data[item])
           }
         })
       }
     },
     importData(data) {
+      this.data = lodash.cloneDeep(data)
       if (this.component.data) {
         data.serializable.forEach(item => {
           if (item in this.component.data) {
-            data[item] = this.component.data[item]
+            data[item] = lodash.cloneDeep(this.component.data[item])
           }
         })
       }

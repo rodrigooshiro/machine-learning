@@ -5,6 +5,7 @@ import VueAxios from 'vue-axios'
 import VueMeta from 'vue-meta'
 import VueRouter from 'vue-router'
 import App from './App.vue'
+import Blank from './Blank.vue'
 import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
@@ -23,7 +24,8 @@ const router = new VueRouter({
   mode: 'history',
   hash: false,
   routes: [
-    { path: '/', component: App }
+    { path: '/', component: App },
+    { path: '/blank', component: Blank }
   ]
 })
 
@@ -32,5 +34,5 @@ global.vue = new Vue({
   router,
   store,
   template: '<router-view/>',
-  components: { App }
+  components: { App, Blank }
 })

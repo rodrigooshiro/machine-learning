@@ -1,7 +1,7 @@
 <template>
   <b-form-group>
-    <h4 v-if="component.title" class="card-title">{{ component.title }}</h4>
-    <b-card-text v-if="component.description">{{ component.description }}</b-card-text>
+    <h4 v-if="component.title" class="card-title" v-html="component.title"></h4>
+    <b-card-text v-if="component.description" v-html="component.description"></b-card-text>
     <b-input-group class="mb-2">
       <b-form-file
         v-model="localFile"
@@ -52,7 +52,7 @@ export default {
   },
   methods: {
     loadFileContent(content) {
-      this.output = content.data.trim()
+      this.output = content.trim()
       this.loading = false
     },
     selectLocalFile(event) {
@@ -78,16 +78,40 @@ export default {
       let content = null
       this.loading = true
       this.axios
-        .get(cors + this.remoteFile)
+        .get(this.remoteFile)
         .then(response => {
           content = response
+          content.response = response.request.response
         })
         .catch(response => {
-          content = response.response
+          if (response.request.status === 0) {
+            content = null
+            this.axios
+              .get(cors + this.remoteFile)
+              .then(response => {
+                content = response
+                content.response = response.request.response
+              })
+              .catch(response => {
+                content = response
+                content.response = response.request.response
+              })
+              .finally(() => {
+                if (content != null) {
+                  this.fileName = path.basename(content.config.url)
+                  this.loadFileContent(content.response)
+                }
+              })
+          } else {
+            content = response
+            content.response = response.request.response
+          }
         })
         .finally(() => {
-          this.fileName = path.basename(content.config.url)
-          this.loadFileContent(content)
+          if (content != null) {
+            this.fileName = path.basename(content.config.url)
+            this.loadFileContent(content.response)
+          }
         })
     }
   }

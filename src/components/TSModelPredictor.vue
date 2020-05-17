@@ -1,0 +1,220 @@
+<template>
+  <b-form-group>
+    <h4 v-if="component.title" class="card-title" v-html="component.title"></h4>
+    <b-card-text v-if="component.description" v-html="component.description"></b-card-text>
+    <b-form class="form-toolbar-rtl" inline>
+      <b-button size="badge" @click="plugAction" :disabled="plugActionDisabled">
+        <b-icon icon="plug" class="btn-icon"></b-icon>
+      </b-button>
+      <b-button size="badge" @click="trashAction" :disabled="trashActionDisabled">
+        <b-icon icon="trash" class="btn-icon"></b-icon>
+      </b-button>
+      <b-button
+        size="badge"
+        v-b-modal="'dataset-view-' + component.index"
+        :disabled="imageActionDisabled"
+      >
+        <b-icon icon="card-image" class="btn-icon"></b-icon>
+      </b-button>
+      <b-button size="badge" @click="onToggleToolbar">
+        <b-icon :icon="toggleIcon"></b-icon>
+      </b-button>
+    </b-form>
+
+    <b-collapse :visible="toggleIcon === 'caret-up'">
+      <b-form inline>
+        <div class="indexInput">
+          <label>Total Layers</label>
+          <b-form-spinbutton
+            v-model="layerSize"
+            min="1"
+            :max="indexMax"
+            placeholder="--"
+            :disabled="editActionDisabled"
+          ></b-form-spinbutton>
+        </div>
+      </b-form>
+    </b-collapse>
+    <div style="margin-top: 8px;"></div>
+    <ToolbarFooter
+      :index.sync="component.index"
+      :input_ref="component.input_ref"
+      :length.sync="length"
+      :loading.sync="loading"
+    />
+
+    <b-modal
+      :id="'dataset-view-' + component.index"
+      title="Dataset View"
+      :static="true"
+      :hide-footer="true"
+      size="lg"
+    >
+      <center>
+        <div ref="draw"></div>
+      </center>
+    </b-modal>
+  </b-form-group>
+</template>
+
+<script>
+import ToolbarFooter from './ToolbarFooter.vue'
+import { mixin } from './mixin'
+import * as tf from '@tensorflow/tfjs'
+import jquery from 'jquery'
+
+export default {
+  name: 'TSModelPredictor',
+  components: { ToolbarFooter },
+  mixins: [mixin],
+  data() {
+    let data = {
+      serializable: ['layerSize'],
+      layerSize: 0,
+      fileChart: false,
+      toggleIcon: 'caret-up'
+    }
+    return this.importData(data)
+  },
+  computed: {
+    editActionDisabled() {
+      let disabled = 0
+      disabled |= this.indexMax === 0
+      return disabled === 1
+    },
+    trashActionDisabled() {
+      return this.editActionDisabled
+    },
+    plugActionDisabled() {
+      let disabled = 0
+      disabled |= this.loading === true
+      disabled |= this.inputData === null || this.inputData.model === null || !(this.inputData.model instanceof Object)
+      return disabled === 1
+    },
+    imageActionDisabled() {
+      let disabled = 0
+      disabled |= this.fileChart === false
+      return disabled === 1
+    },
+    indexMax() {
+      let indexMax = 1
+      if (this.inputData && this.inputData.model && this.inputData.model.layers) {
+        indexMax = this.inputData.model.layers.length
+      }
+      return indexMax
+    }
+  },
+  watch: {
+    inputLoading(next, prev) {
+      if (next === false) {
+        this.trashAction()
+      }
+    }
+  },
+  methods: {
+    onToggleToolbar() {
+      if (this.toggleIcon === 'caret-up') {
+        this.toggleIcon = 'caret-down'
+      } else if (this.toggleIcon === 'caret-down') {
+        this.toggleIcon = 'caret-up'
+      }
+    },
+    trashAction(event) {
+      jquery(this.$refs['draw']).empty()
+      this.fileChart = false
+      this.output = null
+      this.loadData(this.data)
+      this.loadData(this.component.data)
+    },
+    plugAction(event) {
+      this.loading = true
+      let { model, data, inputMatrix, outputMatrix, indexLabel, normalizationData } = this.inputData
+
+      let predictor = tf.sequential()
+      for (let i = 0; i < this.layerSize; i++) {
+        predictor.add(model.layers[i])
+      }
+
+      let inputValues = null
+      let inputTensor = tf.tensor2d(inputMatrix)
+      if (normalizationData.inputUnitsNormalize) {
+        let tensor = inputTensor.sub(normalizationData.inputMin).div(normalizationData.inputMax.sub(normalizationData.inputMin))
+        inputTensor = tensor
+      }
+      let outputValues = null
+      let outputTensor = predictor.predict(inputTensor)
+
+      if (normalizationData.inputUnitsNormalize) {
+        let { inputMax, inputMin } = normalizationData
+        let values = inputTensor.mul(inputMax.sub(inputMin)).add(inputMin)
+        inputValues = values.dataSync()
+      } else {
+        let values = inputTensor
+        inputValues = values.dataSync()
+      }
+      inputTensor.dispose()
+
+      if (normalizationData.outputUnitsNormalize) {
+        let { outputMax, outputMin } = normalizationData
+        let values = outputTensor.mul(outputMax.sub(outputMin)).add(outputMin)
+        outputValues = values.dataSync()
+      } else {
+        let values = outputTensor
+        outputValues = values.dataSync()
+      }
+      outputTensor.dispose()
+
+      let dataLabels = []
+      if (indexLabel !== -1) {
+        dataLabels = data.map(x => x[indexLabel])
+      }
+      let inputUnits = model.layers[0].batchInputShape[1]
+      let outputUnits = model.layers[this.layerSize - 1].units
+      let predictionSize = outputValues.length / outputUnits
+      let output = []
+      for (let i = 0; i < predictionSize; i++) {
+        let row = []
+        for (let j = 0; j < inputUnits; j++) {
+          row.push(inputMatrix[i][j])
+        }
+        for (let j = 0; j < outputUnits; j++) {
+          row.push(outputValues[i * outputUnits + j])
+        }
+        if (indexLabel !== -1) {
+          row.push(dataLabels[i])
+        }
+        output.push(row)
+      }
+      this.output = output
+
+      if (inputMatrix[0].length === 1 && outputMatrix[0].length === 1) {
+        let originalValues = []
+        for (let i = 0; i < inputMatrix.length; i++) {
+          originalValues.push({
+            x: inputMatrix[i][0],
+            y: outputMatrix[i][0]
+          })
+        }
+
+        let predictedValues = Array.from(inputValues).map((val, i) => {
+          return { x: val, y: outputValues[i] }
+        })
+
+        global.tfvis.render.scatterplot(
+          this.$refs['draw'],
+          { values: [originalValues, predictedValues], series: ['original', 'predicted'] },
+          {
+            width: 700,
+            height: 450
+          }
+        )
+        this.fileChart = true
+      }
+      this.loading = false
+    }
+  }
+}
+</script>
+
+<style scoped>
+</style>

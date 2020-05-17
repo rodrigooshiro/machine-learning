@@ -84,7 +84,9 @@ export default {
     DatasetLoader: () => import('./components/DatasetLoader'),
     DatasetTextViewer: () => import('./components/DatasetTextViewer'),
     DatasetTableViewer: () => import('./components/DatasetTableViewer'),
-    TSAutoencoder: () => import('./components/TSAutoencoder')
+    TSModel: () => import('./components/TSModel'),
+    TSModelCompiler: () => import('./components/TSModelCompiler'),
+    TSModelPredictor: () => import('./components/TSModelPredictor')
   },
   created() {
     let promises = this.componentOptions.map(
@@ -94,7 +96,8 @@ export default {
     )
     Promise.all(promises).then(
       function(res) {
-        this.onLoadPipeline('Tensorflow: Autoencoder')
+        // this.onLoadPipeline('Tensorflow: Autoencoder')
+        this.onLoadPipeline('Tensorflow: Making Predictions from 2D')
       }.bind(this)
     )
   },
@@ -104,7 +107,7 @@ export default {
       index: null,
       loading: true,
       componentSelected: 'DatasetLoader',
-      componentOptions: ['DatasetLoader', 'DatasetTextViewer', 'DatasetTableViewer', 'TSAutoencoder'],
+      componentOptions: ['DatasetLoader', 'DatasetTextViewer', 'DatasetTableViewer', 'TSModel', 'TSModelCompiler', 'TSModelPredictor'],
       componentTitle: null,
       componentDescription: null,
       componentInputIndex: null,
