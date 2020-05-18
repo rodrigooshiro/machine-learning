@@ -22,8 +22,7 @@ Vue.config.productionTip = false
 export const store = new Vuex.Store({})
 
 const router = new VueRouter({
-  mode: 'history',
-  hash: false,
+  hash: true,
   routes: [
     { path: '/', component: App },
     { path: '/about', component: About },

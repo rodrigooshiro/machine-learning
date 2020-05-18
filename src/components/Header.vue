@@ -1,9 +1,9 @@
 <template>
   <b-navbar toggleable="lg" type="dark" variant="secondary">
-    <b-navbar-brand href="/" style="padding: 0px !important;">
+    <b-navbar-brand href="/#/" style="padding: 0px !important;">
       <b-icon icon="eye-fill" style="width: 32px; height: 32px;"></b-icon>
     </b-navbar-brand>
-    <b-navbar-brand href="/">Home</b-navbar-brand>
+    <b-navbar-brand href="/#/">Home</b-navbar-brand>
     <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
     <b-collapse id="nav-collapse" is-nav>
       <b-navbar-nav class="ml-auto">
@@ -27,7 +27,7 @@
             >{{template.name}}</b-dropdown-item>
           </template>
         </b-nav-item-dropdown>
-        <b-nav-item href="/about">About</b-nav-item>
+        <b-nav-item href="/#/about">About</b-nav-item>
       </b-navbar-nav>
     </b-collapse>
   </b-navbar>

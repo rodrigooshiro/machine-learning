@@ -95,7 +95,7 @@ module.exports = [
     title: 'Train the model',
     input_ref: 'pipeline_2',
     data: {
-      epochSize: 35,
+      epochSize: 50,
       batchSize: 32,
       validationSpit: 0.1,
       shuffle: true,
