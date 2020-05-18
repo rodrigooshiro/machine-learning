@@ -96,7 +96,6 @@ export default {
     )
     Promise.all(promises).then(
       function(res) {
-        // this.onLoadPipeline('Tensorflow: Autoencoder')
         this.onLoadPipeline('Tensorflow: Making Predictions from 2D')
       }.bind(this)
     )

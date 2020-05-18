@@ -4,7 +4,8 @@ module.exports = [
     type: 'DatasetLoader',
     title: 'Load, format and visualize the input data',
     description: 'This pipeline is based on the tutorial from tensorflow about ' +
-      '<a target="_blank" href="https://www.tensorflow.org/js/tutorials/training/linear_regression">linear regression</a>.',
+      '<a target="_blank" href="https://www.tensorflow.org/js/tutorials/training/linear_regression">linear ' +
+      'regression</a>, with additional hidden layers.',
     data: {
       remoteFile: 'https://storage.googleapis.com/tfjs-tutorials/carsData.json'
     }
@@ -82,11 +83,11 @@ module.exports = [
       indexEnd: 1,
       indexLabel: -1,
       inputShape: 1,
-      layerSize: 2,
-      layerUnits: [1, 1],
-      activationSelected: ['linear', 'linear'],
-      kernelInitializerSelected: ['', ''],
-      biasInitializerSelected: ['zeros', 'zeros']
+      layerSize: 3,
+      layerUnits: [20, 20, 1],
+      activationSelected: ['linear', 'linear', 'sigmoid'],
+      kernelInitializerSelected: ['', '', ''],
+      biasInitializerSelected: ['zeros', 'zeros', 'zeros']
     }
   },
   {
@@ -95,7 +96,7 @@ module.exports = [
     title: 'Train the model',
     input_ref: 'pipeline_2',
     data: {
-      epochSize: 35,
+      epochSize: 30,
       batchSize: 32,
       validationSpit: 0.1,
       shuffle: true,
@@ -135,7 +136,7 @@ module.exports = [
     title: 'Make Predictions',
     input_ref: 'pipeline_3',
     data: {
-      layerSize: 2
+      layerSize: 3
     }
   },
   {

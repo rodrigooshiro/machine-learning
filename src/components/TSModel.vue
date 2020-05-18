@@ -174,6 +174,9 @@ export default {
       biasInitializerOptions: Object.keys(tf.initializers).sort(),
       fileChart: false
     }
+    data.activationOptions.unshift('')
+    data.kernelInitializerOptions.unshift('')
+    data.biasInitializerOptions.unshift('')
     return this.importData(data)
   },
   computed: {
@@ -220,20 +223,14 @@ export default {
       while (this.activationSelected.length > next) {
         this.layerUnits.pop()
         this.activationSelected.pop()
-        this.activationOptions.pop()
         this.kernelInitializerSelected.pop()
-        this.kernelInitializerOptions.pop()
         this.biasInitializerSelected.pop()
-        this.biasInitializerOptions.pop()
       }
       while (this.activationSelected.length < next) {
         this.layerUnits.push(3)
-        this.activationSelected.push('relu')
-        this.activationOptions.push(activationOptions.map(x => x.replace(/hard_sigmoid/g, 'hardSigmoid')).sort())
-        this.kernelInitializerSelected.push('randomNormal')
-        this.kernelInitializerOptions.push(Object.keys(tf.initializers).sort())
-        this.biasInitializerSelected.push('ones')
-        this.biasInitializerOptions.push(Object.keys(tf.initializers).sort())
+        this.activationSelected.push('')
+        this.kernelInitializerSelected.push('')
+        this.biasInitializerSelected.push('')
       }
     },
     shapeMax(next, prev) {
@@ -271,10 +268,18 @@ export default {
       for (let i = 0; i < this.layerSize; i++) {
         let layer = {
           units: this.layerUnits[i],
-          inputShape: this.inputShape,
-          activation: this.activationSelected[i],
-          kernelInitializer: this.kernelInitializerSelected[i],
-          biasInitializer: this.biasInitializerSelected[i]
+          useBias: false,
+          inputShape: this.inputShape
+        }
+        if (this.activationSelected[i] !== '') {
+          layer.activation = this.activationSelected[i]
+        }
+        if (this.kernelInitializerSelected[i] !== '') {
+          layer.kernelInitializer = this.kernelInitializerSelected[i]
+        }
+        if (this.biasInitializerSelected[i] !== '') {
+          layer.useBias = true
+          layer.biasInitializer = this.biasInitializerSelected[i]
         }
         if (i !== 0) {
           delete layer.inputShape

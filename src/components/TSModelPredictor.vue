@@ -89,6 +89,7 @@ export default {
       let disabled = 0
       disabled |= this.loading === true
       disabled |= this.inputData === null || this.inputData.model === null || !(this.inputData.model instanceof Object)
+      disabled |= this.layerSize > this.indexMax
       return disabled === 1
     },
     imageActionDisabled() {
@@ -108,6 +109,11 @@ export default {
     inputLoading(next, prev) {
       if (next === false) {
         this.trashAction()
+      }
+    },
+    indexMax(next, prev) {
+      if (this.layerSize > next) {
+        this.layerSize = next
       }
     }
   },
@@ -187,7 +193,7 @@ export default {
       }
       this.output = output
 
-      if (inputMatrix[0].length === 1 && outputMatrix[0].length === 1) {
+      if (inputUnits === 1 && outputUnits === 1) {
         let originalValues = []
         for (let i = 0; i < inputMatrix.length; i++) {
           originalValues.push({
@@ -209,6 +215,8 @@ export default {
           }
         )
         this.fileChart = true
+      } else {
+        this.fileChart = false
       }
       this.loading = false
     }

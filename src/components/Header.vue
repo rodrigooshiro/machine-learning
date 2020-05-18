@@ -7,7 +7,7 @@
     <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
     <b-collapse id="nav-collapse" is-nav>
       <b-navbar-nav class="ml-auto">
-        <b-nav-item-dropdown right>
+        <b-nav-item-dropdown right :disabled="templates === undefined">
           <template v-slot:button-content>Pipelines</template>
           <b-dropdown-item @click="onImportPipeline" :disabled="loading">
             <b-icon icon="upload"></b-icon>&ensp;Import
@@ -27,6 +27,7 @@
             >{{template.name}}</b-dropdown-item>
           </template>
         </b-nav-item-dropdown>
+        <b-nav-item href="/about">About</b-nav-item>
       </b-navbar-nav>
     </b-collapse>
   </b-navbar>
