@@ -1,12 +1,5 @@
 <template>
-  <div id="app">
-    <Header
-      v-on:onExportPipeline="onExportPipeline"
-      v-on:onImportPipeline="onImportPipeline"
-      v-on:onLoadPipeline="onLoadPipeline"
-      :loading.sync="loading"
-      :templates.sync="templates"
-    />
+  <page-layout ref="layout" :name="$options.name">
     <a ref="export-pipeline" style="display:none" />
     <b-form-file ref="import-pipeline" @change="onImportPipeline" style="display:none"></b-form-file>
     <b-card>
@@ -27,9 +20,9 @@
           v-on:onMoveUpComponent="onMoveUpComponent"
         ></component>
       </template>
-      <ToolbarFooter
+      <component-footer
         v-if="(loading === false) && (pipeline.length === 0)"
-        ref="toolbarFooter"
+        ref="componentFooter"
         :index.sync="template"
         :length.sync="pipeline.length"
         v-on:onAddComponent="onAddComponent"
@@ -67,28 +60,41 @@
         </b-button>
       </b-input-group>
     </b-modal>
-  </div>
+  </page-layout>
 </template>
 
 <script>
-import Header from './components/Header'
-import ToolbarFooter from './components/ToolbarFooter.vue'
-import templates from './templates/index.js'
+import PageLayout from './PageLayout'
+import ComponentFooter from '../components/ComponentFooter.vue'
 
 export default {
-  name: 'App',
+  name: 'Pipeline',
   props: [],
   components: {
-    Header,
-    ToolbarFooter,
-    DatasetLoader: () => import('./components/DatasetLoader'),
-    DatasetTextViewer: () => import('./components/DatasetTextViewer'),
-    DatasetTableViewer: () => import('./components/DatasetTableViewer'),
-    TSModel: () => import('./components/TSModel'),
-    TSModelCompiler: () => import('./components/TSModelCompiler'),
-    TSModelPredictor: () => import('./components/TSModelPredictor')
+    PageLayout,
+    ComponentFooter,
+    DatasetLoader: () => import('../components/DatasetLoader'),
+    DatasetTextViewer: () => import('../components/DatasetTextViewer'),
+    DatasetTableViewer: () => import('../components/DatasetTableViewer'),
+    TSModel: () => import('../components/TSModel'),
+    TSModelCompiler: () => import('../components/TSModelCompiler'),
+    TSModelPredictor: () => import('../components/TSModelPredictor')
   },
   created() {
+    let action = null
+    let template = null
+    if (this.$route.query.action !== undefined) {
+      let query = Object.assign({}, this.$route.query)
+      action = query.action
+      delete query.action
+      this.$router.replace({ query })
+    }
+    if (this.$route.query.template !== undefined) {
+      let query = Object.assign({}, this.$route.query)
+      template = query.template
+      delete query.template
+      this.$router.replace({ query })
+    }
     let promises = this.componentOptions.map(
       function(c) {
         return this.$options.components[c]()
@@ -96,37 +102,75 @@ export default {
     )
     Promise.all(promises).then(
       function(res) {
-        this.onLoadPipeline('Tensorflow: Making Predictions from 2D')
+        if (action === 'new') {
+          this.onNewPipeline()
+        } else {
+          this.onLoadPipeline(template)
+        }
       }.bind(this)
     )
   },
+  mounted() {},
   data() {
-    let data = {
+    return {
       template: 'pipeline_0',
       index: null,
       loading: true,
       componentSelected: 'DatasetLoader',
-      componentOptions: ['DatasetLoader', 'DatasetTextViewer', 'DatasetTableViewer', 'TSModel', 'TSModelCompiler', 'TSModelPredictor'],
+      componentOptions: [
+        'DatasetLoader',
+        'DatasetTextViewer',
+        'DatasetTableViewer',
+        'TSModel',
+        'TSModelCompiler',
+        'TSModelPredictor'
+      ],
       componentTitle: null,
       componentDescription: null,
       componentInputIndex: null,
       componentInputReferenceSelected: null,
       componentInputReferenceOptions: [],
-      templates: [],
       pipeline: []
     }
-    templates.forEach(item => {
-      let template = { ...item, value: null }
-      data.templates.push(template)
-    })
-    return data
+  },
+  watch: {
+    '$route.query.template'(next, prev) {
+      if (next !== undefined) {
+        let query = Object.assign({}, this.$route.query)
+        delete query.template
+        this.$router.replace({ query })
+        this.onLoadPipeline(next)
+      }
+    },
+    '$route.query.action'(next, prev) {
+      if (next !== undefined) {
+        let query = Object.assign({}, this.$route.query)
+        delete query.action
+        this.$router.replace({ query })
+        if (next === 'home') {
+          this.onLoadPipeline()
+        }
+        if (next === 'new') {
+          this.onNewPipeline()
+        }
+        if (next === 'import') {
+          this.onImportPipeline()
+        }
+        if (next === 'export') {
+          this.onExportPipeline()
+        }
+      }
+    }
   },
   methods: {
     setupComponent() {
       this.pipeline[this.index].key = Math.random()
       this.pipeline[this.index].title = this.componentTitle
       this.pipeline[this.index].description = this.componentDescription
-      this.pipeline[this.index].input_ref = this.componentInputReferenceSelected !== '' ? `pipeline_${this.componentInputReferenceSelected}` : undefined
+      this.pipeline[this.index].input_ref =
+        this.componentInputReferenceSelected !== ''
+          ? `pipeline_${this.componentInputReferenceSelected}`
+          : undefined
       this.pipeline[this.index].input_index = this.componentInputIndex
       this.pipeline[this.index] = this.pipeline[this.index]
       if (!this.pipeline[this.index].input_ref) {
@@ -138,8 +182,13 @@ export default {
       this.index = this.pipeline.map(x => x.index).indexOf(index)
       this.componentTitle = this.pipeline[this.index].title
       this.componentDescription = this.pipeline[this.index].description
-      this.componentInputReferenceSelected = this.pipeline[this.index].input_ref !== undefined ? this.pipeline[this.index].input_ref.replace(/pipeline_/g, '') : undefined
-      this.componentInputReferenceOptions = this.pipeline.filter(x => x.index !== index).map(x => x.index.replace(/pipeline_/g, ''))
+      this.componentInputReferenceSelected =
+        this.pipeline[this.index].input_ref !== undefined
+          ? this.pipeline[this.index].input_ref.replace(/pipeline_/g, '')
+          : undefined
+      this.componentInputReferenceOptions = this.pipeline
+        .filter(x => x.index !== index)
+        .map(x => x.index.replace(/pipeline_/g, ''))
       this.componentInputReferenceOptions.splice(0, 0, '')
       this.componentInputIndex = this.pipeline[this.index].input_index
       this.$bvModal.show('setup-component')
@@ -211,8 +260,8 @@ export default {
           pipeline.key = Math.random()
         }
       }
-      if (this.$refs['toolbarFooter']) {
-        this.$refs['toolbarFooter'].toggleIcon = 'caret-down'
+      if (this.$refs['componentFooter']) {
+        this.$refs['componentFooter'].toggleIcon = 'caret-down'
       }
     },
     onAddComponent(index) {
@@ -245,6 +294,10 @@ export default {
       delete this.pipeline[this.index - 1].input_ref
       delete this.pipeline[this.index - 1].input_index
     },
+    onNewPipeline() {
+      this.pipeline = []
+      this.loading = false
+    },
     onExportPipeline() {
       let pipeline = []
       this.pipeline.forEach(p => {
@@ -271,28 +324,34 @@ export default {
           reader.readAsText(file)
         }
       } else if (event instanceof FileReader) {
+        let templates = this.$refs['layout'].$refs['header'].templates
         if (event.error === null) {
           let value = JSON.parse(event.result)
           let template = {
-            name: `${this.templates.length}: ${this.fileName}`,
+            name: `${templates.length}: ${this.fileName}`,
             value: event.result,
             key: Math.random()
           }
           value.forEach(p => {
             p.key = Math.random()
           })
-          this.templates.push(template)
+          templates.push(template)
           this.pipeline = value
         }
         this.loading = false
       }
     },
-    onLoadPipeline(event) {
-      let templates = this.templates.filter(template => template.name === event)
+    onLoadPipeline(name) {
+      if (name === undefined || name === null) {
+        name = 'Tensorflow: Making Predictions from 2D'
+      }
+      let templates = this.$refs['layout'].$refs['header'].templates.filter(
+        template => template.name === name
+      )
       if (templates.length && templates[0].value === null) {
         this.loading = true
         this.pipeline = []
-        let module = () => import('./templates/' + templates[0].js)
+        let module = () => import('../templates/' + templates[0].js)
         module().then(data => {
           let value = data.default
           value.forEach(p => {
@@ -310,72 +369,11 @@ export default {
         })
         templates[0].key = Math.random()
         this.pipeline = value
-      } else {
-        this.pipeline = []
       }
     }
   }
 }
 </script>
 
-<style>
-.nav-link:focus {
-  outline: none !important;
-}
-.form-toolbar-rtl {
-  direction: rtl;
-  float: right;
-}
-.form-float-right {
-  float: right;
-}
-.form-toolbar-rtl .btn,
-.form-toolbar-rtl .badge {
-  margin-left: 4px;
-}
-.form-toolbar-ltr {
-  direction: ltr;
-  float: left;
-}
-.form-float-left {
-  float: left;
-}
-.form-toolbar-ltr .btn,
-.form-toolbar-ltr .badge {
-  margin-right: 4px;
-}
-.form-toolbar-rtl .b-icon,
-.form-toolbar-ltr .b-icon {
-  width: 16px;
-  height: 16px;
-}
-.b-icon-sup {
-  height: 28px;
-  margin-right: 4px;
-}
-.b-icon-sup svg {
-  cursor: pointer;
-}
-.btn:disabled {
-  cursor: not-allowed;
-}
-.btn-badge,
-.btn-group-badge > .btn {
-  padding: 4px 4px !important;
-  line-height: 0 !important;
-  margin-bottom: 0.1rem;
-}
-.indexInput {
-  padding-right: 10px;
-  width: 220px;
-}
-.indexInput select {
-  width: 210px !important;
-}
-.indexInput label {
-  justify-content: flex-start;
-  padding-left: 10px;
-}
-</style>
 <style scoped>
 </style>

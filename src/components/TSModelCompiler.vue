@@ -1,7 +1,5 @@
 <template>
-  <b-form-group>
-    <h4 v-if="component.title" class="card-title" v-html="component.title"></h4>
-    <b-card-text v-if="component.description" v-html="component.description"></b-card-text>
+  <component-layout :component.sync="component" :length.sync="length" :loading.sync="loading">
     <b-form class="form-toolbar-rtl" inline>
       <b-button size="badge" @click="plugAction" :disabled="plugActionDisabled">
         <b-icon icon="plug" class="btn-icon"></b-icon>
@@ -146,12 +144,6 @@
       </b-form>
     </b-collapse>
     <div style="margin-top: 8px;"></div>
-    <ToolbarFooter
-      :index.sync="component.index"
-      :input_ref="component.input_ref"
-      :length.sync="length"
-      :loading.sync="loading"
-    />
 
     <b-modal
       :id="'model-view-' + component.index"
@@ -162,22 +154,33 @@
     >
       <div ref="draw"></div>
     </b-modal>
-  </b-form-group>
+  </component-layout>
 </template>
 
 <script>
-import ToolbarFooter from './ToolbarFooter.vue'
+import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import * as tf from '@tensorflow/tfjs'
 import jquery from 'jquery'
 
 export default {
   name: 'TSModelCompiler',
-  components: { ToolbarFooter },
+  components: { ComponentLayout },
   mixins: [mixin],
   data() {
     let data = {
-      serializable: ['shuffle', 'epochSize', 'batchSize', 'validationSpit', 'inputUnits', 'inputUnitsNormalize', 'outputUnits', 'outputUnitsNormalize', 'compilerOptimizerSelected', 'compilerLossSelected'],
+      serializable: [
+        'shuffle',
+        'epochSize',
+        'batchSize',
+        'validationSpit',
+        'inputUnits',
+        'inputUnitsNormalize',
+        'outputUnits',
+        'outputUnitsNormalize',
+        'compilerOptimizerSelected',
+        'compilerLossSelected'
+      ],
       toggleIcon: 'caret-up',
       shuffle: true,
       epochSize: 0,
@@ -222,14 +225,24 @@ export default {
     },
     inputSize() {
       let inputSize = 0
-      if (this.inputData && this.inputData.model && this.inputData.model.layers && this.inputData.model.layers.length > 1) {
+      if (
+        this.inputData &&
+        this.inputData.model &&
+        this.inputData.model.layers &&
+        this.inputData.model.layers.length > 1
+      ) {
         inputSize = this.inputData.model.layers[0].batchInputShape[1]
       }
       return inputSize
     },
     outputSize() {
       let outputSize = 0
-      if (this.inputData && this.inputData.model && this.inputData.model.layers && this.inputData.model.layers.length > 1) {
+      if (
+        this.inputData &&
+        this.inputData.model &&
+        this.inputData.model.layers &&
+        this.inputData.model.layers.length > 1
+      ) {
         outputSize = this.inputData.model.layers[this.inputData.model.layers.length - 1].units
       }
       return outputSize
@@ -335,13 +348,23 @@ export default {
           epochs: this.epochSize,
           shuffle: this.shuffle,
           validationSpit: this.validationSpit,
-          callbacks: global.tfvis.show.fitCallbacks(this.$refs['draw'], ['loss', 'mse'], { width: 700, height: 200, callbacks: ['onEpochEnd'] })
+          callbacks: global.tfvis.show.fitCallbacks(this.$refs['draw'], ['loss', 'mse'], {
+            width: 700,
+            height: 200,
+            callbacks: ['onEpochEnd']
+          })
         })
         .then(
           function(train) {
             inputTensor.dispose()
             outputTensor.dispose()
-            this.output = { ...this.inputData, train: train, inputMatrix: inputMatrix, outputMatrix: outputMatrix, normalizationData: normalizationData }
+            this.output = {
+              ...this.inputData,
+              train: train,
+              inputMatrix: inputMatrix,
+              outputMatrix: outputMatrix,
+              normalizationData: normalizationData
+            }
             this.loading = false
           }.bind(this)
         )

@@ -5,6 +5,6 @@ module.exports = {
   "tabWidth": 2,
   "useTabs": false,
   "singleQuote": true,
-  "printWidth": 9999,
+  "printWidth": 105,
   "semi": false
 }

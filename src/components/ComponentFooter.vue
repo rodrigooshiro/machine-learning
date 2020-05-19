@@ -42,6 +42,7 @@
 
 <script>
 export default {
+  name: 'ComponentFooter',
   props: ['index', 'length', 'input_ref', 'loading'],
   data() {
     return {

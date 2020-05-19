@@ -4,7 +4,7 @@ module.exports = [
     type: 'DatasetLoader',
     title: 'Load, format and visualize the input data',
     description: 'This pipeline is based on the tutorial from tensorflow about ' +
-      '<a target="_blank" href="https://www.tensorflow.org/js/tutorials/training/linear_regression">linear regression</a>.',
+      '[linear regression](https://www.tensorflow.org/js/tutorials/training/linear_regression).',
     data: {
       remoteFile: 'https://storage.googleapis.com/tfjs-tutorials/carsData.json'
     }
@@ -93,10 +93,10 @@ module.exports = [
     index: 'pipeline_3',
     type: 'TSModelCompiler',
     title: 'Train the model',
-    description: 'If the loss value is still <b>too high</b> you can re-train the model. It will not reset ' +
-      'the previous training, but resume the last training with additional epochs. This helps if the ' +
-      'selected training model was good, but the epochs for the training was too low. Just be careful ' +
-      'to not fall into an overfitting scenario.',
+    description: 'If the loss value is still **too high** you can re-train the model. It will not ' +
+      'reset the previous training, but resume it with additional epochs. This helps if ' +
+      'the selected training model was good, but the epochs for the training was too low. Just be ' +
+      'careful not to overfit.',
     input_ref: 'pipeline_2',
     data: {
       epochSize: 50,

@@ -1,7 +1,5 @@
 <template>
-  <b-form-group>
-    <h4 v-if="component.title" class="card-title" v-html="component.title"></h4>
-    <b-card-text v-if="component.description" v-html="component.description"></b-card-text>
+  <component-layout :component.sync="component" :length.sync="length" :loading.sync="loading">
     <b-form class="form-toolbar-rtl" inline>
       <b-button size="badge" @click="plugAction" :disabled="plugActionDisabled">
         <b-icon icon="plug" class="btn-icon"></b-icon>
@@ -36,12 +34,6 @@
       </b-form>
     </b-collapse>
     <div style="margin-top: 8px;"></div>
-    <ToolbarFooter
-      :index.sync="component.index"
-      :input_ref="component.input_ref"
-      :length.sync="length"
-      :loading.sync="loading"
-    />
 
     <b-modal
       :id="'dataset-view-' + component.index"
@@ -54,18 +46,18 @@
         <div ref="draw"></div>
       </center>
     </b-modal>
-  </b-form-group>
+  </component-layout>
 </template>
 
 <script>
-import ToolbarFooter from './ToolbarFooter.vue'
+import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import * as tf from '@tensorflow/tfjs'
 import jquery from 'jquery'
 
 export default {
   name: 'TSModelPredictor',
-  components: { ToolbarFooter },
+  components: { ComponentLayout },
   mixins: [mixin],
   data() {
     let data = {
@@ -88,7 +80,10 @@ export default {
     plugActionDisabled() {
       let disabled = 0
       disabled |= this.loading === true
-      disabled |= this.inputData === null || this.inputData.model === null || !(this.inputData.model instanceof Object)
+      disabled |=
+        this.inputData === null ||
+        this.inputData.model === null ||
+        !(this.inputData.model instanceof Object)
       disabled |= this.layerSize > this.indexMax
       return disabled === 1
     },
@@ -144,7 +139,9 @@ export default {
       let inputValues = null
       let inputTensor = tf.tensor2d(inputMatrix)
       if (normalizationData.inputUnitsNormalize) {
-        let tensor = inputTensor.sub(normalizationData.inputMin).div(normalizationData.inputMax.sub(normalizationData.inputMin))
+        let tensor = inputTensor
+          .sub(normalizationData.inputMin)
+          .div(normalizationData.inputMax.sub(normalizationData.inputMin))
         inputTensor = tensor
       }
       let outputValues = null

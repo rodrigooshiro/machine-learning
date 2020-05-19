@@ -1,6 +1,5 @@
 <template>
-  <div id="app">
-    <Header />
+  <page-layout :name="$options.name">
     <b-card>
       Welcome, my name is Rodrigo Oshiro.
       <br />
@@ -26,25 +25,20 @@
       behaviour, accepts different inputs and generates outputs that can be linked by other components.
       The combinations are endless and there many possibilities that I will share as I learn about them.
     </b-card>
-  </div>
+  </page-layout>
 </template>
 
 <script>
-import Header from './components/Header'
+import PageLayout from './PageLayout'
 
 export default {
   name: 'About',
   props: [],
   components: {
-    Header
+    PageLayout
   }
 }
 </script>
 
-<style>
-.nav-link:focus {
-  outline: none !important;
-}
-</style>
 <style scoped>
 </style>

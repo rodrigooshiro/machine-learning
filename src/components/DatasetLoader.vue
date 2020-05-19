@@ -1,7 +1,5 @@
 <template>
-  <b-form-group>
-    <h4 v-if="component.title" class="card-title" v-html="component.title"></h4>
-    <b-card-text v-if="component.description" v-html="component.description"></b-card-text>
+  <component-layout :component.sync="component" :length.sync="length" :loading.sync="loading">
     <b-input-group class="mb-2">
       <b-form-file
         v-model="localFile"
@@ -22,24 +20,18 @@
         <b-button class="select-button" @click="selectRemoteFile">Select remote file</b-button>
       </b-input-group-append>
     </b-input-group>
-    <ToolbarFooter
-      :index.sync="component.index"
-      :input_ref="component.input_ref"
-      :length.sync="length"
-      :loading.sync="loading"
-    />
-  </b-form-group>
+  </component-layout>
 </template>
 
 <script>
-import ToolbarFooter from './ToolbarFooter.vue'
+import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import path from 'path'
 const cors = process.env.VUE_APP_CORS_API
 
 export default {
   name: 'DatasetLoader',
-  components: { ToolbarFooter },
+  components: { ComponentLayout },
   mixins: [mixin],
   data() {
     let data = {

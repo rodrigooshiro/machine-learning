@@ -1,7 +1,5 @@
 <template>
-  <b-form-group>
-    <h4 v-if="component.title" class="card-title" v-html="component.title"></h4>
-    <b-card-text v-if="component.description" v-html="component.description"></b-card-text>
+  <component-layout :component.sync="component" :length.sync="length" :loading.sync="loading">
     <b-form class="form-toolbar-rtl" inline>
       <b-button size="badge" @click="downloadAction" :disabled="downloadActionDisabled">
         <b-icon icon="download" class="btn-icon"></b-icon>
@@ -20,22 +18,16 @@
         autocomplete="off"
       ></b-form-textarea>
     </b-input-group>
-    <ToolbarFooter
-      :index.sync="component.index"
-      :input_ref="component.input_ref"
-      :length.sync="length"
-      :loading.sync="loading"
-    />
-  </b-form-group>
+  </component-layout>
 </template>
 
 <script>
-import ToolbarFooter from './ToolbarFooter.vue'
+import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 
 export default {
   name: 'DatasetTextViewer',
-  components: { ToolbarFooter },
+  components: { ComponentLayout },
   mixins: [mixin],
   data() {
     let data = {

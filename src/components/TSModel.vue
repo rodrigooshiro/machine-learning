@@ -1,7 +1,5 @@
 <template>
-  <b-form-group>
-    <h4 v-if="component.title" class="card-title" v-html="component.title"></h4>
-    <b-card-text v-if="component.description" v-html="component.description"></b-card-text>
+  <component-layout :component.sync="component" :length.sync="length" :loading.sync="loading">
     <b-form class="form-toolbar-rtl" inline>
       <b-button size="badge" @click="plugAction" :disabled="plugActionDisabled">
         <b-icon icon="plug" class="btn-icon"></b-icon>
@@ -124,13 +122,6 @@
       </template>
     </b-collapse>
     <div style="margin-top: 8px;"></div>
-    <ToolbarFooter
-      :index.sync="component.index"
-      :input_ref="component.input_ref"
-      :length.sync="length"
-      :loading.sync="loading"
-    />
-
     <b-modal
       :id="'model-view-' + component.index"
       title="TS Model View"
@@ -141,11 +132,11 @@
     >
       <div ref="draw"></div>
     </b-modal>
-  </b-form-group>
+  </component-layout>
 </template>
 
 <script>
-import ToolbarFooter from './ToolbarFooter.vue'
+import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import * as tf from '@tensorflow/tfjs'
 // import ModelView from 'tfjs-model-view'
@@ -154,11 +145,21 @@ import { activationOptions } from '@tensorflow/tfjs-layers/dist/keras_format/act
 
 export default {
   name: 'TSModel',
-  components: { ToolbarFooter },
+  components: { ComponentLayout },
   mixins: [mixin],
   data() {
     let data = {
-      serializable: ['indexStart', 'indexEnd', 'indexLabel', 'layerSize', 'inputShape', 'layerUnits', 'activationSelected', 'kernelInitializerSelected', 'biasInitializerSelected'],
+      serializable: [
+        'indexStart',
+        'indexEnd',
+        'indexLabel',
+        'layerSize',
+        'inputShape',
+        'layerUnits',
+        'activationSelected',
+        'kernelInitializerSelected',
+        'biasInitializerSelected'
+      ],
       toggleIcon: 'caret-up',
       indexStart: 0,
       indexEnd: 0,
