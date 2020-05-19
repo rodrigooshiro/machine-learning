@@ -5,5 +5,6 @@ module.exports = {
     before: api
   },
   outputDir: 'docs',
+  publicPath: '/machine-learning/',
   runtimeCompiler: true
 }
