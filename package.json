@@ -1,7 +1,9 @@
 {
   "name": "machine-learning",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "author": "Rodrigo Oshiro",
+  "license": "Apache-2.0",
   "scripts": {
     "serve": "vue-cli-service serve",
     "backend": "node ./src/backend.js",
