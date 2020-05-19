@@ -4,5 +4,6 @@ module.exports = {
   devServer: {
     before: api
   },
+  outputDir: 'docs',
   runtimeCompiler: true
 }
