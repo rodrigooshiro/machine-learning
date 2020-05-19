@@ -37,6 +37,7 @@ export const store = new Vuex.Store({})
 
 const router = new VueRouter({
   hash: true,
+  base: '/machine-learning',
   routes: [
     { path: '/', component: Pipeline },
     { path: '/about', component: About },
