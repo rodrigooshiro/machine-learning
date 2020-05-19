@@ -1,10 +1,8 @@
 <template>
   <b-navbar toggleable="lg" type="dark" variant="secondary">
-    <router-link to="/" v-slot="{ href }">
-      <b-navbar-brand :href="href + '?action=home'" style="padding: 0px !important;">
-        <b-icon icon="eye-fill" style="width: 32px; height: 32px;"></b-icon>
-      </b-navbar-brand>
-    </router-link>
+    <b-navbar-brand href="/" style="padding: 0px !important;">
+      <b-icon icon="eye-fill" style="width: 32px; height: 32px;"></b-icon>
+    </b-navbar-brand>
     <router-link to="/" v-slot="{ href }">
       <b-navbar-brand :href="href + '?action=home'">Home</b-navbar-brand>
     </router-link>
