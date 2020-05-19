@@ -129,7 +129,7 @@ module.exports = [
         }
       ],
       outputUnitsNormalize: true,
-      compilerOptimizerSelected: 'adam',
+      compilerOptimizerSelected: 'adamax',
       compilerLossSelected: 'meanSquaredError'
     }
   },
