@@ -130,7 +130,19 @@
       size="lg"
       @show="onShowModal"
     >
-      <div ref="draw"></div>
+      <b-carousel :interval="0" :indicators="true">
+        <b-carousel-slide :img-blank="true">
+          <template v-slot:img>
+            <div ref="draw"></div>
+          </template>
+        </b-carousel-slide>
+        <b-carousel-slide :img-blank="true">
+          <template v-slot:img>
+            <div ref="graph"></div>
+          </template>
+        </b-carousel-slide>
+      </b-carousel>
+      <footer class="modal-footer"></footer>
     </b-modal>
   </component-layout>
 </template>
@@ -155,7 +167,7 @@
 import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import * as tf from '@tensorflow/tfjs'
-// import ModelView from 'tfjs-model-view'
+import ModelView from 'tfjs-model-view'
 import jquery from 'jquery'
 import { activationOptions } from '@tensorflow/tfjs-layers/dist/keras_format/activation_config.js'
 
@@ -274,6 +286,7 @@ export default {
     },
     trashAction(event) {
       jquery(this.$refs['draw']).empty()
+      jquery(this.$refs['graph']).empty()
       this.fileChart = false
       this.output = null
       this.loadData(this.data)
@@ -311,10 +324,9 @@ export default {
         indexLabel: this.indexLabel
       }
 
-      /*
       let modelView = new ModelView(model, {
+        width: 765,
         height: 465,
-        width: 465,
         appendImmediately: false,
         renderer: 'd3',
         radius: 10,
@@ -322,9 +334,8 @@ export default {
         printStats: false,
         renderLinks: true
       })
-      jquery(this.$refs['draw']).empty()
-      this.$refs['draw'].appendChild(modelView.getDOMElement())
-      */
+      jquery(this.$refs['graph']).empty()
+      this.$refs['graph'].appendChild(modelView.getDOMElement())
 
       setTimeout(
         function() {

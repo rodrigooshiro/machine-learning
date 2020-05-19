@@ -34,6 +34,9 @@ export default {
 </script>
 
 <style>
+*:focus {
+  outline: none !important;
+}
 .router-link:hover,
 .router-link:focus {
   color: rgba(255, 255, 255, 0.75);
@@ -41,9 +44,6 @@ export default {
 }
 .router-link {
   color: rgba(255, 255, 255, 0.5);
-}
-.nav-link:focus {
-  outline: none !important;
 }
 .form-toolbar-rtl {
   direction: rtl;
@@ -99,5 +99,10 @@ export default {
   justify-content: flex-start;
   padding-left: 10px;
 }
+.carousel-indicators li {
+  background-color: dimgrey !important;
+}
+.carousel-indicators {
+  bottom: -45px !important;
+}
 </style>
-
