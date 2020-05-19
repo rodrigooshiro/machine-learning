@@ -84,7 +84,7 @@ module.exports = [
       indexLabel: -1,
       inputShape: 1,
       layerSize: 3,
-      layerUnits: [20, 20, 1],
+      layerUnits: [20, 15, 1],
       activationSelected: ['linear', 'linear', 'sigmoid'],
       kernelInitializerSelected: ['', '', ''],
       biasInitializerSelected: ['zeros', 'zeros', 'zeros']

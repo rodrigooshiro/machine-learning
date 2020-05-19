@@ -4,7 +4,7 @@ module.exports = {
   devServer: {
     before: api
   },
-  outputDir: 'docs',
+  outputDir: 'build',
   publicPath: '/machine-learning/',
   runtimeCompiler: true
 }
