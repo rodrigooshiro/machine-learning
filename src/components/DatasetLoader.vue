@@ -60,7 +60,7 @@ export default {
   },
   methods: {
     loadFileContent(content) {
-      this.output = content.trim()
+      this.output = content
       this.loading = false
     },
     selectLocalFile(event) {
@@ -73,20 +73,17 @@ export default {
           let reader = new FileReader()
           this.fileName = file.name
           reader.onload = e => this.selectLocalFile(e.target)
-          reader.readAsText(file)
+          reader.readAsArrayBuffer(file)
         }
       } else if (event instanceof FileReader) {
-        this.loadFileContent({
-          status: event.error === null ? 200 : -1,
-          data: event.result
-        })
+        this.loadFileContent(event.result)
       }
     },
     selectRemoteFile() {
       let content = null
       this.loading = true
       this.axios
-        .get(this.remoteFile)
+        .get(this.remoteFile, { responseType: 'arraybuffer' })
         .then(response => {
           content = response
           content.response = response.request.response

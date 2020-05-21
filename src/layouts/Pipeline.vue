@@ -92,6 +92,7 @@ export default {
     DatasetLoader: () => import('../components/DatasetLoader'),
     DatasetTextViewer: () => import('../components/DatasetTextViewer'),
     DatasetTableViewer: () => import('../components/DatasetTableViewer'),
+    DatasetSpriteViewer: () => import('../components/DatasetSpriteViewer'),
     TSModel: () => import('../components/TSModel'),
     TSModelCompiler: () => import('../components/TSModelCompiler'),
     TSModelPredictor: () => import('../components/TSModelPredictor')
@@ -137,6 +138,7 @@ export default {
         'DatasetLoader',
         'DatasetTextViewer',
         'DatasetTableViewer',
+        'DatasetSpriteViewer',
         'TSModel',
         'TSModelCompiler',
         'TSModelPredictor'
@@ -359,7 +361,9 @@ export default {
     },
     onLoadPipeline(name) {
       if (name === undefined || name === null) {
+        name = 'Tensorflow: Autoencoder'
         name = 'Tensorflow: Making Predictions from 2D'
+        // name = 'Tensorflow: Handwritten digit recognition with CNNs'
       }
       let templates = this.$refs['layout'].$refs['header'].templates.filter(
         template => template.name === name

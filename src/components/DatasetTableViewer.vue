@@ -197,40 +197,48 @@ export default {
     inputDataTable: {
       get() {
         let data = []
-        if (this.inputData !== null && this.inputData.length > 0) {
-          let value = this.inputData
-          try {
-            value = JSON.parse(this.inputData)
-          } catch (e) {}
-          if (typeof value === 'string' || value instanceof String) {
-            if (value.length > 0) {
-              value = csv.parse(value)
-            }
+        if (this.inputData !== null) {
+          let value = ''
+          if (Array.isArray(this.inputData)) {
+            value = this.inputData
+          } else if (Object.isExtensible(this.inputData)) {
+            let decoder = new TextDecoder()
+            value = decoder.decode(this.inputData).trim()
           }
-          if (Array.isArray(value) && value.length > 0) {
-            if (Array.isArray(value[0])) {
-              if (this.header) {
+          if (value.length > 0) {
+            try {
+              value = JSON.parse(value)
+            } catch (e) {}
+            if (typeof value === 'string' || value instanceof String) {
+              if (value.length > 0) {
+                value = csv.parse(value)
+              }
+            }
+            if (Array.isArray(value) && value.length > 0) {
+              if (Array.isArray(value[0])) {
+                if (this.header) {
+                  if (this.headers.length === 0) {
+                    this.headers = value[0].map(function(h) {
+                      return { key: h, label: h, state: -1, checked: h }
+                    })
+                  }
+                  data = value.slice(1)
+                } else {
+                  data = value
+                }
+              } else if (Object.isExtensible(value[0])) {
+                this.header = true
                 if (this.headers.length === 0) {
-                  this.headers = value[0].map(function(h) {
+                  this.headers = Object.keys(value[0]).map(function(h) {
                     return { key: h, label: h, state: -1, checked: h }
                   })
                 }
-                data = value.slice(1)
-              } else {
-                data = value
+                let values = []
+                for (let i = 0; i < value.length; i++) {
+                  values.push(Object.values(value[i]))
+                }
+                data = values
               }
-            } else if (Object.isExtensible(value[0])) {
-              this.header = true
-              if (this.headers.length === 0) {
-                this.headers = Object.keys(value[0]).map(function(h) {
-                  return { key: h, label: h, state: -1, checked: h }
-                })
-              }
-              let values = []
-              for (let i = 0; i < value.length; i++) {
-                values.push(Object.values(value[i]))
-              }
-              data = values
             }
           }
         }
@@ -399,7 +407,7 @@ export default {
     },
     trashAction(event) {
       jquery(this.$refs['draw']).empty()
-      this.inputData = ''
+      this.inputData = null
       this.output = null
       this.loadData(this.data)
       this.loadData(this.component.data)

@@ -12,7 +12,7 @@
     <b-input-group class="mb-2">
       <b-form-textarea
         class="fileTextarea"
-        v-model="inputData"
+        v-model="output"
         readonly
         spellcheck="false"
         autocomplete="off"
@@ -54,7 +54,7 @@ export default {
   computed: {
     downloadActionDisabled() {
       let disabled = 0
-      disabled |= this.inputData === null || this.inputData.length === 0
+      disabled |= this.output === null || this.output.length === 0
       return disabled === 1
     },
     trashActionDisabled() {
@@ -65,13 +65,16 @@ export default {
     inputLoading(next, prev) {
       this.loading = next
       if (this.loading === false) {
-        this.output = this.inputData
+        if (this.inputData !== null) {
+          let decoder = new TextDecoder()
+          this.output = decoder.decode(this.inputData).trim()
+        }
       }
     }
   },
   methods: {
     trashAction(event) {
-      this.inputData = ''
+      this.inputData = null
       this.output = null
       this.loadData(this.data)
       this.loadData(this.component.data)

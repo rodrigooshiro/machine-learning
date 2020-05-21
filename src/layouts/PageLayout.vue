@@ -105,4 +105,8 @@ export default {
 .carousel-indicators {
   bottom: -45px !important;
 }
+.carousel-control-prev,
+.carousel-control-next {
+  filter: invert(100%);
+}
 </style>

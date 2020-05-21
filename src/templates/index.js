@@ -10,5 +10,9 @@ module.exports = [
   {
     name: 'Tensorflow: Autoencoder',
     js: 'tensorflow-autoencoder.js'
+  },
+  {
+    name: 'Tensorflow: Handwritten digit recognition with CNNs',
+    js: 'tensorflow-handwritten-digit-cnn.js'
   }
 ]
