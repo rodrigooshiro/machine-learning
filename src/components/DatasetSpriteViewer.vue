@@ -83,11 +83,12 @@ export default {
       toggleIcon: 'caret-up',
       fileChart: false,
       imagePage: 0,
-      imagePageSize: 140,
       spriteWidth: 1,
       spriteHeight: 1,
       imageWidth: 1,
-      imageHeight: 1
+      imageHeight: 1,
+      pageWidth: 1,
+      pageHeight: 1
     }
     return this.importData(data)
   },
@@ -136,32 +137,43 @@ export default {
       }
     },
     async loadPage() {
-      // let batchSize = (this.imageWidth * this.imageHeight) / (this.spriteWidth * this.spriteHeight)
-      // batchSize = 140
       jquery(this.$refs['draw']).empty()
-      const batchImagesArray = new Float32Array(this.imagePageSize * this.imageWidth)
-      for (let i = 0; i < this.imagePageSize; i++) {
-        const idx = this.imagePage * this.imagePageSize + i
-        const image = this.datasetImages.slice(
-          idx * this.imageWidth,
-          idx * this.imageWidth + this.imageWidth
-        )
-        batchImagesArray.set(image, i * this.imageWidth)
-      }
-      let xs = tf.tensor2d(batchImagesArray, [this.imagePageSize, this.imageWidth])
-      let numExamples = xs.shape[0]
-      for (let i = 0; i < numExamples; i++) {
-        const imageTensor = tf.tidy(() => {
-          return xs.slice([i, 0], [1, xs.shape[1]]).reshape([this.spriteWidth, this.spriteHeight, 1])
-        })
-        let sprite = document.createElement('canvas')
-        sprite.width = this.spriteWidth
-        sprite.height = this.spriteHeight
-        await tf.browser.toPixels(imageTensor, sprite)
-        if (i % (sprite.width / 2) === 0 && i > 0) {
-          this.$refs['draw'].appendChild(document.createElement('br'))
+      let pixels = this.pageWidth * this.spriteWidth * this.spriteHeight * this.pageHeight
+      let imagePageSize = parseInt(Math.ceil(pixels / this.imageWidth))
+      const batchImagesArray = new Float32Array(imagePageSize * this.imageWidth)
+      for (let i = 0; i < imagePageSize; i++) {
+        const idx = this.imagePage * imagePageSize + i
+        if (idx * this.imageWidth < this.datasetImages.length) {
+          const image = this.datasetImages.slice(
+            idx * this.imageWidth,
+            idx * this.imageWidth + this.imageWidth
+          )
+          batchImagesArray.set(image, i * this.imageWidth)
         }
-        this.$refs['draw'].appendChild(sprite)
+      }
+      let xs = tf.tensor2d(batchImagesArray, [imagePageSize, this.imageWidth])
+      let canvas = document.createElement('canvas')
+      canvas.width = this.pageWidth * this.spriteWidth
+      canvas.height = this.pageHeight * this.spriteHeight
+      this.$refs['draw'].appendChild(canvas)
+      let numExamples = xs.shape[0]
+      let sprite = document.createElement('canvas')
+      sprite.width = this.spriteWidth
+      sprite.height = this.spriteHeight
+      let canvasContext = canvas.getContext('2d')
+      let spriteContext = sprite.getContext('2d')
+      let maxExample = this.datasetImages.length / this.spriteWidth / this.spriteHeight
+      let pageExample = this.imagePage * this.pageWidth * this.pageHeight
+      for (let i = 0; i < numExamples && i + pageExample < maxExample; i++) {
+        let x = (i * this.spriteWidth) % (this.pageWidth * this.spriteWidth)
+        let y =
+          this.spriteHeight * parseInt((i * this.spriteWidth) / (this.pageWidth * this.spriteWidth))
+        let imageTensor = xs
+          .slice([i, 0], [1, xs.shape[1]])
+          .reshape([this.spriteWidth, this.spriteHeight, 1])
+        await tf.browser.toPixels(imageTensor, sprite)
+        const imageData = spriteContext.getImageData(0, 0, sprite.width, sprite.height)
+        canvasContext.putImageData(imageData, x, y)
         imageTensor.dispose()
       }
       xs.dispose()
@@ -171,10 +183,18 @@ export default {
     },
     onPrevPage(event) {
       this.imagePage -= 1
+      let pixels = this.pageWidth * this.spriteWidth * this.spriteHeight * this.pageHeight
+      if (this.imagePage * pixels < 0) {
+        this.imagePage = parseInt(this.datasetImages.length / pixels)
+      }
       this.loadPage()
     },
     onNextPage(event) {
       this.imagePage += 1
+      let pixels = this.pageWidth * this.spriteWidth * this.spriteHeight * this.pageHeight
+      if (this.imagePage * pixels > this.datasetImages.length) {
+        this.imagePage = 0
+      }
       this.loadPage()
     },
     trashAction(event) {
@@ -193,32 +213,42 @@ export default {
       img.onload = async function() {
         this.imageWidth = img.naturalWidth
         this.imageHeight = img.naturalHeight
+        this.pageWidth = parseInt(500 / this.spriteWidth)
+        this.pageHeight = parseInt(400 / this.spriteHeight)
+        let datasetBytesBuffer = new ArrayBuffer(this.imageWidth * this.imageHeight * 4)
+
         let canvas = document.createElement('canvas')
         let ctx = canvas.getContext('2d')
-        canvas.width = img.naturalWidth
-        canvas.height = img.naturalHeight
+        let chunkSize = 10 * this.pageHeight * this.spriteHeight
+        canvas.width = this.imageWidth
+        canvas.height = chunkSize
+        for (let i = 0; i < this.imageHeight / chunkSize; i++) {
+          let size = this.imageWidth * chunkSize
+          if (i * this.imageWidth * chunkSize * 4 + size * 4 > this.imageWidth * this.imageHeight * 4) {
+            size = (this.imageWidth * this.imageHeight * 4 - i * this.imageWidth * chunkSize * 4) / 4
+          }
+          const datasetBytesView = new Float32Array(
+            datasetBytesBuffer,
+            i * this.imageWidth * chunkSize * 4,
+            size
+          )
 
-        const datasetBytesBuffer = new ArrayBuffer(img.naturalWidth * img.naturalHeight * 4)
-        const datasetBytesView = new Float32Array(
-          datasetBytesBuffer,
-          0,
-          img.naturalWidth * img.naturalHeight
-        )
-        ctx.drawImage(
-          img,
-          0,
-          0,
-          img.naturalWidth,
-          img.naturalHeight,
-          0,
-          0,
-          img.naturalWidth,
-          img.naturalHeight
-        )
+          ctx.drawImage(
+            img,
+            0,
+            i * chunkSize,
+            this.imageWidth,
+            chunkSize,
+            0,
+            0,
+            this.imageWidth,
+            chunkSize
+          )
 
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-        for (let j = 0; j < imageData.data.length / 4; j++) {
-          datasetBytesView[j] = imageData.data[j * 4] / 255
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+          for (let j = 0; j < imageData.data.length / 4; j++) {
+            datasetBytesView[j] = imageData.data[j * 4] / 255
+          }
         }
         this.datasetImages = new Float32Array(datasetBytesBuffer)
         this.imagePage = 0
