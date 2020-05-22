@@ -93,6 +93,7 @@ export default {
     DatasetTextViewer: () => import('../components/DatasetTextViewer'),
     DatasetTableViewer: () => import('../components/DatasetTableViewer'),
     DatasetSpriteViewer: () => import('../components/DatasetSpriteViewer'),
+    DatasetLabel: () => import('../components/DatasetLabel'),
     TSModel: () => import('../components/TSModel'),
     TSModelCompiler: () => import('../components/TSModelCompiler'),
     TSModelPredictor: () => import('../components/TSModelPredictor')
@@ -139,6 +140,7 @@ export default {
         'DatasetTextViewer',
         'DatasetTableViewer',
         'DatasetSpriteViewer',
+        'DatasetLabel',
         'TSModel',
         'TSModelCompiler',
         'TSModelPredictor'
@@ -207,6 +209,7 @@ export default {
       this.componentInputReferenceOptions = this.pipeline
         .filter(x => x.index !== index)
         .map(x => x.index.replace(/pipeline_/g, ''))
+      console.log(this.componentInputReferenceOptions)
       this.componentInputReferenceOptions.splice(0, 0, '')
       this.componentInputIndex = this.pipeline[this.index].input_index
       this.$bvModal.show('setup-component')
@@ -361,9 +364,9 @@ export default {
     },
     onLoadPipeline(name) {
       if (name === undefined || name === null) {
-        name = 'Tensorflow: Autoencoder'
-        name = 'Tensorflow: Making Predictions from 2D'
-        // name = 'Tensorflow: Handwritten digit recognition with CNNs'
+        // name = 'Tensorflow: Autoencoder'
+        // name = 'Tensorflow: Making Predictions from 2D'
+        name = 'Tensorflow: Handwritten digit recognition with CNNs'
       }
       let templates = this.$refs['layout'].$refs['header'].templates.filter(
         template => template.name === name

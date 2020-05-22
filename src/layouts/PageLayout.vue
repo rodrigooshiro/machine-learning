@@ -109,4 +109,9 @@ export default {
 .carousel-control-next {
   filter: invert(100%);
 }
+.carousel-loading-true .carousel-control-prev-icon,
+.carousel-loading-true .carousel-control-next-icon {
+  opacity: 0.65 !important;
+  cursor: not-allowed;
+}
 </style>

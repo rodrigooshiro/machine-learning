@@ -7,6 +7,15 @@
     <script src="tfjs-vis.umd.min.js"></script>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <script>
+        async function redirect() {
+          if (window.location.pathname === '/') {
+            window.location.href = '/machine-learning/'
+          }
+        }
+        document.addEventListener('DOMContentLoaded', redirect)
+      </script>
+    </div>
   </body>
 </html>
