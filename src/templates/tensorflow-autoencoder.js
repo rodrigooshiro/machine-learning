@@ -35,11 +35,11 @@ module.exports = [
       indexEnd: 3,
       indexLabel: 4,
       layerSize: 2,
-      inputShape: 4,
-      layerUnits: [3, 4],
-      activationSelected: ['relu', 'relu'],
-      kernelInitializerSelected: ['randomNormal', 'randomNormal'],
-      biasInitializerSelected: ['ones', 'ones']
+      inputShape: [4],
+      units: [3, 4],
+      activation: ['relu', 'relu'],
+      kernelInitializer: ['randomNormal', 'randomNormal'],
+      biasInitializer: ['ones', 'ones']
     }
   },
   {

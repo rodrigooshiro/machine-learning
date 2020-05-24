@@ -127,6 +127,13 @@ export const mixin = {
         return value
       }
     },
+    positiveFormatter(value) {
+      if (value <= 0) {
+        return '--'
+      } else {
+        return value
+      }
+    },
     registerStore() {
       if (!('store' in this.component)) {
         this.component.store = {
@@ -156,6 +163,8 @@ export const mixin = {
         this.$store.unregisterModule(this.component.index)
       }
     },
+    validateData() {
+    },
     loadData(data) {
       if (data) {
         this.serializable.concat(['output']).forEach(item => {
@@ -163,6 +172,7 @@ export const mixin = {
             this[item] = lodash.cloneDeep(data[item])
           }
         })
+        this.validateData()
       }
     },
     importData(data) {
@@ -179,12 +189,12 @@ export const mixin = {
     exportData() {
       let serializable = null
       let data = {
-        'type': this.$options.name
+        type: this.$options.name
       }
       serializable = ['index', 'input_ref', 'input_index', 'title', 'description']
       serializable.forEach(item => {
         if (item in this.component) {
-          if ((this.component[item] !== undefined) && (this.component[item] !== null)) {
+          if (this.component[item] !== undefined && this.component[item] !== null) {
             data[item] = this.component[item]
           }
         }
@@ -192,7 +202,7 @@ export const mixin = {
       serializable = this.serializable.concat(['output'])
       serializable.forEach(item => {
         if (item in this) {
-          if ((this[item] !== undefined) && (this[item] !== null)) {
+          if (this[item] !== undefined && this[item] !== null) {
             if (!('data' in data)) {
               data['data'] = {}
             }

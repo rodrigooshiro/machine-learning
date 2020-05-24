@@ -25,10 +25,10 @@
           <label>Input Index (Start)</label>
           <b-form-spinbutton
             v-model="indexStart"
-            min="0"
+            min="-1"
             :max="indexMax"
-            placeholder="--"
-            :disabled="editActionDisabled"
+            :formatter-fn="indexFormatter"
+            :disabled="indexActionDisabled"
           ></b-form-spinbutton>
         </div>
 
@@ -36,10 +36,10 @@
           <label>Input Index (End)</label>
           <b-form-spinbutton
             v-model="indexEnd"
-            min="0"
+            min="-1"
             :max="indexMax"
-            placeholder="--"
-            :disabled="editActionDisabled"
+            :formatter-fn="indexFormatter"
+            :disabled="indexActionDisabled"
           ></b-form-spinbutton>
         </div>
 
@@ -50,7 +50,7 @@
             min="-1"
             :max="indexMax"
             :formatter-fn="indexFormatter"
-            :disabled="editActionDisabled"
+            :disabled="indexActionDisabled"
           ></b-form-spinbutton>
         </div>
       </b-form>
@@ -68,52 +68,194 @@
 
         <div class="indexInput">
           <label>Input Shape</label>
-          <b-form-spinbutton
-            v-model="inputShape"
-            min="1"
-            :max="shapeMax"
-            placeholder="--"
+          <b-dropdown
+            text="shape"
+            no-flip
+            split
+            split-variant="outline-secondary"
+            block
+            variant="secondary"
             :disabled="editActionDisabled"
-          ></b-form-spinbutton>
+          >
+            <b-dropdown-form style="text-align: left">
+              <b-form inline>
+                <div class="indexInput">
+                  <label>Dimensions</label>
+                  <b-form-spinbutton
+                    v-model="inputShapeLength"
+                    min="1"
+                    :formatter-fn="positiveFormatter"
+                    :disabled="true"
+                  ></b-form-spinbutton>
+                </div>
+              </b-form>
+
+              <label v-if="inputShape.length > 0">Values</label>
+              <template v-for="i in inputShape.length">
+                <b-form v-bind:key="i" inline>
+                  <div class="indexInput">
+                    <b-form-spinbutton
+                      v-model="inputShape[i-1]"
+                      min="1"
+                      :max="shapeMax"
+                      :formatter-fn="positiveFormatter"
+                      :disabled="!indexActionDisabled && editActionDisabled"
+                    ></b-form-spinbutton>
+                  </div>
+                </b-form>
+              </template>
+            </b-dropdown-form>
+          </b-dropdown>
         </div>
       </b-form>
 
       <template v-for="i in layerSize">
         <b-form v-bind:key="i" inline>
           <div class="indexInput">
-            <label>Layer (units)</label>
+            <label>Layer {{ i }} (class)</label>
+            <b-form-select
+              v-model="layerName[i-1]"
+              :options="layerNameOptions"
+              :disabled="editActionDisabled"
+            ></b-form-select>
+          </div>
+
+          <div class="indexInput">
+            <label>Layer {{ i }} (units)</label>
             <b-form-spinbutton
-              v-model="layerUnits[i-1]"
-              min="1"
-              placeholder="--"
+              v-model="units[i-1]"
+              min="0"
+              :formatter-fn="positiveFormatter"
               :disabled="editActionDisabled"
             ></b-form-spinbutton>
           </div>
 
           <div class="indexInput">
+            <label>Layer {{ i }} (kernelSize)</label>
+            <b-form-spinbutton
+              v-model="kernelSize[i-1]"
+              min="0"
+              :formatter-fn="positiveFormatter"
+              :disabled="editActionDisabled"
+            ></b-form-spinbutton>
+          </div>
+
+          <div class="indexInput">
+            <label>Layer {{ i }} (filters)</label>
+            <b-form-spinbutton
+              v-model="filters[i-1]"
+              min="-1"
+              :formatter-fn="indexFormatter"
+              :disabled="editActionDisabled"
+            ></b-form-spinbutton>
+          </div>
+
+          <div class="indexInput">
+            <label>Layer {{ i }} (strides)</label>
+            <b-dropdown
+              text="strides"
+              no-flip
+              split
+              split-variant="outline-secondary"
+              block
+              variant="secondary"
+              :disabled="editActionDisabled"
+            >
+              <b-dropdown-form style="text-align: left">
+                <b-form inline>
+                  <div class="indexInput">
+                    <label>Dimensions</label>
+                    <b-form-spinbutton
+                      v-model="stridesLength[i-1]"
+                      min="0"
+                      :formatter-fn="positiveFormatter"
+                      :disabled="editActionDisabled"
+                    ></b-form-spinbutton>
+                  </div>
+                </b-form>
+
+                <label v-if="strides[i-1].length > 0">Values</label>
+                <template v-for="j in strides[i-1].length">
+                  <b-form v-bind:key="j" inline>
+                    <div class="indexInput">
+                      <b-form-spinbutton
+                        v-model="strides[i-1][j-1]"
+                        min="0"
+                        :formatter-fn="indexFormatter"
+                        :disabled="editActionDisabled"
+                      ></b-form-spinbutton>
+                    </div>
+                  </b-form>
+                </template>
+              </b-dropdown-form>
+            </b-dropdown>
+          </div>
+
+          <div class="indexInput">
+            <label>Layer {{ i }} (poolSize)</label>
+            <b-dropdown
+              text="poolSize"
+              no-flip
+              split
+              split-variant="outline-secondary"
+              block
+              variant="secondary"
+              :disabled="editActionDisabled"
+            >
+              <b-dropdown-form style="text-align: left">
+                <b-form inline>
+                  <div class="indexInput">
+                    <label>Dimensions</label>
+                    <b-form-spinbutton
+                      v-model="poolSizeLength[i-1]"
+                      min="0"
+                      :formatter-fn="positiveFormatter"
+                      :disabled="editActionDisabled"
+                    ></b-form-spinbutton>
+                  </div>
+                </b-form>
+
+                <label v-if="poolSize[i-1].length > 0">Values</label>
+                <template v-for="j in poolSize[i-1].length">
+                  <b-form v-bind:key="j" inline>
+                    <div class="indexInput">
+                      <b-form-spinbutton
+                        v-model="poolSize[i-1][j-1]"
+                        min="0"
+                        :formatter-fn="indexFormatter"
+                        :disabled="editActionDisabled"
+                      ></b-form-spinbutton>
+                    </div>
+                  </b-form>
+                </template>
+              </b-dropdown-form>
+            </b-dropdown>
+          </div>
+
+          <div class="indexInput">
             <label>
-              <span>Layer (activation)</span>
+              <span>Layer {{ i }} (activation)</span>
             </label>
             <b-form-select
-              v-model="activationSelected[i-1]"
+              v-model="activation[i-1]"
               :options="activationOptions"
               :disabled="editActionDisabled"
             ></b-form-select>
           </div>
 
           <div class="indexInput">
-            <label>Layer (kernel initializer)</label>
+            <label>Layer ({{ i }} kernel initializer)</label>
             <b-form-select
-              v-model="kernelInitializerSelected[i-1]"
+              v-model="kernelInitializer[i-1]"
               :options="kernelInitializerOptions"
               :disabled="editActionDisabled"
             ></b-form-select>
           </div>
 
           <div class="indexInput">
-            <label>Layer (bias initializer)</label>
+            <label>Layer {{ i }} (bias initializer)</label>
             <b-form-select
-              v-model="biasInitializerSelected[i-1]"
+              v-model="biasInitializer[i-1]"
               :options="biasInitializerOptions"
               :disabled="editActionDisabled"
             ></b-form-select>
@@ -143,6 +285,9 @@
         </b-carousel-slide>
       </b-carousel>
       <footer class="modal-footer"></footer>
+      <footer class="modal-footer"></footer>
+      <footer class="modal-footer"></footer>
+      <footer class="modal-footer"></footer>
     </b-modal>
   </component-layout>
 </template>
@@ -169,7 +314,7 @@ import { mixin } from './mixin'
 import * as tf from '@tensorflow/tfjs'
 import ModelView from 'tfjs-model-view'
 import jquery from 'jquery'
-import { activationOptions } from '@tensorflow/tfjs-layers/dist/keras_format/activation_config.js'
+import definitions from '../config/definitions.js'
 
 export default {
   name: 'TSModel',
@@ -183,32 +328,49 @@ export default {
         'indexLabel',
         'layerSize',
         'inputShape',
-        'layerUnits',
-        'activationSelected',
-        'kernelInitializerSelected',
-        'biasInitializerSelected'
+        'layerName',
+        'units',
+        'kernelSize',
+        'filters',
+        'strides',
+        'poolSize',
+        'activation',
+        'kernelInitializer',
+        'biasInitializer'
       ],
       toggleIcon: 'caret-up',
-      indexStart: 0,
-      indexEnd: 0,
-      indexLabel: null,
+      indexStart: -1,
+      indexEnd: -1,
+      indexLabel: -1,
       layerSize: 0,
-      inputShape: 0,
-      layerUnits: [],
-      activationSelected: [],
-      activationOptions: activationOptions.map(x => x.replace(/hard_sigmoid/g, 'hardSigmoid')).sort(),
-      kernelInitializerSelected: [],
-      kernelInitializerOptions: Object.keys(tf.initializers).sort(),
-      biasInitializerSelected: [],
-      biasInitializerOptions: Object.keys(tf.initializers).sort(),
+      inputShape: [],
+      layerName: [],
+      units: [],
+      kernelSize: [],
+      filters: [],
+      strides: [],
+      poolSize: [],
+      activation: [],
+      kernelInitializer: [],
+      biasInitializer: [],
+      layerNameOptions: definitions.tf.layer.options,
+      activationOptions: definitions.tf.layer.activation.options,
+      kernelInitializerOptions: definitions.tf.initializers.options,
+      biasInitializerOptions: definitions.tf.initializers.options,
+      inputShapeLength: 0,
+      stridesLength: [],
+      poolSizeLength: [],
       fileChart: false
     }
-    data.activationOptions.unshift('')
-    data.kernelInitializerOptions.unshift('')
-    data.biasInitializerOptions.unshift('')
     return this.importData(data)
   },
   computed: {
+    indexActionDisabled() {
+      let disabled = 0
+      disabled |= this.editActionDisabled === true
+      disabled |= !Array.isArray(this.inputData) && Object.isExtensible(this.inputData)
+      return disabled === 1
+    },
     editActionDisabled() {
       let disabled = 0
       disabled |= this.indexMax === 0
@@ -227,7 +389,7 @@ export default {
       disabled |= this.loading === true
       disabled |= this.indexMax === 0
       disabled |= this.shapeMax === 0
-      disabled |= this.indexEnd <= this.indexStart
+      disabled |= !this.indexActionDisabled && this.indexEnd <= this.indexStart
       return disabled === 1
     },
     imageActionDisabled() {
@@ -237,8 +399,12 @@ export default {
     },
     indexMax() {
       let indexMax = 0
-      if (this.inputData && this.inputData.length > 0) {
+      if (this.inputData && Array.isArray(this.inputData) && this.inputData.length > 0) {
         indexMax = this.inputData[0].length - 1
+      } else if (this.inputData && Object.isExtensible(this.inputData)) {
+        if ('datasetImages' in this.inputData) {
+          indexMax = this.inputData['datasetImages'].length - 1
+        }
       }
       return indexMax
     },
@@ -248,28 +414,95 @@ export default {
     }
   },
   watch: {
+    inputShape: {
+      deep: true,
+      handler(next, prev) {
+        this.inputShapeLength = this.inputShape.length
+      }
+    },
+    inputShapeLength: {
+      deep: true,
+      handler(value, prev) {
+        while (this.inputShape.length > value) {
+          this.inputShape.pop()
+        }
+        while (this.inputShape.length < value) {
+          this.inputShape.push(1)
+        }
+      }
+    },
+    strides: {
+      deep: true,
+      handler(next, prev) {
+        this.stridesLength = []
+        for (let i = 0; i < this.strides.length; i++) {
+          this.stridesLength.push(this.strides[i].length)
+        }
+      }
+    },
+    stridesLength: {
+      deep: true,
+      handler(next, prev) {
+        for (let i = 0; i < this.stridesLength.length; i++) {
+          let value = this.stridesLength[i]
+          while (this.strides[i].length > value) {
+            this.strides[i].pop()
+          }
+          while (this.strides[i].length < value) {
+            this.strides[i].push(0)
+          }
+        }
+      }
+    },
+    poolSize: {
+      deep: true,
+      handler(next, prev) {
+        this.poolSizeLength = []
+        for (let i = 0; i < this.poolSize.length; i++) {
+          this.poolSizeLength.push(this.poolSize[i].length)
+        }
+      }
+    },
+    poolSizeLength: {
+      deep: true,
+      handler(next, prev) {
+        for (let i = 0; i < this.poolSizeLength.length; i++) {
+          let value = this.poolSizeLength[i]
+          while (this.poolSize[i].length > value) {
+            this.poolSize[i].pop()
+          }
+          while (this.poolSize[i].length < value) {
+            this.poolSize[i].push(0)
+          }
+        }
+      }
+    },
     layerSize(next, prev) {
-      while (this.activationSelected.length > next) {
-        this.layerUnits.pop()
-        this.activationSelected.pop()
-        this.kernelInitializerSelected.pop()
-        this.biasInitializerSelected.pop()
-      }
-      while (this.activationSelected.length < next) {
-        this.layerUnits.push(3)
-        this.activationSelected.push('')
-        this.kernelInitializerSelected.push('')
-        this.biasInitializerSelected.push('')
-      }
+      this.validateData()
     },
     shapeMax(next, prev) {
       if (this.inputShape > next) {
-        this.inputShape = next
+        if (this.indexActionDisabled === false) {
+          this.inputShape[0] = next
+        }
       }
     },
     inputLoading(next, prev) {
       if (next === false) {
         this.trashAction()
+        if (this.inputData !== null) {
+          if (
+            'spriteWidth' in this.inputData &&
+            'spriteHeight' in this.inputData &&
+            'spriteChannels' in this.inputData
+          ) {
+            this.inputShape = [
+              this.inputData['spriteWidth'],
+              this.inputData['spriteHeight'],
+              this.inputData['spriteChannels']
+            ]
+          }
+        }
       }
     }
   },
@@ -284,6 +517,48 @@ export default {
     onShowModal() {
       global.tfvis.show.modelSummary(this.$refs['draw'], this.output.model)
     },
+    validateData() {
+      let keys = [
+        'layerName',
+        'units',
+        'kernelSize',
+        'filters',
+        'strides',
+        'poolSize',
+        'activation',
+        'kernelInitializer',
+        'biasInitializer'
+      ]
+      keys.forEach(value => {
+        while (this[value].length > this.layerSize) {
+          this[value].pop()
+        }
+      })
+      while (this.layerName.length < this.layerSize) {
+        this.layerName.push('dense')
+      }
+      keys = ['units', 'kernelSize']
+      keys.forEach(value => {
+        while (this[value].length < this.layerSize) {
+          this[value].push(0)
+        }
+      })
+      while (this.filters.length < this.layerSize) {
+        this.filters.push(-1)
+      }
+      keys = ['strides', 'poolSize']
+      keys.forEach(value => {
+        while (this[value].length < this.layerSize) {
+          this[value].push([])
+        }
+      })
+      keys = ['activation', 'kernelInitializer', 'biasInitializer']
+      keys.forEach(value => {
+        while (this[value].length < this.layerSize) {
+          this[value].push('--')
+        }
+      })
+    },
     trashAction(event) {
       jquery(this.$refs['draw']).empty()
       jquery(this.$refs['graph']).empty()
@@ -296,25 +571,46 @@ export default {
       this.loading = true
       let model = tf.sequential()
       for (let i = 0; i < this.layerSize; i++) {
-        let layer = {
-          units: this.layerUnits[i],
-          useBias: false,
-          inputShape: this.inputShape
+        let layer = {}
+        if (i === 0) {
+          if (this.inputShape.length === 1) {
+            layer.inputShape = this.inputShape[0]
+          } else {
+            layer.inputShape = this.inputShape
+          }
         }
-        if (this.activationSelected[i] !== '') {
-          layer.activation = this.activationSelected[i]
+        if (this.units[i] !== 0) {
+          layer.units = this.units[i]
         }
-        if (this.kernelInitializerSelected[i] !== '') {
-          layer.kernelInitializer = this.kernelInitializerSelected[i]
+        if (this.kernelSize[i] !== 0) {
+          layer.kernelSize = this.kernelSize[i]
         }
-        if (this.biasInitializerSelected[i] !== '') {
+        if (this.filters[i] !== -1) {
+          layer.filters = this.filters[i]
+        }
+        if (this.strides[i].length === 1) {
+          layer.strides = this.strides[i][0]
+        }
+        if (this.strides[i].length > 1) {
+          layer.strides = this.strides[i]
+        }
+        if (this.poolSize[i].length === 1) {
+          layer.poolSize = this.poolSize[i][0]
+        }
+        if (this.poolSize[i].length > 1) {
+          layer.poolSize = this.poolSize[i]
+        }
+        if (this.activation[i] !== '--') {
+          layer.activation = this.activation[i]
+        }
+        if (this.kernelInitializer[i] !== '--') {
+          layer.kernelInitializer = this.kernelInitializer[i]
+        }
+        if (this.biasInitializer[i] !== '--') {
           layer.useBias = true
-          layer.biasInitializer = this.biasInitializerSelected[i]
+          layer.biasInitializer = this.biasInitializer[i]
         }
-        if (i !== 0) {
-          delete layer.inputShape
-        }
-        model.add(tf.layers.dense(layer))
+        model.add(tf.layers[this.layerName[i]](layer))
       }
       model.inputData = this.inputData
       this.fileChart = true

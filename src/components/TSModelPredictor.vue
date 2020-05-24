@@ -109,7 +109,7 @@ export default {
       return disabled === 1
     },
     indexMax() {
-      let indexMax = 1
+      let indexMax = 0
       if (this.inputData && this.inputData.model && this.inputData.model.layers) {
         indexMax = this.inputData.model.layers.length
       }

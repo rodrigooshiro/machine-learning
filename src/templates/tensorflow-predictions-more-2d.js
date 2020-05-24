@@ -82,12 +82,12 @@ module.exports = [
       indexStart: 0,
       indexEnd: 1,
       indexLabel: -1,
-      inputShape: 1,
+      inputShape: [1],
       layerSize: 3,
-      layerUnits: [20, 15, 1],
-      activationSelected: ['linear', 'linear', 'sigmoid'],
-      kernelInitializerSelected: ['', '', ''],
-      biasInitializerSelected: ['zeros', 'zeros', 'zeros']
+      units: [20, 15, 1],
+      activation: ['linear', 'linear', 'sigmoid'],
+      kernelInitializer: ['--', '--', '--'],
+      biasInitializer: ['zeros', 'zeros', 'zeros']
     }
   },
   {

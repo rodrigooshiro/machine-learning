@@ -39,10 +39,27 @@ module.exports = [
     input_ref: 'pipeline_1',
     data: {
       layerSize: 6,
-      layerUnits: [1, 1, 1, 1, 1, 10],
-      activationSelected: ['relu', '', 'relu', '', '', 'softmax'],
-      kernelInitializerSelected: ['varianceScaling', '', 'varianceScaling', '', '', 'varianceScaling'],
-      biasInitializerSelected: ['zeros', 'zeros', 'zeros', 'zeros', 'zeros', 'zeros']
+      layerName: ['conv2d', 'maxPooling2d', 'conv2d', 'maxPooling2d', 'flatten', 'dense'],
+      units: [0, 0, 0, 0, 0, 10],
+      kernelSize: [5, 0, 5, 0, 0, 0],
+      filters: [8, -1, 16, -1, -1, 10],
+      strides: [[1], [2, 2], [1], [2, 2], [], []],
+      poolSize: [[], [2, 2], [], [2, 2], [], []],
+      activation: ['relu', '--', 'relu', '--', '--', 'softmax'],
+      kernelInitializer: ['varianceScaling', '--', 'varianceScaling', '--', '--', 'varianceScaling'],
+      biasInitializer: ['zeros', 'zeros', 'zeros', 'zeros', 'zeros', 'zeros']
+    }
+  },
+  {
+    index: 'pipeline_5',
+    type: 'TSModelCompiler',
+    input_ref: 'pipeline_4',
+    data: {
+      epochSize: 10,
+      batchSize: 512,
+      shuffle: true,
+      compilerOptimizerSelected: 'adamax',
+      compilerLossSelected: 'categoricalCrossentropy'
     }
   }
 ]
