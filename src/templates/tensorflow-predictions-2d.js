@@ -3,7 +3,8 @@ module.exports = [
     index: 'pipeline_0',
     type: 'DatasetLoader',
     title: 'Load, format and visualize the input data',
-    description: 'This pipeline is based on the tutorial from tensorflow about ' +
+    description:
+      'This pipeline is based on the tutorial from tensorflow about ' +
       '[linear regression](https://www.tensorflow.org/js/tutorials/training/linear_regression).',
     data: {
       remoteFile: 'https://storage.googleapis.com/tfjs-tutorials/carsData.json'
@@ -16,60 +17,62 @@ module.exports = [
     data: {
       xAxis: 1,
       yAxis: 0,
-      headers: [{
-        key: 'Name',
-        label: 'Name',
-        checked: false,
-        state: 0
-      },
-      {
-        key: 'Miles_per_Gallon',
-        label: 'Miles per Gallon',
-        checked: 'Miles_per_Gallon',
-        state: 1
-      },
-      {
-        key: 'Cylinders',
-        label: 'Cylinders',
-        checked: false,
-        state: 0
-      },
-      {
-        key: 'Displacement',
-        label: 'Displacement',
-        checked: false,
-        state: 0
-      },
-      {
-        key: 'Horsepower',
-        label: 'Horsepower',
-        checked: 'Horsepower',
-        state: 1
-      },
-      {
-        key: 'Weight_in_lbs',
-        label: 'Weight in lbs',
-        checked: false,
-        state: 0
-      },
-      {
-        key: 'Acceleration',
-        label: 'Acceleration',
-        checked: false,
-        state: 0
-      },
-      {
-        key: 'Year',
-        label: 'Year',
-        checked: false,
-        state: 0
-      },
-      {
-        key: 'Origin',
-        label: 'Origin',
-        checked: false,
-        state: 0
-      }]
+      headers: [
+        {
+          key: 'Name',
+          label: 'Name',
+          checked: false,
+          state: 0
+        },
+        {
+          key: 'Miles_per_Gallon',
+          label: 'Miles per Gallon',
+          checked: 'Miles_per_Gallon',
+          state: 1
+        },
+        {
+          key: 'Cylinders',
+          label: 'Cylinders',
+          checked: false,
+          state: 0
+        },
+        {
+          key: 'Displacement',
+          label: 'Displacement',
+          checked: false,
+          state: 0
+        },
+        {
+          key: 'Horsepower',
+          label: 'Horsepower',
+          checked: 'Horsepower',
+          state: 1
+        },
+        {
+          key: 'Weight_in_lbs',
+          label: 'Weight in lbs',
+          checked: false,
+          state: 0
+        },
+        {
+          key: 'Acceleration',
+          label: 'Acceleration',
+          checked: false,
+          state: 0
+        },
+        {
+          key: 'Year',
+          label: 'Year',
+          checked: false,
+          state: 0
+        },
+        {
+          key: 'Origin',
+          label: 'Origin',
+          checked: false,
+          state: 0
+        }
+      ]
     }
   },
   {
@@ -93,7 +96,8 @@ module.exports = [
     index: 'pipeline_3',
     type: 'TSModelCompiler',
     title: 'Train the model',
-    description: 'If the loss value is still **too high** you can re-train the model. It will not ' +
+    description:
+      'If the loss value is still **too high** you can re-train the model. It will not ' +
       'reset the previous training, but resume it with additional epochs. This helps if ' +
       'the selected training model was good, but the epochs for the training was too low. Just be ' +
       'careful not to overfit.',

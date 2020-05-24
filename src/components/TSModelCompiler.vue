@@ -22,15 +22,18 @@
     <b-collapse :visible="toggleIcon === 'caret-up'">
       <b-form inline>
         <div class="indexInput">
-          <label>Input Units ({{ inputSize }})</label>
+          <label>
+            Input Units
+            <span v-if="!unitsActionDisabled">({{ inputSize }})</span>
+          </label>
           <b-dropdown
-            text="Columns"
+            :text="unitsActionDisabled ? 'datasetImages' : 'Columns'"
             no-flip
             split
             split-variant="outline-secondary"
             block
             variant="secondary"
-            :disabled="editActionDisabled"
+            :disabled="editActionDisabled || unitsActionDisabled"
           >
             <b-dropdown-form style="text-align: left">
               <template v-for="item in inputUnits">
@@ -53,15 +56,18 @@
         </div>
 
         <div class="indexInput">
-          <label>Output Units ({{ outputSize }})</label>
+          <label>
+            Output Units
+            <span v-if="!unitsActionDisabled">({{ outputSize }})</span>
+          </label>
           <b-dropdown
-            text="Columns"
+            :text="unitsActionDisabled ? 'datasetLabels' : 'Columns'"
             no-flip
             split
             split-variant="outline-secondary"
             block
             variant="secondary"
-            :disabled="editActionDisabled"
+            :disabled="editActionDisabled || unitsActionDisabled"
           >
             <b-dropdown-form style="text-align: left">
               <template v-for="item in outputUnits">
@@ -141,7 +147,6 @@
             :disabled="editActionDisabled"
           ></b-form-select>
         </div>
-
       </b-form>
     </b-collapse>
     <div style="margin-top: 8px;"></div>
@@ -186,7 +191,6 @@ export default {
   components: { ComponentLayout },
   mixins: [mixin],
   data() {
-    window.tf = tf
     let data = {
       serializable: [
         'shuffle',
@@ -218,6 +222,15 @@ export default {
     return this.importData(data)
   },
   computed: {
+    unitsActionDisabled() {
+      let disabled = 0
+      disabled |= this.loading === true
+      if (this.inputData !== null && 'data' in this.inputData) {
+        let { data } = this.inputData
+        disabled |= 'datasetImages' in data && 'datasetLabels' in data
+      }
+      return disabled === 1
+    },
     editActionDisabled() {
       let disabled = 0
       disabled |= this.loading === true
@@ -231,8 +244,10 @@ export default {
     plugActionDisabled() {
       let disabled = 0
       disabled |= this.loading === true
-      disabled |= this.inputUnits.filter(unit => unit.checked === true).length !== this.inputSize
-      disabled |= this.outputUnits.filter(unit => unit.checked === true).length !== this.outputSize
+      if (!this.unitsActionDisabled && this.inputData !== null) {
+        disabled |= this.inputUnits.filter(unit => unit.checked === true).length !== this.inputSize
+        disabled |= this.outputUnits.filter(unit => unit.checked === true).length !== this.outputSize
+      }
       return disabled === 1
     },
     imageActionDisabled() {
@@ -315,27 +330,53 @@ export default {
     plugAction(event) {
       this.loading = true
       let { model, data } = this.inputData
-      let inputMatrix = []
-      let outputMatrix = []
-      for (let i = 0; i < data.length; i++) {
-        let inputRow = []
-        let outputRow = []
-        for (let j = 0; j < this.dataSize; j++) {
-          if (this.inputUnits.filter(unit => unit.key === j && unit.checked === true).length) {
-            inputRow.push(parseFloat(data[i][j]))
-          }
-          if (this.outputUnits.filter(unit => unit.key === j && unit.checked === true).length) {
-            outputRow.push(parseFloat(data[i][j]))
-          }
-        }
-        inputMatrix.push(inputRow)
-        outputMatrix.push(outputRow)
-      }
+      let inputTensor = null
+      let outputTensor = null
+      let inputMatrix = null
+      let outputMatrix = null
       let normalizationData = {
         inputUnitsNormalize: this.inputUnitsNormalize,
         outputUnitsNormalize: this.outputUnitsNormalize
       }
-      let inputTensor = tf.tensor2d(inputMatrix)
+      if ('datasetImages' in data) {
+        inputMatrix = data['datasetImages']
+        // inputMatrix = inputMatrix.slice(0, inputMatrix.length / 10)
+        let size = data.spriteWidth * data.spriteHeight * data.spriteChannels
+        let length = parseInt(inputMatrix.length / size)
+        let tensor = tf.tensor2d(inputMatrix, [length, size])
+        inputTensor = tensor.reshape([length, data.spriteWidth, data.spriteHeight, data.spriteChannels])
+      } else {
+        inputMatrix = []
+        for (let i = 0; i < data.length; i++) {
+          let inputRow = []
+          for (let j = 0; j < this.dataSize; j++) {
+            if (this.inputUnits.filter(unit => unit.key === j && unit.checked === true).length) {
+              inputRow.push(parseFloat(data[i][j]))
+            }
+          }
+          inputMatrix.push(inputRow)
+        }
+        inputTensor = tf.tensor2d(inputMatrix)
+      }
+      if ('datasetLabels' in data) {
+        outputMatrix = data['datasetLabels']
+        // outputMatrix = outputMatrix.slice(0, outputMatrix.length / 10)
+        let size = data['datasetLabelsSize']
+        let length = parseInt(outputMatrix.length / size)
+        outputTensor = tf.tensor2d(outputMatrix, [length, size])
+      } else {
+        outputMatrix = []
+        for (let i = 0; i < data.length; i++) {
+          let outputRow = []
+          for (let j = 0; j < this.dataSize; j++) {
+            if (this.outputUnits.filter(unit => unit.key === j && unit.checked === true).length) {
+              outputRow.push(parseFloat(data[i][j]))
+            }
+          }
+          outputMatrix.push(outputRow)
+        }
+        outputTensor = tf.tensor2d(outputMatrix)
+      }
       if (this.inputUnitsNormalize) {
         let max = inputTensor.max()
         let min = inputTensor.min()
@@ -344,7 +385,6 @@ export default {
         normalizationData.inputMax = max
         normalizationData.inputMin = min
       }
-      let outputTensor = tf.tensor2d(outputMatrix)
       if (this.outputUnitsNormalize) {
         let max = outputTensor.max()
         let min = outputTensor.min()
@@ -354,9 +394,9 @@ export default {
         normalizationData.outputMin = min
       }
       let loss = this.compilerLossSelected
-      try {
+      if (loss in tf.losses) {
         loss = tf.losses[loss]
-      } catch (e) {}
+      }
       model.compile({
         optimizer: this.compilerOptimizerSelected,
         loss: loss,
