@@ -134,6 +134,9 @@ export const mixin = {
         return value
       }
     },
+    percentageFormatter(value) {
+      return parseFloat(100 * value).toFixed(0) + '%'
+    },
     registerStore() {
       if (!('store' in this.component)) {
         this.component.store = {
@@ -163,8 +166,7 @@ export const mixin = {
         this.$store.unregisterModule(this.component.index)
       }
     },
-    validateData() {
-    },
+    validateData() {},
     loadData(data) {
       if (data) {
         this.serializable.concat(['output']).forEach(item => {

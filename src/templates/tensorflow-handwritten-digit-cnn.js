@@ -58,6 +58,7 @@ module.exports = [
       epochSize: 10,
       batchSize: 512,
       shuffle: true,
+      validationSplit: 0.16,
       compilerOptimizerSelected: 'adamax',
       compilerLossSelected: 'categoricalCrossentropy'
     }

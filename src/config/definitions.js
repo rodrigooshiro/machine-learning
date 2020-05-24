@@ -97,6 +97,23 @@ let definitions = {
         'ones',
         'zeros'
       ]
+    },
+    train: {
+      options: ['sgd', 'momentum', 'adagrad', 'adadelta', 'adam', 'adamax', 'rmsprop']
+    },
+    losses: {
+      options: [
+        'absoluteDifference',
+        'categoricalCrossentropy',
+        'computeWeightedLoss',
+        'cosineDistance',
+        'hingeLoss',
+        'huberLoss',
+        'logLoss',
+        'meanSquaredError',
+        'sigmoidCrossEntropy',
+        'softmaxCrossEntropy'
+      ]
     }
   }
 }

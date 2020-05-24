@@ -106,13 +106,13 @@
         </div>
 
         <div class="indexInput">
-          <label>Validation Spit</label>
+          <label>Validation Split</label>
           <b-form-spinbutton
-            v-model="validationSpit"
-            min="0.01"
-            max="1.00"
+            v-model="validationSplit"
+            min="0.0"
+            max="1.0"
             step="0.01"
-            placeholder="--"
+            :formatter-fn="percentageFormatter"
             :disabled="editActionDisabled"
           ></b-form-spinbutton>
         </div>
@@ -141,6 +141,7 @@
             :disabled="editActionDisabled"
           ></b-form-select>
         </div>
+
       </b-form>
     </b-collapse>
     <div style="margin-top: 8px;"></div>
@@ -178,18 +179,20 @@ import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import * as tf from '@tensorflow/tfjs'
 import jquery from 'jquery'
+import definitions from '../config/definitions.js'
 
 export default {
   name: 'TSModelCompiler',
   components: { ComponentLayout },
   mixins: [mixin],
   data() {
+    window.tf = tf
     let data = {
       serializable: [
         'shuffle',
         'epochSize',
         'batchSize',
-        'validationSpit',
+        'validationSplit',
         'inputUnits',
         'inputUnitsNormalize',
         'outputUnits',
@@ -201,17 +204,15 @@ export default {
       shuffle: true,
       epochSize: 0,
       batchSize: 0,
-      validationSpit: 0,
+      validationSplit: 0,
       inputUnits: [],
       inputUnitsNormalize: false,
       outputUnits: [],
       outputUnitsNormalize: false,
       compilerOptimizerSelected: null,
-      compilerOptimizerOptions: Object.keys(tf.train).sort(),
+      compilerOptimizerOptions: definitions.tf.train.options,
       compilerLossSelected: null,
-      compilerLossOptions: Object.keys(tf.losses)
-        .slice(1)
-        .sort(),
+      compilerLossOptions: definitions.tf.losses.options,
       fileChart: false
     }
     return this.importData(data)
@@ -352,9 +353,13 @@ export default {
         normalizationData.outputMax = max
         normalizationData.outputMin = min
       }
+      let loss = this.compilerLossSelected
+      try {
+        loss = tf.losses[loss]
+      } catch (e) {}
       model.compile({
         optimizer: this.compilerOptimizerSelected,
-        loss: this.compilerLossSelected,
+        loss: loss,
         metrics: ['mse']
       })
       this.fileChart = true
@@ -363,7 +368,7 @@ export default {
           batchSize: this.batchSize,
           epochs: this.epochSize,
           shuffle: this.shuffle,
-          validationSpit: this.validationSpit,
+          validationSplit: this.validationSplit,
           callbacks: global.tfvis.show.fitCallbacks(this.$refs['draw'], ['loss', 'mse'], {
             width: 700,
             height: 200,

@@ -101,7 +101,7 @@ module.exports = [
     data: {
       epochSize: 50,
       batchSize: 32,
-      validationSpit: 0.5,
+      validationSplit: 0.1,
       shuffle: true,
       inputUnits: [
         {
