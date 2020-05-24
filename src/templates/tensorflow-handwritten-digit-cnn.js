@@ -30,7 +30,7 @@ module.exports = [
       "its a one, then the second number will be a one and so on... It's like turning on and off the " +
       'numbers of the array, so the **neural network** should be able to turn one of its **10** ' +
       'outputs (as its a classifier) to represent a digit. There are 65000 **groups** of 10 numbers ' +
-      'that describing digits in the image from above.',
+      'describing the digits in the image from above.',
     data: {
       remoteFile: 'https://storage.googleapis.com/learnjs-data/model-builder/mnist_labels_uint8'
     }
@@ -40,7 +40,7 @@ module.exports = [
     input_ref: 'pipeline_2',
     description:
       'We define **10** numbers to represent a **label** (as there are 10 possible digits), and then ' +
-      'we **reference** the pipeline 1, so it will have this information added to it.',
+      'we **reference** the output of pipeline 1, so it will have this information added to it.',
     type: 'DatasetLabel',
     data: {
       labelSize: 10,
