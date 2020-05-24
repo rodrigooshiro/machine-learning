@@ -182,9 +182,10 @@
  */
 import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
-import * as tf from '@tensorflow/tfjs'
 import jquery from 'jquery'
 import definitions from '../config/definitions.js'
+const tf = global.tf
+const tfvis = global.tfvis
 
 export default {
   name: 'TSModelCompiler',
@@ -409,7 +410,7 @@ export default {
           epochs: this.epochSize,
           shuffle: this.shuffle,
           validationSplit: this.validationSplit,
-          callbacks: global.tfvis.show.fitCallbacks(this.$refs['draw'], ['loss', 'mse'], {
+          callbacks: tfvis.show.fitCallbacks(this.$refs['draw'], ['loss', 'mse'], {
             width: 700,
             height: 200,
             callbacks: ['onEpochEnd']

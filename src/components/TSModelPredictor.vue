@@ -68,8 +68,9 @@
  */
 import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
-import * as tf from '@tensorflow/tfjs'
 import jquery from 'jquery'
+const tf = global.tf
+const tfvis = global.tfvis
 
 export default {
   name: 'TSModelPredictor',
@@ -219,7 +220,7 @@ export default {
           return { x: val, y: outputValues[i] }
         })
 
-        global.tfvis.render.scatterplot(
+        tfvis.render.scatterplot(
           this.$refs['draw'],
           { values: [originalValues, predictedValues], series: ['original', 'predicted'] },
           {

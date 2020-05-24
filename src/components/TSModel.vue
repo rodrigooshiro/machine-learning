@@ -311,10 +311,11 @@
  */
 import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
-import * as tf from '@tensorflow/tfjs'
 import ModelView from 'tfjs-model-view'
 import jquery from 'jquery'
 import definitions from '../config/definitions.js'
+const tf = global.tf
+const tfvis = global.tfvis
 
 export default {
   name: 'TSModel',
@@ -515,7 +516,7 @@ export default {
       }
     },
     onShowModal() {
-      global.tfvis.show.modelSummary(this.$refs['draw'], this.output.model)
+      tfvis.show.modelSummary(this.$refs['draw'], this.output.model)
     },
     validateData() {
       let keys = [

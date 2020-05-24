@@ -91,8 +91,8 @@
  */
 import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
-import * as tf from '@tensorflow/tfjs'
 import jquery from 'jquery'
+const tf = global.tf
 
 export default {
   name: 'DatasetSpriteViewer',
