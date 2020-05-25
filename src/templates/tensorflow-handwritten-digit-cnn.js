@@ -49,7 +49,7 @@ module.exports = [
   },
   {
     index: 'pipeline_4',
-    type: 'TSModel',
+    type: 'TSModelBuilder',
     title: 'Define the model architecture',
     description:
       "This is how the neural network is defined, it's important to have the last layer with **10**, " +

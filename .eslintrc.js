@@ -11,6 +11,7 @@ module.exports = {
     "sourceType": "module"
   },
   "rules": {
+    "no-eval": 0,
     "space-before-function-paren": 0,
     "arrow-parens": 0,
     "generator-star-spacing": 0

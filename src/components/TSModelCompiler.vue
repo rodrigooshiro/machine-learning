@@ -184,6 +184,7 @@ import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import jquery from 'jquery'
 import definitions from '../config/definitions.js'
+import Worker from 'worker-loader!../config/worker.js'
 const tf = global.tf
 const tfvis = global.tfvis
 
@@ -394,42 +395,46 @@ export default {
         normalizationData.outputMax = max
         normalizationData.outputMin = min
       }
-      let loss = this.compilerLossSelected
-      if (loss in tf.losses) {
-        loss = tf.losses[loss]
-      }
-      model.compile({
-        optimizer: this.compilerOptimizerSelected,
-        loss: loss,
-        metrics: ['mse']
+
+      let callbacks = tfvis.show.fitCallbacks(this.$refs['draw'], ['loss', 'mse'], {
+        width: 700,
+        height: 200,
+        callbacks: ['onEpochEnd']
       })
-      this.fileChart = true
-      model
-        .fit(inputTensor, outputTensor, {
-          batchSize: this.batchSize,
-          epochs: this.epochSize,
-          shuffle: this.shuffle,
-          validationSplit: this.validationSplit,
-          callbacks: tfvis.show.fitCallbacks(this.$refs['draw'], ['loss', 'mse'], {
-            width: 700,
-            height: 200,
-            callbacks: ['onEpochEnd']
-          })
-        })
-        .then(
-          function(train) {
-            inputTensor.dispose()
-            outputTensor.dispose()
-            this.output = {
-              ...this.inputData,
-              train: train,
-              inputMatrix: inputMatrix,
-              outputMatrix: outputMatrix,
-              normalizationData: normalizationData
-            }
-            this.loading = false
-          }.bind(this)
-        )
+
+      let worker = new Worker()
+      worker.onmessage = function(event) {
+        if (event.data[0] === 'onEnd') {
+          let train = event.data[1]
+          tf.loadLayersModel('indexeddb://model').then(
+            function(model) {
+              this.inputData.model = model
+              this.output = {
+                ...this.inputData,
+                train: train,
+                inputMatrix: inputMatrix,
+                outputMatrix: outputMatrix,
+                normalizationData: normalizationData
+              }
+              this.loading = false
+              worker.terminate()
+            }.bind(this)
+          )
+        } else {
+          this.fileChart = true
+          callbacks[event.data[0]](event.data[1], event.data[2])
+        }
+      }.bind(this)
+
+      let inputTensorJSON = { data: inputTensor.dataSync(), shape: inputTensor.shape }
+      let outputTensorJSON = { data: outputTensor.dataSync(), shape: outputTensor.shape }
+      model.save('indexeddb://model').then(
+        function() {
+          worker.postMessage(['compiler', this.$data, inputTensorJSON, outputTensorJSON])
+          inputTensor.dispose()
+          outputTensor.dispose()
+        }.bind(this)
+      )
     }
   }
 }

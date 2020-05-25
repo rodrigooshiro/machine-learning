@@ -26,8 +26,10 @@ import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 import 'file-loader?name=tf.min.js.map!@tensorflow/tfjs/dist/tf.min.js.map'
+import 'file-loader?name=tf.min.js!@tensorflow/tfjs/dist/tf.min.js'
 import 'script-loader!@tensorflow/tfjs/dist/tf.min.js'
 import 'file-loader?name=tfjs-vis.umd.min.js.map!@tensorflow/tfjs-vis/dist/tfjs-vis.umd.min.js.map'
+import 'file-loader?name=tfjs-vis.umd.min.js!@tensorflow/tfjs-vis/dist/tfjs-vis.umd.min.js'
 import 'script-loader!@tensorflow/tfjs-vis/dist/tfjs-vis.umd.min.js'
 
 Vue.use(Vuex)

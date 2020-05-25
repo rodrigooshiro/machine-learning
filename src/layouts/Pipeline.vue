@@ -94,7 +94,7 @@ export default {
     DatasetTableViewer: () => import('../components/DatasetTableViewer'),
     DatasetSpriteViewer: () => import('../components/DatasetSpriteViewer'),
     DatasetLabel: () => import('../components/DatasetLabel'),
-    TSModel: () => import('../components/TSModel'),
+    TSModelBuilder: () => import('../components/TSModelBuilder'),
     TSModelCompiler: () => import('../components/TSModelCompiler'),
     TSModelPredictor: () => import('../components/TSModelPredictor')
   },
@@ -141,7 +141,7 @@ export default {
         'DatasetTableViewer',
         'DatasetSpriteViewer',
         'DatasetLabel',
-        'TSModel',
+        'TSModelBuilder',
         'TSModelCompiler',
         'TSModelPredictor'
       ],

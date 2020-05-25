@@ -26,7 +26,7 @@ module.exports = [
   },
   {
     index: 'pipeline_2',
-    type: 'TSModel',
+    type: 'TSModelBuilder',
     title: 'Autoencoder Model',
     description:
       'In this model, the input shape of 4 will be **reduced** to 3, then it ' +

@@ -314,11 +314,12 @@ import { mixin } from './mixin'
 import ModelView from 'tfjs-model-view'
 import jquery from 'jquery'
 import definitions from '../config/definitions.js'
+import Worker from 'worker-loader!../config/worker.js'
 const tf = global.tf
 const tfvis = global.tfvis
 
 export default {
-  name: 'TSModel',
+  name: 'TSModelBuilder',
   components: { ComponentLayout },
   mixins: [mixin],
   data() {
@@ -570,76 +571,36 @@ export default {
     },
     plugAction(event) {
       this.loading = true
-      let model = tf.sequential()
-      for (let i = 0; i < this.layerSize; i++) {
-        let layer = {}
-        if (i === 0) {
-          if (this.inputShape.length === 1) {
-            layer.inputShape = this.inputShape[0]
-          } else {
-            layer.inputShape = this.inputShape
-          }
+      let worker = new Worker()
+      worker.onmessage = function(event) {
+        if (event.data[0] === 'onEnd') {
+          tf.loadLayersModel('indexeddb://model').then(
+            function(model) {
+              this.fileChart = true
+              this.output = {
+                model: model,
+                data: this.inputData,
+                indexLabel: this.indexLabel
+              }
+              let modelView = new ModelView(model, {
+                width: 765,
+                height: 465,
+                appendImmediately: false,
+                renderer: 'd3',
+                radius: 10,
+                layerPadding: 100,
+                printStats: false,
+                renderLinks: true
+              })
+              jquery(this.$refs['graph']).empty()
+              this.$refs['graph'].appendChild(modelView.getDOMElement())
+              this.loading = false
+              worker.terminate()
+            }.bind(this)
+          )
         }
-        if (this.units[i] !== 0) {
-          layer.units = this.units[i]
-        }
-        if (this.kernelSize[i] !== 0) {
-          layer.kernelSize = this.kernelSize[i]
-        }
-        if (this.filters[i] !== -1) {
-          layer.filters = this.filters[i]
-        }
-        if (this.strides[i].length === 1) {
-          layer.strides = this.strides[i][0]
-        }
-        if (this.strides[i].length > 1) {
-          layer.strides = this.strides[i]
-        }
-        if (this.poolSize[i].length === 1) {
-          layer.poolSize = this.poolSize[i][0]
-        }
-        if (this.poolSize[i].length > 1) {
-          layer.poolSize = this.poolSize[i]
-        }
-        if (this.activation[i] !== '--') {
-          layer.activation = this.activation[i]
-        }
-        if (this.kernelInitializer[i] !== '--') {
-          layer.kernelInitializer = this.kernelInitializer[i]
-        }
-        if (this.biasInitializer[i] !== '--') {
-          layer.useBias = true
-          layer.biasInitializer = this.biasInitializer[i]
-        }
-        model.add(tf.layers[this.layerName[i]](layer))
-      }
-      model.inputData = this.inputData
-      this.fileChart = true
-      this.output = {
-        model: model,
-        data: this.inputData,
-        indexLabel: this.indexLabel
-      }
-
-      let modelView = new ModelView(model, {
-        width: 765,
-        height: 465,
-        appendImmediately: false,
-        renderer: 'd3',
-        radius: 10,
-        layerPadding: 100,
-        printStats: false,
-        renderLinks: true
-      })
-      jquery(this.$refs['graph']).empty()
-      this.$refs['graph'].appendChild(modelView.getDOMElement())
-
-      setTimeout(
-        function() {
-          this.loading = false
-        }.bind(this),
-        1
-      )
+      }.bind(this)
+      worker.postMessage(['builder', this.$data])
     }
   }
 }

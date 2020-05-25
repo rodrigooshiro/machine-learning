@@ -17,16 +17,19 @@
 const express = require('express')
 const router = express.Router()
 
-router.all('/', function (req, res, next) {
+router.all('/', function(req, res, next) {
+  console.log('/')
   res.send('OK')
 })
 
-module.exports = function (app) {
+module.exports = function(app) {
   if (app) {
-    app.use('/api', router)
+    app.use('/machine-learning/api', router)
   } else if (process.env.VUE_APP_BACKEND_DISABLED === undefined) {
     app = express()
-    app.use('/api', router)
-    app.listen(8080, () => console.log('Express app listening at http://localhost:8080/api/'))
+    app.use('/machine-learning/api', router)
+    app.listen(8080, () =>
+      console.log('Express app listening at http://localhost:8080/machine-learning/api/')
+    )
   }
 }

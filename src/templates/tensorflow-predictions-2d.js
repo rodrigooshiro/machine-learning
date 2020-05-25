@@ -77,7 +77,7 @@ module.exports = [
   },
   {
     index: 'pipeline_2',
-    type: 'TSModel',
+    type: 'TSModelBuilder',
     title: 'Define the model architecture',
     input_ref: 'pipeline_1',
     data: {
