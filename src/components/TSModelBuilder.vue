@@ -574,7 +574,10 @@ export default {
       this.$options.sockets.onerror = function() {
         let worker = new Worker('worker.js')
         worker.onmessage = function(event) {
-          if (event.data[0] === 'onEnd') {
+          if (event.data[0] === 'onEnd' && event.error) {
+            this.loading = false
+            worker.terminate()
+          } else if (event.data[0] === 'onEnd') {
             tf.loadLayersModel('indexeddb://model').then(
               function(model) {
                 this.fileChart = true
@@ -631,14 +634,18 @@ export default {
               })
               jquery(this.$refs['graph']).empty()
               this.$refs['graph'].appendChild(modelView.getDOMElement())
-              this.loading = false
-              delete this.$options.sockets.onerror
-              delete this.$options.sockets.onopen
-              delete this.$options.sockets.onmessage
               this.$disconnect()
             }.bind(this)
           )
         }
+      }.bind(this)
+
+      this.$options.sockets.onclose = function() {
+        this.loading = false
+        delete this.$options.sockets.onerror
+        delete this.$options.sockets.onopen
+        delete this.$options.sockets.onclose
+        delete this.$options.sockets.onmessage
       }.bind(this)
 
       let websocket = new URL(process.env.VUE_APP_WEBSOCKET_API).hostname

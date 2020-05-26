@@ -21,7 +21,7 @@ const fileUrl = require('file-url')
 const WebSocket = require('ws')
 const definitions = require('./config/definitions')
 const router = express.Router()
-const wss = new WebSocket.Server({ port: 8001 })
+const wss = new WebSocket.Server({ maxPayload: -1, port: 8001 })
 const upload = multer({
   storage: multer.diskStorage({
     destination: function(req, file, cb) {
@@ -81,6 +81,10 @@ wss.on('connection', ws => {
     if (event.data[0] === 'compiler') {
       self.compiler(ws, event.data[1], event.data[2], event.data[3])
     }
+  })
+  ws.on('error', err => {
+    ws.send(JSON.stringify({ data: ['onEnd'], error: err.message }))
+    console.error(err.message)
   })
 })
 

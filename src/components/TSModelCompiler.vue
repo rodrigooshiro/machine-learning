@@ -422,7 +422,10 @@ export default {
       this.$options.sockets.onerror = function() {
         let worker = new Worker('worker.js')
         worker.onmessage = function(event) {
-          if (event.data[0] === 'onEnd') {
+          if (event.data[0] === 'onEnd' && event.error) {
+            this.loading = false
+            worker.terminate()
+          } else if (event.data[0] === 'onEnd') {
             let train = event.data[1]
             tf.loadLayersModel('indexeddb://model').then(
               function(model) {
@@ -474,10 +477,6 @@ export default {
                 outputMatrix: outputMatrix,
                 normalizationData: normalizationData
               }
-              this.loading = false
-              delete this.$options.sockets.onerror
-              delete this.$options.sockets.onopen
-              delete this.$options.sockets.onmessage
               this.$disconnect()
             }.bind(this)
           )
@@ -485,6 +484,14 @@ export default {
           this.fileChart = true
           callbacks[event.data[0]](event.data[1], event.data[2])
         }
+      }.bind(this)
+
+      this.$options.sockets.onclose = function() {
+        this.loading = false
+        delete this.$options.sockets.onerror
+        delete this.$options.sockets.onopen
+        delete this.$options.sockets.onmessage
+        delete this.$options.sockets.onclose
       }.bind(this)
 
       let websocket = new URL(process.env.VUE_APP_WEBSOCKET_API).hostname
