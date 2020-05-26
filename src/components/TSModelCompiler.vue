@@ -486,8 +486,13 @@ export default {
           callbacks[event.data[0]](event.data[1], event.data[2])
         }
       }.bind(this)
-
-      this.$connect('ws://localhost:8001', { format: 'json' })
+      let protocol = new URL(window.location.href).protocol
+      let hostname = new URL(window.location.href).hostname
+      if (protocol === 'http:') {
+        this.$connect(`ws://${hostname}:8001`, { format: 'json' })
+      } else if (protocol === 'https:') {
+        this.$connect(`wss://${hostname}:8001`, { format: 'json' })
+      }
     }
   }
 }
