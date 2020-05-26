@@ -384,21 +384,54 @@ export default {
         }
         outputTensor = this.$tf.tensor2d(outputMatrix)
       }
+      let dataSync = null
       if (this.inputUnitsNormalize) {
         let max = inputTensor.max()
         let min = inputTensor.min()
         let tensor = inputTensor.sub(min).div(max.sub(min))
         inputTensor = tensor
-        normalizationData.inputMax = max
-        normalizationData.inputMin = min
+        dataSync = max.dataSync()
+        normalizationData.inputMax = {
+          data: {
+            type: dataSync.constructor.name,
+            data: Object.values(dataSync)
+          },
+          shape: dataSync.shape
+        }
+        dataSync = min.dataSync()
+        normalizationData.inputMin = {
+          data: {
+            type: dataSync.constructor.name,
+            data: Object.values(dataSync)
+          },
+          shape: dataSync.shape
+        }
+        max.dispose()
+        min.dispose()
       }
       if (this.outputUnitsNormalize) {
         let max = outputTensor.max()
         let min = outputTensor.min()
         let tensor = outputTensor.sub(min).div(max.sub(min))
         outputTensor = tensor
-        normalizationData.outputMax = max
-        normalizationData.outputMin = min
+        dataSync = max.dataSync()
+        normalizationData.outputMax = {
+          data: {
+            type: dataSync.constructor.name,
+            data: Object.values(dataSync)
+          },
+          shape: dataSync.shape
+        }
+        dataSync = min.dataSync()
+        normalizationData.outputMin = {
+          data: {
+            type: dataSync.constructor.name,
+            data: Object.values(dataSync)
+          },
+          shape: dataSync.shape
+        }
+        max.dispose()
+        min.dispose()
       }
 
       let callbacks = this.$tfvis.show.fitCallbacks(this.$refs['draw'], ['loss', 'mse'], {
@@ -428,8 +461,8 @@ export default {
         let worker = new Worker('worker.js')
         worker.onmessage = function(event) {
           if (event.data[0] === 'onEnd' && event.error) {
-            this.loading = false
             worker.terminate()
+            this.loading = false
           } else if (event.data[0] === 'onEnd') {
             let train = event.data[1]
             this.$tf.loadLayersModel('indexeddb://model').then(
@@ -442,8 +475,8 @@ export default {
                   outputTensorJSON: outputTensorJSON,
                   normalizationData: normalizationData
                 }
-                this.loading = false
                 worker.terminate()
+                this.loading = false
               }.bind(this)
             )
           } else {

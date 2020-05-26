@@ -69,6 +69,18 @@ const self = {
     )
     await output.model.save(fileUrl('model'))
     ws.send(JSON.stringify({ data: ['onEnd', output.train] }))
+  },
+  predictor: async function(ws, data, inputTensorJSON, normalizationData) {
+    let model = await tf.loadLayersModel(fileUrl('model/model.json'))
+    let output = await definitions.tasks.predictor(
+      global,
+      tf,
+      model,
+      data,
+      inputTensorJSON,
+      normalizationData
+    )
+    ws.send(JSON.stringify({ data: ['onEnd', output.predictTensorJSON] }))
   }
 }
 
@@ -80,6 +92,9 @@ wss.on('connection', ws => {
     }
     if (event.data[0] === 'compiler') {
       self.compiler(ws, event.data[1], event.data[2], event.data[3])
+    }
+    if (event.data[0] === 'predictor') {
+      self.predictor(ws, event.data[1], event.data[2], event.data[3])
     }
   })
   ws.on('error', err => {

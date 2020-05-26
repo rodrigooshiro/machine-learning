@@ -125,6 +125,14 @@ export default {
       if (this.layerSize > next) {
         this.layerSize = next
       }
+    },
+    loading(next, prev) {
+      if (next === false) {
+        delete this.$options.sockets.onerror
+        delete this.$options.sockets.onopen
+        delete this.$options.sockets.onmessage
+        delete this.$options.sockets.onclose
+      }
     }
   },
   methods: {
@@ -142,21 +150,8 @@ export default {
       this.loadData(this.data)
       this.loadData(this.component.data)
     },
-    plugAction(event) {
-      this.loading = true
-      let {
-        model,
-        data,
-        inputTensorJSON,
-        outputTensorJSON,
-        indexLabel,
-        normalizationData
-      } = this.inputData
-
-      let predictor = this.$tf.sequential()
-      for (let i = 0; i < this.layerSize; i++) {
-        predictor.add(model.layers[i])
-      }
+    plugActionPost(predictTensorJSON) {
+      let { data, inputTensorJSON, outputTensorJSON, indexLabel, normalizationData } = this.inputData
 
       let values = null
       let inputMatrix = null
@@ -165,8 +160,14 @@ export default {
 
       if (normalizationData.inputUnitsNormalize) {
         let { inputMax, inputMin } = normalizationData
-        values = inputTensor.mul(inputMax.sub(inputMin)).add(inputMin)
+        let maxData = global[inputMax.data['type']].from(inputMax.data['data'])
+        let maxTensor = this.$tf.tensor(maxData, inputMax.shape)
+        let minData = global[inputMin.data['type']].from(inputMin.data['data'])
+        let minTensor = this.$tf.tensor(minData, inputMin.shape)
+        values = inputTensor.mul(maxTensor.sub(minTensor)).add(minTensor)
         inputMatrix = values.arraySync()
+        maxTensor.dispose()
+        minTensor.dispose()
       } else {
         values = inputTensor
         inputMatrix = values.arraySync()
@@ -177,15 +178,21 @@ export default {
       let outputTensor = this.$tf.tensor(outputData, outputTensorJSON.shape)
 
       let predictMatrix = null
-      let predictTensor = predictor.predict(inputTensor)
+      let predictData = global[predictTensorJSON.data['type']].from(predictTensorJSON.data['data'])
+      let predictTensor = this.$tf.tensor(predictData, predictTensorJSON.shape)
 
       if (normalizationData.outputUnitsNormalize) {
         let { outputMax, outputMin } = normalizationData
-        values = outputTensor.mul(outputMax.sub(outputMin)).add(outputMin)
+        let maxData = global[outputMax.data['type']].from(outputMax.data['data'])
+        let maxTensor = this.$tf.tensor(maxData, outputMax.shape)
+        let minData = global[outputMin.data['type']].from(outputMin.data['data'])
+        let minTensor = this.$tf.tensor(minData, outputMin.shape)
+        values = outputTensor.mul(maxTensor.sub(minTensor)).add(minTensor)
         outputMatrix = values.arraySync()
-
-        values = predictTensor.mul(outputMax.sub(outputMin)).add(outputMin)
+        values = predictTensor.mul(maxTensor.sub(minTensor)).add(minTensor)
         predictMatrix = values.arraySync()
+        maxTensor.dispose()
+        minTensor.dispose()
       } else {
         values = outputTensor
         outputMatrix = values.arraySync()
@@ -242,8 +249,57 @@ export default {
       } else {
         this.fileChart = false
       }
+    },
+    plugAction(event) {
+      this.loading = true
+      let { model, inputTensorJSON, normalizationData } = this.inputData
 
-      this.loading = false
+      this.$options.sockets.onerror = function() {
+        let worker = new Worker('worker.js')
+        worker.onmessage = function(event) {
+          if (event.data[0] === 'onEnd' && event.error) {
+            worker.terminate()
+            this.loading = false
+          } else if (event.data[0] === 'onEnd') {
+            this.plugActionPost(event.data[1])
+            worker.terminate()
+            this.loading = false
+          }
+        }.bind(this)
+        model.save('indexeddb://model').then(
+          function() {
+            worker.postMessage(['predictor', this.$data, inputTensorJSON, normalizationData])
+          }.bind(this)
+        )
+      }.bind(this)
+
+      this.$options.sockets.onopen = function() {
+        model.save(this.$tf.io.browserHTTPRequest('./api/model')).then(
+          function() {
+            this.$socket.sendObj({ data: ['predictor', this.$data, inputTensorJSON, normalizationData] })
+          }.bind(this)
+        )
+      }.bind(this)
+
+      this.$options.sockets.onmessage = function(message) {
+        let event = JSON.parse(message.data)
+        if (event.data[0] === 'onEnd') {
+          this.plugActionPost(event.data[1])
+          this.$disconnect()
+        }
+      }.bind(this)
+
+      this.$options.sockets.onclose = function() {
+        this.loading = false
+      }.bind(this)
+
+      let websocket = new URL(process.env.VUE_APP_WEBSOCKET_API).hostname
+      let hostname = new URL(window.location.href).hostname
+      if (websocket === hostname) {
+        this.$connect()
+      } else {
+        this.$options.sockets.onerror()
+      }
     }
   }
 }

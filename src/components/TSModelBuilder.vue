@@ -581,8 +581,8 @@ export default {
         let worker = new Worker('worker.js')
         worker.onmessage = function(event) {
           if (event.data[0] === 'onEnd' && event.error) {
-            this.loading = false
             worker.terminate()
+            this.loading = false
           } else if (event.data[0] === 'onEnd') {
             this.$tf.loadLayersModel('indexeddb://model').then(
               function(model) {
@@ -604,8 +604,8 @@ export default {
                 })
                 jquery(this.$refs['graph']).empty()
                 this.$refs['graph'].appendChild(modelView.getDOMElement())
-                this.loading = false
                 worker.terminate()
+                this.loading = false
               }.bind(this)
             )
           }
