@@ -14,13 +14,9 @@
  * limitations under the License.
  * =============================================================================
  */
-if (global === undefined) {
-  global = {
-    window: self
-  }
-} else {
+try {
   global.window = self
-}
+} catch (e) {}
 self.importScripts('tf.min.js')
 self.importScripts('definitions.js')
 
