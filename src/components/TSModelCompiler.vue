@@ -486,13 +486,13 @@ export default {
           callbacks[event.data[0]](event.data[1], event.data[2])
         }
       }.bind(this)
-      let protocol = new URL(window.location.href).protocol
+
+      let websocket = new URL(process.env.VUE_APP_WEBSOCKET_API).hostname
       let hostname = new URL(window.location.href).hostname
-      hostname = 'local'
-      if (protocol === 'http:') {
-        this.$connect(`ws://${hostname}:8001`, { format: 'json' })
-      } else if (protocol === 'https:') {
-        this.$connect(`wss://${hostname}:8001`, { format: 'json' })
+      if (websocket === hostname) {
+        this.$connect()
+      } else {
+        this.$options.sockets.onerror()
       }
     }
   }

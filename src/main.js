@@ -38,8 +38,9 @@ import 'script-loader!@tensorflow/tfjs-vis/dist/tfjs-vis.umd.min.js'
 Vue.use(Vuex)
 Vue.use(VueAxios, axios)
 Vue.use(VueRouter)
-Vue.use(VueNativeSock, 'ws://localhost', {
-  connectManually: true
+Vue.use(VueNativeSock, process.env.VUE_APP_WEBSOCKET_API, {
+  connectManually: true,
+  format: 'json'
 })
 Vue.use(BootstrapVue)
 Vue.use(IconsPlugin)
