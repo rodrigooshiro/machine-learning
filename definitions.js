@@ -195,6 +195,44 @@
         })
 
         return { model, train }
+      },
+      predictor: async function(scope, tf, model, data, inputTensorJSON, normalizationData) {
+        let predictor = tf.sequential()
+        for (let i = 0; i < data.layerSize; i++) {
+          predictor.add(model.layers[i])
+        }
+
+        let values = null
+        let inputMatrix = null
+        let inputData = scope[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
+        let inputTensor = tf.tensor(inputData, inputTensorJSON.shape)
+
+        if (normalizationData.inputUnitsNormalize) {
+          let { inputMax, inputMin } = normalizationData
+          let maxData = scope[inputMax.data['type']].from(inputMax.data['data'])
+          let maxTensor = tf.tensor(maxData, inputMax.shape)
+          let minData = scope[inputMin.data['type']].from(inputMin.data['data'])
+          let minTensor = tf.tensor(minData, inputMin.shape)
+          values = inputTensor.mul(maxTensor.sub(minTensor)).add(minTensor)
+          inputMatrix = values.arraySync()
+          maxTensor.dispose()
+          minTensor.dispose()
+        } else {
+          values = inputTensor
+          inputMatrix = values.arraySync()
+        }
+
+        let predictTensor = predictor.predict(inputTensor)
+        let predictTensorData = predictTensor.dataSync()
+        let predictTensorJSON = {
+          data: {
+            type: predictTensorData.constructor.name,
+            data: Object.values(predictTensorData)
+          },
+          shape: predictTensor.shape
+        }
+
+        return { predictTensorJSON }
       }
     }
   }

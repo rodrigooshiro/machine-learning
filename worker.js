@@ -47,11 +47,27 @@ self.compiler = async function(data, inputTensorJSON, outputTensorJSON) {
   self.postMessage(['onEnd', output.train])
 }
 
+self.predictor = async function(data, inputTensorJSON, normalizationData) {
+  let model = await tf.loadLayersModel('indexeddb://model')
+  let output = await definitions.tasks.predictor(
+    self,
+    tf,
+    model,
+    data,
+    inputTensorJSON,
+    normalizationData
+  )
+  self.postMessage(['onEnd', output.predictTensorJSON])
+}
+
 self.addEventListener('message', function(event) {
   if (event.data[0] === 'builder') {
     self.builder(event.data[1])
   }
   if (event.data[0] === 'compiler') {
     self.compiler(event.data[1], event.data[2], event.data[3])
+  }
+  if (event.data[0] === 'predictor') {
+    self.predictor(event.data[1], event.data[2], event.data[3])
   }
 })
