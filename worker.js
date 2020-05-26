@@ -14,11 +14,8 @@
  * limitations under the License.
  * =============================================================================
  */
-try {
-  global = self
+if (typeof window === 'undefined') {
   window = self
-} catch (e) {
-  console.log(e)
 }
 self.importScripts('tf.min.js')
 self.importScripts('definitions.js')
@@ -35,9 +32,17 @@ self.builder = async function(data) {
 
 self.compiler = async function(data, inputTensorJSON, outputTensorJSON) {
   let model = await tf.loadLayersModel('indexeddb://model')
-  let output = await definitions.tasks.compiler(self, tf, model, data, inputTensorJSON, outputTensorJSON, {
-    onEpochEnd: self.onEpochEnd
-  })
+  let output = await definitions.tasks.compiler(
+    self,
+    tf,
+    model,
+    data,
+    inputTensorJSON,
+    outputTensorJSON,
+    {
+      onEpochEnd: self.onEpochEnd
+    }
+  )
   await output.model.save('indexeddb://model')
   self.postMessage(['onEnd', output.train])
 }
