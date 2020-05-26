@@ -15,8 +15,11 @@
  * =============================================================================
  */
 try {
-  global.window = self
-} catch (e) {}
+  global = self
+  window = self
+} catch (e) {
+  console.log(e)
+}
 self.importScripts('tf.min.js')
 self.importScripts('definitions.js')
 
