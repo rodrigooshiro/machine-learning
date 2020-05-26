@@ -5,7 +5,6 @@ module.exports = {
     before: api,
     port: 8000
   },
-  outputDir: 'build',
   publicPath: '/machine-learning/',
   runtimeCompiler: true
 }
