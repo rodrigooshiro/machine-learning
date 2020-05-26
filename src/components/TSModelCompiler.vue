@@ -184,8 +184,6 @@ import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import jquery from 'jquery'
 import * as definitions from '../config/definitions.js'
-const tf = global.tf
-const tfvis = global.tfvis
 
 export default {
   name: 'TSModelCompiler',
@@ -293,6 +291,14 @@ export default {
       if (next === false) {
         this.trashAction()
       }
+    },
+    loading(next, prev) {
+      if (next === false) {
+        delete this.$options.sockets.onerror
+        delete this.$options.sockets.onopen
+        delete this.$options.sockets.onmessage
+        delete this.$options.sockets.onclose
+      }
     }
   },
   methods: {
@@ -344,7 +350,7 @@ export default {
         // inputMatrix = inputMatrix.slice(0, inputMatrix.length / 10)
         let size = data.spriteWidth * data.spriteHeight * data.spriteChannels
         let length = parseInt(inputMatrix.length / size)
-        let tensor = tf.tensor2d(inputMatrix, [length, size])
+        let tensor = this.$tf.tensor2d(inputMatrix, [length, size])
         inputTensor = tensor.reshape([length, data.spriteWidth, data.spriteHeight, data.spriteChannels])
       } else {
         inputMatrix = []
@@ -357,14 +363,14 @@ export default {
           }
           inputMatrix.push(inputRow)
         }
-        inputTensor = tf.tensor2d(inputMatrix)
+        inputTensor = this.$tf.tensor2d(inputMatrix)
       }
       if ('datasetLabels' in data) {
         outputMatrix = data['datasetLabels']
         // outputMatrix = outputMatrix.slice(0, outputMatrix.length / 10)
         let size = data['datasetLabelsSize']
         let length = parseInt(outputMatrix.length / size)
-        outputTensor = tf.tensor2d(outputMatrix, [length, size])
+        outputTensor = this.$tf.tensor2d(outputMatrix, [length, size])
       } else {
         outputMatrix = []
         for (let i = 0; i < data.length; i++) {
@@ -376,7 +382,7 @@ export default {
           }
           outputMatrix.push(outputRow)
         }
-        outputTensor = tf.tensor2d(outputMatrix)
+        outputTensor = this.$tf.tensor2d(outputMatrix)
       }
       if (this.inputUnitsNormalize) {
         let max = inputTensor.max()
@@ -395,7 +401,7 @@ export default {
         normalizationData.outputMin = min
       }
 
-      let callbacks = tfvis.show.fitCallbacks(this.$refs['draw'], ['loss', 'mse'], {
+      let callbacks = this.$tfvis.show.fitCallbacks(this.$refs['draw'], ['loss', 'mse'], {
         width: 700,
         height: 200,
         callbacks: ['onEpochEnd']
@@ -409,7 +415,6 @@ export default {
         },
         shape: inputTensor.shape
       }
-      window.tensor = inputTensorJSON
       let outputTensorData = outputTensor.dataSync()
       let outputTensorJSON = {
         data: {
@@ -427,14 +432,14 @@ export default {
             worker.terminate()
           } else if (event.data[0] === 'onEnd') {
             let train = event.data[1]
-            tf.loadLayersModel('indexeddb://model').then(
+            this.$tf.loadLayersModel('indexeddb://model').then(
               function(model) {
                 this.inputData.model = model
                 this.output = {
                   ...this.inputData,
                   train: train,
-                  inputMatrix: inputMatrix,
-                  outputMatrix: outputMatrix,
+                  inputTensorJSON: inputTensorJSON,
+                  outputTensorJSON: outputTensorJSON,
                   normalizationData: normalizationData
                 }
                 this.loading = false
@@ -456,7 +461,7 @@ export default {
       }.bind(this)
 
       this.$options.sockets.onopen = function() {
-        model.save(tf.io.browserHTTPRequest('./api/model')).then(
+        model.save(this.$tf.io.browserHTTPRequest('./api/model')).then(
           function() {
             this.$socket.sendObj({ data: ['compiler', this.$data, inputTensorJSON, outputTensorJSON] })
           }.bind(this)
@@ -467,14 +472,14 @@ export default {
         let event = JSON.parse(message.data)
         if (event.data[0] === 'onEnd') {
           let train = event.data[1]
-          tf.loadLayersModel('./api/model/model.json').then(
+          this.$tf.loadLayersModel('./api/model/model.json').then(
             function(model) {
               this.inputData.model = model
               this.output = {
                 ...this.inputData,
                 train: train,
-                inputMatrix: inputMatrix,
-                outputMatrix: outputMatrix,
+                inputTensorJSON: inputTensorJSON,
+                outputTensorJSON: outputTensorJSON,
                 normalizationData: normalizationData
               }
               this.$disconnect()
@@ -488,10 +493,6 @@ export default {
 
       this.$options.sockets.onclose = function() {
         this.loading = false
-        delete this.$options.sockets.onerror
-        delete this.$options.sockets.onopen
-        delete this.$options.sockets.onmessage
-        delete this.$options.sockets.onclose
       }.bind(this)
 
       let websocket = new URL(process.env.VUE_APP_WEBSOCKET_API).hostname
@@ -501,6 +502,20 @@ export default {
       } else {
         this.$options.sockets.onerror()
       }
+      /*
+      this.$tf.loadLayersModel('./api/model/!model.json').then(
+        function(model) {
+          this.inputData.model = model
+          this.output = {
+            ...this.inputData,
+            inputTensorJSON: inputTensorJSON,
+            outputTensorJSON: outputTensorJSON,
+            normalizationData: normalizationData
+          }
+          this.loading = false
+        }.bind(this)
+      )
+      */
     }
   }
 }

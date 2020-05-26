@@ -73,20 +73,35 @@ module.exports = [
     type: 'TSModelCompiler',
     title: 'Train the Model',
     description:
-      'When training, we are using **all** the 65000 digits loaded, and using 16% of those as ' +
-      '**validation** to prevent overfitting. So the training size will be 54600 and the validation ' +
-      'size will be 10400 digits. **Shuffling** is turned on, as most of the digits are ordered in ' +
+      'The training uses **all** 65000 digits loaded, having 15% of those digits as ' +
+      '**validation** to prevent overfitting. So the training size will be 55250 and the validation ' +
+      'size will be 9750. **Shuffling** is turned on, as most of the digits are ordered in ' +
       'sequence and have the same handwriting. It takes a **long** time to train, this example ' +
       'should have tensorflow running in a backend as running entirely in the browser can be ' +
-      'quite **slow**.',
+      'quite **slow**.\n\nThe backend runs with the package **@tensorflow/tfjs-node**, you can ' +
+      'set it up in your own machine and use the **GPU** if you have **Linux**. My machine cannot not ' +
+      'run this example running javascript in the browser, but with **C++** bindings it completes ' +
+      'the training.',
     input_ref: 'pipeline_4',
     data: {
       epochSize: 10,
       batchSize: 512,
       shuffle: true,
-      validationSplit: 0.16,
+      validationSplit: 0.15,
       compilerOptimizerSelected: 'adamax',
       compilerLossSelected: 'categoricalCrossentropy'
+    }
+  },
+  {
+    index: 'pipeline_6',
+    type: 'TSModelPredictor',
+    title: 'Evaluate our model',
+    description:
+      'All six layers will be used to validate the CNN, the last layer (output) should classify the ' +
+      'digit if the training was successful.',
+    input_ref: 'pipeline_5',
+    data: {
+      layerSize: 6
     }
   }
 ]

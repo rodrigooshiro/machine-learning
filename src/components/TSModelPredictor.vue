@@ -69,8 +69,6 @@
 import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import jquery from 'jquery'
-const tf = global.tf
-const tfvis = global.tfvis
 
 export default {
   name: 'TSModelPredictor',
@@ -146,59 +144,71 @@ export default {
     },
     plugAction(event) {
       this.loading = true
-      let { model, data, inputMatrix, outputMatrix, indexLabel, normalizationData } = this.inputData
+      let {
+        model,
+        data,
+        inputTensorJSON,
+        outputTensorJSON,
+        indexLabel,
+        normalizationData
+      } = this.inputData
 
-      let predictor = tf.sequential()
+      let predictor = this.$tf.sequential()
       for (let i = 0; i < this.layerSize; i++) {
         predictor.add(model.layers[i])
       }
 
-      let inputValues = null
-      let inputTensor = tf.tensor2d(inputMatrix)
-      if (normalizationData.inputUnitsNormalize) {
-        let tensor = inputTensor
-          .sub(normalizationData.inputMin)
-          .div(normalizationData.inputMax.sub(normalizationData.inputMin))
-        inputTensor = tensor
-      }
-      let outputValues = null
-      let outputTensor = predictor.predict(inputTensor)
+      let values = null
+      let inputMatrix = null
+      let inputData = global[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
+      let inputTensor = this.$tf.tensor(inputData, inputTensorJSON.shape)
 
       if (normalizationData.inputUnitsNormalize) {
         let { inputMax, inputMin } = normalizationData
-        let values = inputTensor.mul(inputMax.sub(inputMin)).add(inputMin)
-        inputValues = values.dataSync()
+        values = inputTensor.mul(inputMax.sub(inputMin)).add(inputMin)
+        inputMatrix = values.arraySync()
       } else {
-        let values = inputTensor
-        inputValues = values.dataSync()
+        values = inputTensor
+        inputMatrix = values.arraySync()
       }
-      inputTensor.dispose()
+
+      let outputMatrix = null
+      let outputData = global[outputTensorJSON.data['type']].from(outputTensorJSON.data['data'])
+      let outputTensor = this.$tf.tensor(outputData, outputTensorJSON.shape)
+
+      let predictMatrix = null
+      let predictTensor = predictor.predict(inputTensor)
 
       if (normalizationData.outputUnitsNormalize) {
         let { outputMax, outputMin } = normalizationData
-        let values = outputTensor.mul(outputMax.sub(outputMin)).add(outputMin)
-        outputValues = values.dataSync()
+        values = outputTensor.mul(outputMax.sub(outputMin)).add(outputMin)
+        outputMatrix = values.arraySync()
+
+        values = predictTensor.mul(outputMax.sub(outputMin)).add(outputMin)
+        predictMatrix = values.arraySync()
       } else {
-        let values = outputTensor
-        outputValues = values.dataSync()
+        values = outputTensor
+        outputMatrix = values.arraySync()
+
+        values = predictTensor
+        predictMatrix = values.arraySync()
       }
+      inputTensor.dispose()
       outputTensor.dispose()
+      predictTensor.dispose()
 
       let dataLabels = []
       if (indexLabel !== -1) {
         dataLabels = data.map(x => x[indexLabel])
       }
-      let inputUnits = model.layers[0].batchInputShape[1]
-      let outputUnits = model.layers[this.layerSize - 1].units
-      let predictionSize = outputValues.length / outputUnits
       let output = []
-      for (let i = 0; i < predictionSize; i++) {
+      for (let i = 0; i < inputMatrix.length; i++) {
         let row = []
-        for (let j = 0; j < inputUnits; j++) {
+        for (let j = 0; j < inputTensor.shape[1]; j++) {
           row.push(inputMatrix[i][j])
         }
-        for (let j = 0; j < outputUnits; j++) {
-          row.push(outputValues[i * outputUnits + j])
+        for (let j = 0; j < predictTensor.shape[1]; j++) {
+          row.push(predictMatrix[i][j])
         }
         if (indexLabel !== -1) {
           row.push(dataLabels[i])
@@ -207,20 +217,20 @@ export default {
       }
       this.output = output
 
-      if (inputUnits === 1 && outputUnits === 1) {
+      if (inputTensor.shape[1] === 1 && outputTensor.shape[1] === 1 && predictTensor.shape[1] === 1) {
         let originalValues = []
+        let predictedValues = []
         for (let i = 0; i < inputMatrix.length; i++) {
           originalValues.push({
             x: inputMatrix[i][0],
             y: outputMatrix[i][0]
           })
+          predictedValues.push({
+            x: inputMatrix[i][0],
+            y: predictMatrix[i][0]
+          })
         }
-
-        let predictedValues = Array.from(inputValues).map((val, i) => {
-          return { x: val, y: outputValues[i] }
-        })
-
-        tfvis.render.scatterplot(
+        this.$tfvis.render.scatterplot(
           this.$refs['draw'],
           { values: [originalValues, predictedValues], series: ['original', 'predicted'] },
           {
@@ -232,6 +242,7 @@ export default {
       } else {
         this.fileChart = false
       }
+
       this.loading = false
     }
   }

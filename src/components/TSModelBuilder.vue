@@ -314,8 +314,6 @@ import { mixin } from './mixin'
 import ModelView from 'tfjs-model-view'
 import jquery from 'jquery'
 import * as definitions from '../config/definitions.js'
-const tf = global.tf
-const tfvis = global.tfvis
 
 export default {
   name: 'TSModelBuilder',
@@ -505,6 +503,14 @@ export default {
           }
         }
       }
+    },
+    loading(next, prev) {
+      if (next === false) {
+        delete this.$options.sockets.onerror
+        delete this.$options.sockets.onopen
+        delete this.$options.sockets.onmessage
+        delete this.$options.sockets.onclose
+      }
     }
   },
   methods: {
@@ -516,7 +522,7 @@ export default {
       }
     },
     onShowModal() {
-      tfvis.show.modelSummary(this.$refs['draw'], this.output.model)
+      this.$tfvis.show.modelSummary(this.$refs['draw'], this.output.model)
     },
     validateData() {
       let keys = [
@@ -578,7 +584,7 @@ export default {
             this.loading = false
             worker.terminate()
           } else if (event.data[0] === 'onEnd') {
-            tf.loadLayersModel('indexeddb://model').then(
+            this.$tf.loadLayersModel('indexeddb://model').then(
               function(model) {
                 this.fileChart = true
                 this.output = {
@@ -614,7 +620,7 @@ export default {
       this.$options.sockets.onmessage = function(message) {
         let event = JSON.parse(message.data)
         if (event.data[0] === 'onEnd') {
-          tf.loadLayersModel('./api/model/model.json').then(
+          this.$tf.loadLayersModel('./api/model/model.json').then(
             function(model) {
               this.fileChart = true
               this.output = {
@@ -642,10 +648,6 @@ export default {
 
       this.$options.sockets.onclose = function() {
         this.loading = false
-        delete this.$options.sockets.onerror
-        delete this.$options.sockets.onopen
-        delete this.$options.sockets.onclose
-        delete this.$options.sockets.onmessage
       }.bind(this)
 
       let websocket = new URL(process.env.VUE_APP_WEBSOCKET_API).hostname

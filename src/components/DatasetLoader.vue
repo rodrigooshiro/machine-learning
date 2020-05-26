@@ -82,7 +82,7 @@ export default {
     selectRemoteFile() {
       let content = null
       this.loading = true
-      this.axios
+      this.$axios
         .get(this.remoteFile, { responseType: 'arraybuffer' })
         .then(response => {
           content = response
@@ -91,7 +91,7 @@ export default {
         .catch(response => {
           if (response.request.status === 0) {
             content = null
-            this.axios
+            this.$axios
               .get(cors + this.remoteFile)
               .then(response => {
                 content = response

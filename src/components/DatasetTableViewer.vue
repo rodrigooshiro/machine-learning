@@ -143,7 +143,6 @@ import * as csv from 'csv-string'
 import jquery from 'jquery'
 import Plotly from 'plotly.js-dist'
 import randomcolor from 'randomcolor'
-const tfvis = global.tfvis
 
 export default {
   name: 'DatasetTableViewer',
@@ -392,7 +391,7 @@ export default {
               y: trace.y[i]
             })
           }
-          tfvis.render.scatterplot(
+          this.$tfvis.render.scatterplot(
             this.$refs['draw'],
             { values },
             {

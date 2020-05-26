@@ -17,7 +17,6 @@
 import axios from 'axios'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import VueAxios from 'vue-axios'
 import VueRouter from 'vue-router'
 import VueNativeSock from 'vue-native-websocket'
 import Pipeline from './layouts/Pipeline.vue'
@@ -36,7 +35,6 @@ import 'script-loader!@tensorflow/tfjs/dist/tf.min.js'
 import 'script-loader!@tensorflow/tfjs-vis/dist/tfjs-vis.umd.min.js'
 
 Vue.use(Vuex)
-Vue.use(VueAxios, axios)
 Vue.use(VueRouter)
 Vue.use(VueNativeSock, process.env.VUE_APP_WEBSOCKET_API, {
   connectManually: true,
@@ -44,6 +42,13 @@ Vue.use(VueNativeSock, process.env.VUE_APP_WEBSOCKET_API, {
 })
 Vue.use(BootstrapVue)
 Vue.use(IconsPlugin)
+Vue.use({
+  install(Vue) {
+    Vue.prototype.$axios = axios
+    Vue.prototype.$tf = global.tf
+    Vue.prototype.$tfvis = global.tfvis
+  }
+})
 Vue.config.productionTip = false
 
 export const store = new Vuex.Store({})

@@ -92,7 +92,6 @@
 import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import jquery from 'jquery'
-const tf = global.tf
 
 export default {
   name: 'DatasetSpriteViewer',
@@ -186,7 +185,7 @@ export default {
           batchImagesArray.set(image, i * arraySize)
         }
       }
-      let xs = tf.tensor2d(batchImagesArray, [imagePageSize, arraySize])
+      let xs = this.$tf.tensor2d(batchImagesArray, [imagePageSize, arraySize])
       let canvas = document.createElement('canvas')
       canvas.width = this.pageWidth * this.spriteWidth
       canvas.height = this.pageHeight * this.spriteHeight
@@ -208,7 +207,7 @@ export default {
         sprite.y = y
         sprite.width = this.spriteWidth
         sprite.height = this.spriteHeight
-        tf.browser.toPixels(imageTensor, sprite).then(() => {
+        this.$tf.browser.toPixels(imageTensor, sprite).then(() => {
           const spriteContext = sprite.getContext('2d')
           const imageData = spriteContext.getImageData(0, 0, sprite.width, sprite.height)
           canvasContext.putImageData(imageData, sprite.x, sprite.y)
