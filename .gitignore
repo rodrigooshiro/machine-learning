@@ -1,5 +1,7 @@
 .DS_Store
 dist
+model/*
+!model/.gitkeep
 node_modules
 package-lock.json
 
