@@ -314,7 +314,6 @@ import { mixin } from './mixin'
 import ModelView from 'tfjs-model-view'
 import jquery from 'jquery'
 import * as definitions from '../config/definitions.js'
-import Worker from 'worker-loader!../config/worker.js'
 const tf = global.tf
 const tfvis = global.tfvis
 
@@ -573,7 +572,7 @@ export default {
       this.loading = true
 
       this.$options.sockets.onerror = function() {
-        let worker = new Worker()
+        let worker = new Worker('worker.js')
         worker.onmessage = function(event) {
           if (event.data[0] === 'onEnd') {
             tf.loadLayersModel('indexeddb://model').then(

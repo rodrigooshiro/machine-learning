@@ -184,7 +184,6 @@ import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import jquery from 'jquery'
 import * as definitions from '../config/definitions.js'
-import Worker from 'worker-loader!../config/worker.js'
 const tf = global.tf
 const tfvis = global.tfvis
 
@@ -421,7 +420,7 @@ export default {
       }
 
       this.$options.sockets.onerror = function() {
-        let worker = new Worker()
+        let worker = new Worker('worker.js')
         worker.onmessage = function(event) {
           if (event.data[0] === 'onEnd') {
             let train = event.data[1]

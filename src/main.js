@@ -33,6 +33,7 @@ import 'file-loader?name=tfjs-vis.umd.min.js.map!@tensorflow/tfjs-vis/dist/tfjs-
 import 'file-loader?name=tfjs-vis.umd.min.js!@tensorflow/tfjs-vis/dist/tfjs-vis.umd.min.js'
 import 'script-loader!@tensorflow/tfjs-vis/dist/tfjs-vis.umd.min.js'
 import '!!file-loader?name=definitions.js!./config/definitions.js'
+import '!!file-loader?name=worker.js!./config/worker.js'
 
 Vue.use(Vuex)
 Vue.use(VueAxios, axios)
