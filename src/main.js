@@ -19,22 +19,27 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import VueAxios from 'vue-axios'
 import VueRouter from 'vue-router'
+import VueNativeSock from 'vue-native-websocket'
 import Pipeline from './layouts/Pipeline.vue'
 import About from './layouts/About.vue'
 import Blank from './layouts/Blank.vue'
 import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
-import 'file-loader?name=tf.min.js.map!@tensorflow/tfjs/dist/tf.min.js.map'
-import 'file-loader?name=tf.min.js!@tensorflow/tfjs/dist/tf.min.js'
-import 'script-loader!@tensorflow/tfjs/dist/tf.min.js'
-import 'file-loader?name=tfjs-vis.umd.min.js.map!@tensorflow/tfjs-vis/dist/tfjs-vis.umd.min.js.map'
-import 'file-loader?name=tfjs-vis.umd.min.js!@tensorflow/tfjs-vis/dist/tfjs-vis.umd.min.js'
-import 'script-loader!@tensorflow/tfjs-vis/dist/tfjs-vis.umd.min.js'
+import '!!file-loader?name=tf.min.js.map!@tensorflow/tfjs/dist/tf.min.js.map'
+import '!!file-loader?name=tf.min.js!@tensorflow/tfjs/dist/tf.min.js'
+import '!!script-loader!@tensorflow/tfjs/dist/tf.min.js'
+import '!!file-loader?name=tfjs-vis.umd.min.js.map!@tensorflow/tfjs-vis/dist/tfjs-vis.umd.min.js.map'
+import '!!file-loader?name=tfjs-vis.umd.min.js!@tensorflow/tfjs-vis/dist/tfjs-vis.umd.min.js'
+import '!!script-loader!@tensorflow/tfjs-vis/dist/tfjs-vis.umd.min.js'
+import '!!file-loader?name=definitions.js!./config/definitions.js'
 
 Vue.use(Vuex)
 Vue.use(VueAxios, axios)
 Vue.use(VueRouter)
+Vue.use(VueNativeSock, 'ws://localhost', {
+  connectManually: true
+})
 Vue.use(BootstrapVue)
 Vue.use(IconsPlugin)
 Vue.config.productionTip = false

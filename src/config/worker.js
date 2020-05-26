@@ -16,88 +16,25 @@
  */
 global.window = self
 self.importScripts('tf.min.js')
+self.importScripts('definitions.js')
 
 self.onEpochEnd = async function(epoch, logs) {
   self.postMessage(['onEpochEnd', epoch, logs])
 }
 
 self.builder = async function(data) {
-  let model = tf.sequential()
-  for (let i = 0; i < data.layerSize; i++) {
-    let layer = {}
-    if (i === 0) {
-      if (data.inputShape.length === 1) {
-        layer.inputShape = data.inputShape[0]
-      } else {
-        layer.inputShape = data.inputShape
-      }
-    }
-    if (data.units[i] !== 0) {
-      layer.units = data.units[i]
-    }
-    if (data.kernelSize[i] !== 0) {
-      layer.kernelSize = data.kernelSize[i]
-    }
-    if (data.filters[i] !== -1) {
-      layer.filters = data.filters[i]
-    }
-    if (data.strides[i].length === 1) {
-      layer.strides = data.strides[i][0]
-    }
-    if (data.strides[i].length > 1) {
-      layer.strides = data.strides[i]
-    }
-    if (data.poolSize[i].length === 1) {
-      layer.poolSize = data.poolSize[i][0]
-    }
-    if (data.poolSize[i].length > 1) {
-      layer.poolSize = data.poolSize[i]
-    }
-    if (data.activation[i] !== '--') {
-      layer.activation = data.activation[i]
-    }
-    if (data.kernelInitializer[i] !== '--') {
-      layer.kernelInitializer = data.kernelInitializer[i]
-    }
-    if (data.biasInitializer[i] !== '--') {
-      layer.useBias = true
-      layer.biasInitializer = data.biasInitializer[i]
-    }
-    model.add(tf.layers[data.layerName[i]](layer))
-  }
-
-  await model.save('indexeddb://model')
+  let output = await definitions.tasks.builder(tf, data)
+  await output.model.save('indexeddb://model')
   self.postMessage(['onEnd'])
 }
 
 self.compiler = async function(data, inputTensorJSON, outputTensorJSON) {
-  let model = await self.tf.loadLayersModel('indexeddb://model')
-  let inputTensor = self.tf.tensor(inputTensorJSON.data, inputTensorJSON.shape)
-  let outputTensor = self.tf.tensor(outputTensorJSON.data, outputTensorJSON.shape)
-
-  let loss = data.compilerLossSelected
-  if (loss in self.tf.losses) {
-    loss = self.tf.losses[loss]
-  }
-
-  model.compile({
-    optimizer: data.compilerOptimizerSelected,
-    loss: loss,
-    metrics: ['mse']
+  let model = await tf.loadLayersModel('indexeddb://model')
+  let output = await definitions.tasks.compiler(self, tf, model, data, inputTensorJSON, outputTensorJSON, {
+    onEpochEnd: self.onEpochEnd
   })
-
-  let train = await model.fit(inputTensor, outputTensor, {
-    batchSize: data.batchSize,
-    epochs: data.epochSize,
-    shuffle: data.shuffle,
-    validationSplit: data.validationSplit,
-    callbacks: {
-      onEpochEnd: self.onEpochEnd
-    }
-  })
-
-  await model.save('indexeddb://model')
-  self.postMessage(['onEnd', train])
+  await output.model.save('indexeddb://model')
+  self.postMessage(['onEnd', output.train])
 }
 
 self.addEventListener('message', function(event) {

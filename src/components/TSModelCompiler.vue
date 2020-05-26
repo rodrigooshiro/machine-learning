@@ -183,7 +183,7 @@
 import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import jquery from 'jquery'
-import definitions from '../config/definitions.js'
+import * as definitions from '../config/definitions.js'
 import Worker from 'worker-loader!../config/worker.js'
 const tf = global.tf
 const tfvis = global.tfvis
@@ -402,11 +402,70 @@ export default {
         callbacks: ['onEpochEnd']
       })
 
-      let worker = new Worker()
-      worker.onmessage = function(event) {
+      let inputTensorData = inputTensor.dataSync()
+      let inputTensorJSON = {
+        data: {
+          type: inputTensorData.constructor.name,
+          data: Object.values(inputTensorData)
+        },
+        shape: inputTensor.shape
+      }
+      window.tensor = inputTensorJSON
+      let outputTensorData = outputTensor.dataSync()
+      let outputTensorJSON = {
+        data: {
+          type: outputTensorData.constructor.name,
+          data: Object.values(outputTensorData)
+        },
+        shape: outputTensor.shape
+      }
+
+      this.$options.sockets.onerror = function() {
+        let worker = new Worker()
+        worker.onmessage = function(event) {
+          if (event.data[0] === 'onEnd') {
+            let train = event.data[1]
+            tf.loadLayersModel('indexeddb://model').then(
+              function(model) {
+                this.inputData.model = model
+                this.output = {
+                  ...this.inputData,
+                  train: train,
+                  inputMatrix: inputMatrix,
+                  outputMatrix: outputMatrix,
+                  normalizationData: normalizationData
+                }
+                this.loading = false
+                worker.terminate()
+              }.bind(this)
+            )
+          } else {
+            this.fileChart = true
+            callbacks[event.data[0]](event.data[1], event.data[2])
+          }
+        }.bind(this)
+        model.save('indexeddb://model').then(
+          function() {
+            worker.postMessage(['compiler', this.$data, inputTensorJSON, outputTensorJSON])
+            inputTensor.dispose()
+            outputTensor.dispose()
+          }.bind(this)
+        )
+      }.bind(this)
+
+      this.$options.sockets.onopen = function() {
+        model.save(tf.io.browserHTTPRequest('./api/model')).then(
+          function() {
+            this.$socket.sendObj({ data: ['compiler', this.$data, inputTensorJSON, outputTensorJSON] })
+          }.bind(this)
+        )
+      }.bind(this)
+
+      this.$options.sockets.onmessage = function(message) {
+        let event = JSON.parse(message.data)
         if (event.data[0] === 'onEnd') {
           let train = event.data[1]
-          tf.loadLayersModel('indexeddb://model').then(
+          tf.loadLayersModel('./api/model/model.json').then(
             function(model) {
               this.inputData.model = model
               this.output = {
@@ -417,7 +476,10 @@ export default {
                 normalizationData: normalizationData
               }
               this.loading = false
-              worker.terminate()
+              delete this.$options.sockets.onerror
+              delete this.$options.sockets.onopen
+              delete this.$options.sockets.onmessage
+              this.$disconnect()
             }.bind(this)
           )
         } else {
@@ -426,15 +488,7 @@ export default {
         }
       }.bind(this)
 
-      let inputTensorJSON = { data: inputTensor.dataSync(), shape: inputTensor.shape }
-      let outputTensorJSON = { data: outputTensor.dataSync(), shape: outputTensor.shape }
-      model.save('indexeddb://model').then(
-        function() {
-          worker.postMessage(['compiler', this.$data, inputTensorJSON, outputTensorJSON])
-          inputTensor.dispose()
-          outputTensor.dispose()
-        }.bind(this)
-      )
+      this.$connect('ws://localhost:8001', { format: 'json' })
     }
   }
 }

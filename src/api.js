@@ -14,12 +14,74 @@
  * limitations under the License.
  * =============================================================================
  */
+const multer = require('multer')
 const express = require('express')
+const tf = require('@tensorflow/tfjs-node')
+const fileUrl = require('file-url')
+const WebSocket = require('ws')
+const definitions = require('./config/definitions')
 const router = express.Router()
+const wss = new WebSocket.Server({ port: 8001 })
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: function(req, file, cb) {
+      cb(null, 'model')
+    },
+    filename: function(req, file, cb) {
+      cb(null, file.fieldname)
+    }
+  })
+})
 
 router.all('/', function(req, res, next) {
-  console.log('/')
   res.send('OK')
+})
+
+router.post('/model', upload.any(), async function(req, res) {
+  res.send('OK')
+})
+
+router.get('/model/:file', function(req, res, next) {
+  res.sendFile(req.params.file, { root: './model' })
+})
+
+const self = {
+  builder: async function(ws, data) {
+    let output = await definitions.tasks.builder(tf, data)
+    await output.model.save(fileUrl('model'))
+    ws.send(JSON.stringify({ data: ['onEnd'] }))
+  },
+  compiler: async function(ws, data, inputTensorJSON, outputTensorJSON) {
+    ws.onEpochEnd = async function(epoch, logs) {
+      ws.send(JSON.stringify({ data: ['onEpochEnd', epoch, logs] }))
+    }
+    let model = await tf.loadLayersModel(fileUrl('model/model.json'))
+    let output = await definitions.tasks.compiler(
+      global,
+      tf,
+      model,
+      data,
+      inputTensorJSON,
+      outputTensorJSON,
+      {
+        onEpochEnd: ws.onEpochEnd
+      }
+    )
+    await output.model.save(fileUrl('model'))
+    ws.send(JSON.stringify({ data: ['onEnd', output.train] }))
+  }
+}
+
+wss.on('connection', ws => {
+  ws.on('message', message => {
+    let event = JSON.parse(message)
+    if (event.data[0] === 'builder') {
+      self.builder(ws, event.data[1])
+    }
+    if (event.data[0] === 'compiler') {
+      self.compiler(ws, event.data[1], event.data[2], event.data[3])
+    }
+  })
 })
 
 module.exports = function(app) {
@@ -28,7 +90,7 @@ module.exports = function(app) {
   } else if (process.env.VUE_APP_BACKEND_DISABLED === undefined) {
     app = express()
     app.use('/machine-learning/api', router)
-    app.listen(8080, () =>
+    app.listen(8000, () =>
       console.log('Express app listening at http://localhost:8080/machine-learning/api/')
     )
   }

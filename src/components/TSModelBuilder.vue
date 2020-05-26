@@ -313,7 +313,7 @@ import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import ModelView from 'tfjs-model-view'
 import jquery from 'jquery'
-import definitions from '../config/definitions.js'
+import * as definitions from '../config/definitions.js'
 import Worker from 'worker-loader!../config/worker.js'
 const tf = global.tf
 const tfvis = global.tfvis
@@ -571,10 +571,48 @@ export default {
     },
     plugAction(event) {
       this.loading = true
-      let worker = new Worker()
-      worker.onmessage = function(event) {
+
+      this.$options.sockets.onerror = function() {
+        let worker = new Worker()
+        worker.onmessage = function(event) {
+          if (event.data[0] === 'onEnd') {
+            tf.loadLayersModel('indexeddb://model').then(
+              function(model) {
+                this.fileChart = true
+                this.output = {
+                  model: model,
+                  data: this.inputData,
+                  indexLabel: this.indexLabel
+                }
+                let modelView = new ModelView(model, {
+                  width: 765,
+                  height: 465,
+                  appendImmediately: false,
+                  renderer: 'd3',
+                  radius: 10,
+                  layerPadding: 100,
+                  printStats: false,
+                  renderLinks: true
+                })
+                jquery(this.$refs['graph']).empty()
+                this.$refs['graph'].appendChild(modelView.getDOMElement())
+                this.loading = false
+                worker.terminate()
+              }.bind(this)
+            )
+          }
+        }.bind(this)
+        worker.postMessage(['builder', this.$data])
+      }.bind(this)
+
+      this.$options.sockets.onopen = function() {
+        this.$socket.sendObj({ data: ['builder', this.$data] })
+      }.bind(this)
+
+      this.$options.sockets.onmessage = function(message) {
+        let event = JSON.parse(message.data)
         if (event.data[0] === 'onEnd') {
-          tf.loadLayersModel('indexeddb://model').then(
+          tf.loadLayersModel('./api/model/model.json').then(
             function(model) {
               this.fileChart = true
               this.output = {
@@ -595,12 +633,16 @@ export default {
               jquery(this.$refs['graph']).empty()
               this.$refs['graph'].appendChild(modelView.getDOMElement())
               this.loading = false
-              worker.terminate()
+              delete this.$options.sockets.onerror
+              delete this.$options.sockets.onopen
+              delete this.$options.sockets.onmessage
+              this.$disconnect()
             }.bind(this)
           )
         }
       }.bind(this)
-      worker.postMessage(['builder', this.$data])
+
+      this.$connect('ws://localhost:8001', { format: 'json' })
     }
   }
 }
