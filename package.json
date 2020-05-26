@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@tensorflow/tfjs": "^1.7.4",
-    "@tensorflow/tfjs-node": "^1.7.4",
     "@tensorflow/tfjs-vis": "^1.4.0",
     "axios": "^0.19.2",
     "babel-core": "^6.26.3",
@@ -58,6 +57,7 @@
     "ws": "^7.3.0"
   },
   "devDependencies": {
+    "@tensorflow/tfjs-node": "^1.7.4",
     "@vue/cli-plugin-babel": "~4.3.0",
     "@vue/cli-plugin-eslint": "~4.3.0",
     "@vue/cli-service": "~4.3.0"
