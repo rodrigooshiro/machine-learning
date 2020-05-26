@@ -14,9 +14,12 @@
  * limitations under the License.
  * =============================================================================
  */
+console.log('A')
 if (typeof window === 'undefined') {
   window = self
+  console.log('B')
 }
+console.log('C')
 self.importScripts('tf.min.js')
 self.importScripts('definitions.js')
 

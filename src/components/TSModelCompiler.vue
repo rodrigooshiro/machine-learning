@@ -488,6 +488,7 @@ export default {
       }.bind(this)
       let protocol = new URL(window.location.href).protocol
       let hostname = new URL(window.location.href).hostname
+      hostname = 'local'
       if (protocol === 'http:') {
         this.$connect(`ws://${hostname}:8001`, { format: 'json' })
       } else if (protocol === 'https:') {
