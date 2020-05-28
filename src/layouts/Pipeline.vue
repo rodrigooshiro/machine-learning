@@ -387,8 +387,8 @@ export default {
     },
     onLoadPipeline(name) {
       if (name === undefined || name === null) {
-        // name = 'Tensorflow: Making Predictions from 2D'
-        name = 'Tensorflow: Making More Predictions from 2D'
+        name = 'Tensorflow: Making Predictions from 2D'
+        // name = 'Tensorflow: Making More Predictions from 2D'
         // name = 'Tensorflow: Autoencoder'
         // name = 'Tensorflow: Handwritten digit recognition with CNNs'
       }

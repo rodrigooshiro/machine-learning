@@ -488,9 +488,7 @@ export default {
         }
       }.bind(this)
 
-      let websocket = new URL(process.env.VUE_APP_WEBSOCKET_API).hostname
-      let hostname = new URL(window.location.href).hostname
-      if (websocket === hostname) {
+      if (process.env.VUE_APP_WEBSOCKET_API === 'true') {
         this.$connect()
       } else {
         this.$options.sockets.onerror()

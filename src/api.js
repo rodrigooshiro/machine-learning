@@ -41,6 +41,8 @@ const upload = multer({
   })
 })
 
+tf.enableProdMode()
+
 router.all('/', function(req, res, next) {
   res.send('OK')
 })

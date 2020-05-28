@@ -4,9 +4,8 @@ module.exports = {
 }
 
 if (process.env.NODE_ENV === 'development') {
-  const api = require('./src/api')
   module.exports.devServer = {
-    before: api,
+    before: require('./src/api'),
     port: 8000
   }
 }

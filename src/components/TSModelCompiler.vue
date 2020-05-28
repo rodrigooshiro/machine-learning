@@ -264,7 +264,7 @@ export default {
       let inputTensorData = inputTensor.dataSync()
       let inputTensorJSON = {
         data: {
-          type: inputTensorData.constructor.name,
+          type: inputTensorData.constructor.toString().replace(/.* (.*)\(\)(.|\n)*/g, '$1'),
           data: Object.values(inputTensorData)
         },
         shape: inputTensor.shape
@@ -272,23 +272,19 @@ export default {
       let outputTensorData = outputTensor.dataSync()
       let outputTensorJSON = {
         data: {
-          type: outputTensorData.constructor.name,
+          type: outputTensorData.constructor.toString().replace(/.* (.*)\(\)(.|\n)*/g, '$1'),
           data: Object.values(outputTensorData)
         },
         shape: outputTensor.shape
       }
 
       this.$options.sockets.onerror = function() {
-        console.log('MA')
         let worker = new Worker('worker.js')
         worker.onmessage = function(event) {
-          console.log('MB')
           if (event.data[0] === 'onEnd' && event.error) {
-            console.log('MC')
             worker.terminate()
             this.loading = false
           } else if (event.data[0] === 'onEnd') {
-            console.log('MD')
             let train = event.data[1]
             this.$tf.loadLayersModel('indexeddb://model').then(
               function(model) {
@@ -304,7 +300,6 @@ export default {
               }.bind(this)
             )
           } else {
-            console.log('MF')
             this.fileChart = true
             callbacks[event.data[0]](event.data[1], event.data[2])
           }
@@ -351,9 +346,7 @@ export default {
         }
       }.bind(this)
 
-      let websocket = new URL(process.env.VUE_APP_WEBSOCKET_API).hostname
-      let hostname = new URL(window.location.href).hostname
-      if (websocket === hostname) {
+      if (process.env.VUE_APP_WEBSOCKET_API === 'true') {
         this.$connect()
       } else {
         this.$options.sockets.onerror()

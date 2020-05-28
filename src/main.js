@@ -34,9 +34,19 @@ import '!!file-loader?name=worker.js!./config/worker.js'
 import 'script-loader!@tensorflow/tfjs/dist/tf.min.js'
 import 'script-loader!@tensorflow/tfjs-vis/dist/tfjs-vis.umd.min.js'
 
+let hostname = new URL(window.location.href).hostname
+let protocol = new URL(window.location.href).protocol
+if (protocol === 'http:') {
+  protocol = 'ws:'
+}
+if (protocol === 'https:') {
+  protocol = 'wss:'
+}
+global.tf.enableProdMode()
+
 Vue.use(Vuex)
 Vue.use(VueRouter)
-Vue.use(VueNativeSock, process.env.VUE_APP_WEBSOCKET_API, {
+Vue.use(VueNativeSock, `${protocol}//${hostname}:8001`, {
   connectManually: true,
   format: 'json'
 })
