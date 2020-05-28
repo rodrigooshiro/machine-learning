@@ -124,12 +124,13 @@
     },
     tasks: {
       normalizeTensor(tf, tensor, minJSON, maxJSON) {
+        let scope = (typeof window === 'undefined') ? global : window
         let minTensor = null
         let maxTensor = null
         let dataSync = null
         if (minJSON && maxJSON) {
-          let minData = window[minJSON.data['type']].from(minJSON.data['data'])
-          let maxData = window[maxJSON.data['type']].from(maxJSON.data['data'])
+          let minData = scope[minJSON.data['type']].from(minJSON.data['data'])
+          let maxData = scope[maxJSON.data['type']].from(maxJSON.data['data'])
           minTensor = tf.tensor(minData, minJSON.shape)
           maxTensor = tf.tensor(maxData, maxJSON.shape)
         } else {
@@ -165,8 +166,9 @@
         return { normal, min, max }
       },
       unnormalizeTensor(tf, tensor, minJSON, maxJSON) {
-        let minData = window[minJSON.data['type']].from(minJSON.data['data'])
-        let maxData = window[maxJSON.data['type']].from(maxJSON.data['data'])
+        let scope = (typeof window === 'undefined') ? global : window
+        let minData = scope[minJSON.data['type']].from(minJSON.data['data'])
+        let maxData = scope[maxJSON.data['type']].from(maxJSON.data['data'])
         let minTensor = tf.tensor(minData, minJSON.shape)
         let maxTensor = tf.tensor(maxData, maxJSON.shape)
         let tSub = maxTensor.sub(minTensor)
@@ -226,8 +228,9 @@
         return { model }
       },
       compiler: async function(tf, model, data, inputTensorJSON, outputTensorJSON, callbacks) {
-        let inputData = window[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
-        let outputData = window[outputTensorJSON.data['type']].from(outputTensorJSON.data['data'])
+        let scope = (typeof window === 'undefined') ? global : window
+        let inputData = scope[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
+        let outputData = scope[outputTensorJSON.data['type']].from(outputTensorJSON.data['data'])
         let inputTensor = tf.tensor(inputData, inputTensorJSON.shape)
         let outputTensor = tf.tensor(outputData, outputTensorJSON.shape)
 
@@ -253,12 +256,13 @@
         return { model, train }
       },
       predictor: async function(tf, model, data, inputTensorJSON) {
+        let scope = (typeof window === 'undefined') ? global : window
         let predictor = tf.sequential()
         for (let i = 0; i < data.layerSize; i++) {
           predictor.add(model.layers[i])
         }
 
-        let inputData = window[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
+        let inputData = scope[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
         let inputTensor = tf.tensor(inputData, inputTensorJSON.shape)
         let predictTensor = predictor.predict(inputTensor)
         let predictTensorData = predictTensor.dataSync()

@@ -41,10 +41,6 @@ const upload = multer({
   })
 })
 
-if (typeof window === 'undefined') {
-  window = global
-}
-
 router.all('/', function(req, res, next) {
   res.send('OK')
 })
