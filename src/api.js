@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * @license
  * Copyright 2020 Rodrigo Oshiro. All Rights Reserved.
@@ -19,7 +20,7 @@ const express = require('express')
 const tf = require('@tensorflow/tfjs-node')
 const fileUrl = require('file-url')
 const WebSocket = require('ws')
-const definitions = require('./config/definitions')
+const utilities = require('./config/utilities')
 const router = express.Router()
 const wss = new WebSocket.Server({ maxPayload: -1, port: 8001 })
 const upload = multer({
@@ -40,6 +41,10 @@ const upload = multer({
   })
 })
 
+if (typeof window === 'undefined') {
+  window = global
+}
+
 router.all('/', function(req, res, next) {
   res.send('OK')
 })
@@ -54,7 +59,7 @@ router.get('/model/:file', function(req, res, next) {
 
 const self = {
   builder: async function(ws, data) {
-    let output = await definitions.tasks.builder(tf, data)
+    let output = await utilities.tasks.builder(tf, data)
     await output.model.save(fileUrl('model'))
     ws.send(JSON.stringify({ data: ['onEnd'] }))
   },
@@ -63,8 +68,7 @@ const self = {
       ws.send(JSON.stringify({ data: ['onEpochEnd', epoch, logs] }))
     }
     let model = await tf.loadLayersModel(fileUrl('model/model.json'))
-    let output = await definitions.tasks.compiler(
-      global,
+    let output = await utilities.tasks.compiler(
       tf,
       model,
       data,
@@ -77,15 +81,13 @@ const self = {
     await output.model.save(fileUrl('model'))
     ws.send(JSON.stringify({ data: ['onEnd', output.train] }))
   },
-  predictor: async function(ws, data, inputTensorJSON, normalizationData) {
+  predictor: async function(ws, data, inputTensorJSON) {
     let model = await tf.loadLayersModel(fileUrl('model/model.json'))
-    let output = await definitions.tasks.predictor(
-      global,
+    let output = await utilities.tasks.predictor(
       tf,
       model,
       data,
-      inputTensorJSON,
-      normalizationData
+      inputTensorJSON
     )
     ws.send(JSON.stringify({ data: ['onEnd', output.predictTensorJSON] }))
   }

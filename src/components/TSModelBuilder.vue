@@ -233,7 +233,7 @@ import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import ModelView from 'tfjs-model-view'
 import jquery from 'jquery'
-import * as definitions from '../config/definitions.js'
+import * as utilities from '../config/utilities.js'
 
 export default {
   name: 'TSModelBuilder',
@@ -264,10 +264,10 @@ export default {
       activation: [],
       kernelInitializer: [],
       biasInitializer: [],
-      layerNameOptions: definitions.tf.layer.options,
-      activationOptions: definitions.tf.layer.activation.options,
-      kernelInitializerOptions: definitions.tf.initializers.options,
-      biasInitializerOptions: definitions.tf.initializers.options,
+      layerNameOptions: utilities.tf.layer.options,
+      activationOptions: utilities.tf.layer.activation.options,
+      kernelInitializerOptions: utilities.tf.initializers.options,
+      biasInitializerOptions: utilities.tf.initializers.options,
       stridesLength: [],
       poolSizeLength: [],
       inputShape: null,

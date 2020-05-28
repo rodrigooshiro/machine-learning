@@ -222,62 +222,6 @@ export const mixin = {
       })
       return data
     },
-    normalizeTensor(tensor, minJSON, maxJSON) {
-      let minTensor = null
-      let maxTensor = null
-      let dataSync = null
-      if (minJSON && maxJSON) {
-        let minData = global[minJSON.data['type']].from(minJSON.data['data'])
-        let maxData = global[maxJSON.data['type']].from(maxJSON.data['data'])
-        minTensor = this.$tf.tensor(minData, minJSON.shape)
-        maxTensor = this.$tf.tensor(maxData, maxJSON.shape)
-      } else {
-        minTensor = tensor.min()
-        maxTensor = tensor.max()
-      }
-      let tSub = tensor.sub(minTensor)
-      let tDiv = maxTensor.sub(minTensor)
-      let normal = tSub.div(tDiv)
-      tSub.dispose()
-      tDiv.dispose()
-
-      dataSync = minTensor.dataSync()
-      let min = {
-        data: {
-          type: dataSync.constructor.name,
-          data: Object.values(dataSync)
-        },
-        shape: dataSync.shape
-      }
-      minTensor.dispose()
-
-      dataSync = maxTensor.dataSync()
-      let max = {
-        data: {
-          type: dataSync.constructor.name,
-          data: Object.values(dataSync)
-        },
-        shape: dataSync.shape
-      }
-
-      maxTensor.dispose()
-      return { normal, min, max }
-    },
-    unnormalizeTensor(tensor, minJSON, maxJSON) {
-      let minData = global[minJSON.data['type']].from(minJSON.data['data'])
-      let maxData = global[maxJSON.data['type']].from(maxJSON.data['data'])
-      let minTensor = this.$tf.tensor(minData, minJSON.shape)
-      let maxTensor = this.$tf.tensor(maxData, maxJSON.shape)
-      let tSub = maxTensor.sub(minTensor)
-      let tMul = tensor.mul(tSub)
-      let unnormal = tMul.add(minTensor)
-      tSub.dispose()
-      tMul.dispose()
-
-      minTensor.dispose()
-      maxTensor.dispose()
-      return { unnormal }
-    },
     plugActionEvent(event) {
       this.loading = false
     },

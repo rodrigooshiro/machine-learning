@@ -132,7 +132,7 @@ import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import jquery from 'jquery'
 import lodash from 'lodash'
-import * as definitions from '../config/definitions.js'
+import * as utilities from '../config/utilities.js'
 
 export default {
   name: 'TSModelCompiler',
@@ -158,9 +158,9 @@ export default {
       inputUnitsNormalize: false,
       outputUnitsNormalize: false,
       compilerOptimizerSelected: null,
-      compilerOptimizerOptions: definitions.tf.train.options,
+      compilerOptimizerOptions: utilities.tf.train.options,
       compilerLossSelected: null,
-      compilerLossOptions: definitions.tf.losses.options,
+      compilerLossOptions: utilities.tf.losses.options,
       fileChart: false
     }
     return this.importData(data)
@@ -241,14 +241,14 @@ export default {
       outputTensor = this.$tf.tensor(outputMatrix, outputShape)
 
       if (this.inputUnitsNormalize) {
-        let { normal, min, max } = this.normalizeTensor(inputTensor)
+        let { normal, min, max } = utilities.tasks.normalizeTensor(this.$tf, inputTensor)
         inputTensor.dispose()
         inputTensor = normal
         normalizationData.inputMin = min
         normalizationData.inputMax = max
       }
       if (this.outputUnitsNormalize) {
-        let { normal, min, max } = this.normalizeTensor(outputTensor)
+        let { normal, min, max } = utilities.tasks.normalizeTensor(this.$tf, outputTensor)
         outputTensor.dispose()
         outputTensor = normal
         normalizationData.outputMin = min

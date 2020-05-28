@@ -18,9 +18,9 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
   typeof define === 'function' && define.amd ? define(['exports'], factory) :
-  (factory((global.definitions = global.definitions || {})));
+  (factory((global.utilities = global.utilities || {})));
 }(this, (function (exports) { 'use strict';
-  let definitions = {
+  let utilities = {
     tf: {
       layer: {
         options: [
@@ -123,6 +123,62 @@
       }
     },
     tasks: {
+      normalizeTensor(tf, tensor, minJSON, maxJSON) {
+        let minTensor = null
+        let maxTensor = null
+        let dataSync = null
+        if (minJSON && maxJSON) {
+          let minData = window[minJSON.data['type']].from(minJSON.data['data'])
+          let maxData = window[maxJSON.data['type']].from(maxJSON.data['data'])
+          minTensor = tf.tensor(minData, minJSON.shape)
+          maxTensor = tf.tensor(maxData, maxJSON.shape)
+        } else {
+          minTensor = tensor.min()
+          maxTensor = tensor.max()
+        }
+        let tSub = tensor.sub(minTensor)
+        let tDiv = maxTensor.sub(minTensor)
+        let normal = tSub.div(tDiv)
+        tSub.dispose()
+        tDiv.dispose()
+  
+        dataSync = minTensor.dataSync()
+        let min = {
+          data: {
+            type: dataSync.constructor.name,
+            data: Object.values(dataSync)
+          },
+          shape: dataSync.shape
+        }
+        minTensor.dispose()
+  
+        dataSync = maxTensor.dataSync()
+        let max = {
+          data: {
+            type: dataSync.constructor.name,
+            data: Object.values(dataSync)
+          },
+          shape: dataSync.shape
+        }
+  
+        maxTensor.dispose()
+        return { normal, min, max }
+      },
+      unnormalizeTensor(tf, tensor, minJSON, maxJSON) {
+        let minData = window[minJSON.data['type']].from(minJSON.data['data'])
+        let maxData = window[maxJSON.data['type']].from(maxJSON.data['data'])
+        let minTensor = tf.tensor(minData, minJSON.shape)
+        let maxTensor = tf.tensor(maxData, maxJSON.shape)
+        let tSub = maxTensor.sub(minTensor)
+        let tMul = tensor.mul(tSub)
+        let unnormal = tMul.add(minTensor)
+        tSub.dispose()
+        tMul.dispose()
+  
+        minTensor.dispose()
+        maxTensor.dispose()
+        return { unnormal }
+      },
       builder: async function(tf, data) {
         let model = tf.sequential()
         for (let i = 0; i < data.layerSize; i++) {
@@ -169,9 +225,9 @@
         }
         return { model }
       },
-      compiler: async function(scope, tf, model, data, inputTensorJSON, outputTensorJSON, callbacks) {
-        let inputData = scope[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
-        let outputData = scope[outputTensorJSON.data['type']].from(outputTensorJSON.data['data'])
+      compiler: async function(tf, model, data, inputTensorJSON, outputTensorJSON, callbacks) {
+        let inputData = window[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
+        let outputData = window[outputTensorJSON.data['type']].from(outputTensorJSON.data['data'])
         let inputTensor = tf.tensor(inputData, inputTensorJSON.shape)
         let outputTensor = tf.tensor(outputData, outputTensorJSON.shape)
 
@@ -196,32 +252,14 @@
 
         return { model, train }
       },
-      predictor: async function(scope, tf, model, data, inputTensorJSON, normalizationData) {
+      predictor: async function(tf, model, data, inputTensorJSON) {
         let predictor = tf.sequential()
         for (let i = 0; i < data.layerSize; i++) {
           predictor.add(model.layers[i])
         }
 
-        let values = null
-        let inputMatrix = null
-        let inputData = scope[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
+        let inputData = window[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
         let inputTensor = tf.tensor(inputData, inputTensorJSON.shape)
-
-        if (normalizationData.inputUnitsNormalize) {
-          let { inputMax, inputMin } = normalizationData
-          let maxData = scope[inputMax.data['type']].from(inputMax.data['data'])
-          let maxTensor = tf.tensor(maxData, inputMax.shape)
-          let minData = scope[inputMin.data['type']].from(inputMin.data['data'])
-          let minTensor = tf.tensor(minData, inputMin.shape)
-          values = inputTensor.mul(maxTensor.sub(minTensor)).add(minTensor)
-          inputMatrix = values.arraySync()
-          maxTensor.dispose()
-          minTensor.dispose()
-        } else {
-          values = inputTensor
-          inputMatrix = values.arraySync()
-        }
-
         let predictTensor = predictor.predict(inputTensor)
         let predictTensorData = predictTensor.dataSync()
         let predictTensorJSON = {
@@ -236,7 +274,7 @@
       }
     }
   }
-  exports.tf = definitions.tf
-  exports.tasks = definitions.tasks
+  exports.tf = utilities.tf
+  exports.tasks = utilities.tasks
   Object.defineProperty(exports, '__esModule', { value: true })
 })));

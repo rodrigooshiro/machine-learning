@@ -85,6 +85,7 @@ import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import jquery from 'jquery'
 import lodash from 'lodash'
+import * as utilities from '../config/utilities.js'
 
 export default {
   name: 'TSModelPredictor',
@@ -190,14 +191,24 @@ export default {
 
       if (normalizationData.inputUnitsNormalize) {
         let { inputMin, inputMax } = normalizationData
-        let { unnormal } = this.unnormalizeTensor(this.inputTensor, inputMin, inputMax)
+        let { unnormal } = utilities.tasks.unnormalizeTensor(
+          this.$tf,
+          this.inputTensor,
+          inputMin,
+          inputMax
+        )
         this.inputTensor.dispose()
         this.inputTensor = unnormal
       }
 
       if (normalizationData.outputUnitsNormalize) {
         let { outputMin, outputMax } = normalizationData
-        let { unnormal } = this.unnormalizeTensor(this.predictTensor, outputMin, outputMax)
+        let { unnormal } = utilities.tasks.unnormalizeTensor(
+          this.$tf,
+          this.predictTensor,
+          outputMin,
+          outputMax
+        )
         this.predictTensor.dispose()
         this.predictTensor = unnormal
       }
@@ -338,7 +349,8 @@ export default {
       }
 
       if (normalizationData.inputMin && normalizationData.inputMax) {
-        let { normal } = this.normalizeTensor(
+        let { normal } = utilities.tasks.normalizeTensor(
+          this.$tf,
           this.inputTensor,
           normalizationData.inputMin,
           normalizationData.inputMax
@@ -370,7 +382,7 @@ export default {
         }.bind(this)
         this.global.model.save('indexeddb://model').then(
           function() {
-            worker.postMessage(['predictor', this.$data, inputTensorJSON, normalizationData])
+            worker.postMessage(['predictor', this.$data, inputTensorJSON])
           }.bind(this)
         )
       }.bind(this)
@@ -378,7 +390,7 @@ export default {
       this.$options.sockets.onopen = function() {
         this.global.model.save(this.$tf.io.browserHTTPRequest('./api/model')).then(
           function() {
-            this.$socket.sendObj({ data: ['predictor', this.$data, inputTensorJSON, normalizationData] })
+            this.$socket.sendObj({ data: ['predictor', this.$data, inputTensorJSON] })
           }.bind(this)
         )
       }.bind(this)
