@@ -15,10 +15,10 @@
  * limitations under the License.
  * =============================================================================
  */
+const path = require('path')
 const multer = require('multer')
 const express = require('express')
 const tf = require('@tensorflow/tfjs-node')
-const fileUrl = require('file-url')
 const WebSocket = require('ws')
 const utilities = require('./config/utilities')
 const router = express.Router()
@@ -56,14 +56,16 @@ router.get('/model/:file', function(req, res, next) {
 const self = {
   builder: async function(ws, data) {
     let output = await utilities.tasks.builder(tf, data)
-    await output.model.save(fileUrl('model'))
+    let dirname = __dirname.replace(/\\/g, '/').split(':').splice(-1)[0]
+    await output.model.save('file://' + path.dirname(dirname) + '/model')
     ws.send(JSON.stringify({ data: ['onEnd'] }))
   },
   compiler: async function(ws, data, inputTensorJSON, outputTensorJSON) {
     ws.onEpochEnd = async function(epoch, logs) {
       ws.send(JSON.stringify({ data: ['onEpochEnd', epoch, logs] }))
     }
-    let model = await tf.loadLayersModel(fileUrl('model/model.json'))
+    let dirname = __dirname.replace(/\\/g, '/').split(':').splice(-1)[0]
+    let model = await tf.loadLayersModel('file://' + path.dirname(dirname) + '/model/model.json')
     let output = await utilities.tasks.compiler(
       tf,
       model,
@@ -74,11 +76,12 @@ const self = {
         onEpochEnd: ws.onEpochEnd
       }
     )
-    await output.model.save(fileUrl('model'))
+    await output.model.save('file://' + path.dirname(dirname) + '/model')
     ws.send(JSON.stringify({ data: ['onEnd', output.train] }))
   },
   predictor: async function(ws, data, inputTensorJSON) {
-    let model = await tf.loadLayersModel(fileUrl('model/model.json'))
+    let dirname = __dirname.replace(/\\/g, '/').split(':').splice(-1)[0]
+    let model = await tf.loadLayersModel('file://' + path.dirname(dirname) + '/model/model.json')
     let output = await utilities.tasks.predictor(
       tf,
       model,

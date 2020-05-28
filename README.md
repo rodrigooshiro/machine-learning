@@ -2,6 +2,7 @@
 
 ## Project Setup
 ```
+install python 2.7 (required by @tensorflow/tfjs-node)
 npm install
 ```
 
