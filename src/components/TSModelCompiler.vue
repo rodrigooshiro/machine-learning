@@ -215,7 +215,6 @@ export default {
       this.loadData(this.component.data)
     },
     plugActionEvent(event) {
-      console.log('A')
       let inputTensor = null
       let outputTensor = null
       let inputMatrix = this.global.inputMatrix
@@ -224,7 +223,7 @@ export default {
         inputUnitsNormalize: this.inputUnitsNormalize,
         outputUnitsNormalize: this.outputUnitsNormalize
       }
-      console.log('B')
+
       let inputShape = lodash.cloneDeep(this.global.inputShape)
       if (this.global.training !== null) {
         inputMatrix = this.global.training.inputMatrix
@@ -232,7 +231,7 @@ export default {
       }
       inputShape.unshift(inputMatrix.length)
       inputTensor = this.$tf.tensor(inputMatrix, inputShape)
-      console.log('C')
+
       let outputShape = lodash.cloneDeep(this.global.outputShape)
       if (this.global.training !== null) {
         outputMatrix = this.global.training.outputMatrix
@@ -240,7 +239,7 @@ export default {
       }
       outputShape.unshift(outputMatrix.length)
       outputTensor = this.$tf.tensor(outputMatrix, outputShape)
-      console.log('D')
+
       if (this.inputUnitsNormalize) {
         let { normal, min, max } = utilities.tasks.normalizeTensor(this.$tf, inputTensor)
         inputTensor.dispose()
@@ -255,13 +254,13 @@ export default {
         normalizationData.outputMin = min
         normalizationData.outputMax = max
       }
-      console.log('E')
+
       let callbacks = this.$tfvis.show.fitCallbacks(this.$refs['draw'], ['loss', 'mse'], {
         width: 700,
         height: 200,
         callbacks: ['onEpochEnd']
       })
-      console.log('F')
+
       let inputTensorData = inputTensor.dataSync()
       let inputTensorJSON = {
         data: {
@@ -278,20 +277,21 @@ export default {
         },
         shape: outputTensor.shape
       }
-      console.log('G')
+
       this.$options.sockets.onerror = function() {
+        console.log('MA')
         let worker = new Worker('worker.js')
         worker.onmessage = function(event) {
+          console.log('MB')
           if (event.data[0] === 'onEnd' && event.error) {
-            console.log('H')
+            console.log('MC')
             worker.terminate()
             this.loading = false
           } else if (event.data[0] === 'onEnd') {
-            console.log('I')
+            console.log('MD')
             let train = event.data[1]
             this.$tf.loadLayersModel('indexeddb://model').then(
               function(model) {
-                console.log('J')
                 this.global.model.dispose()
                 this.global.model = model
                 this.output = {
@@ -304,14 +304,13 @@ export default {
               }.bind(this)
             )
           } else {
-            console.log('K')
+            console.log('MF')
             this.fileChart = true
             callbacks[event.data[0]](event.data[1], event.data[2])
           }
         }.bind(this)
         this.global.model.save('indexeddb://model').then(
           function() {
-            console.log('L')
             worker.postMessage(['compiler', this.$data, inputTensorJSON, outputTensorJSON])
             inputTensor.dispose()
             outputTensor.dispose()
@@ -352,7 +351,6 @@ export default {
         }
       }.bind(this)
 
-      console.log('M')
       let websocket = new URL(process.env.VUE_APP_WEBSOCKET_API).hostname
       let hostname = new URL(window.location.href).hostname
       if (websocket === hostname) {
