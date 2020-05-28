@@ -21,7 +21,6 @@ self.importScripts('tf.min.js')
 self.importScripts('utilities.js')
 
 self.onEpochEnd = async function(epoch, logs) {
-  console.log('WC')
   self.postMessage(['onEpochEnd', epoch, logs])
 }
 
@@ -33,7 +32,6 @@ self.builder = async function(data) {
 
 self.compiler = async function(data, inputTensorJSON, outputTensorJSON) {
   let model = await tf.loadLayersModel('indexeddb://model')
-  console.log('WA')
   let output = await utilities.tasks.compiler(
     tf,
     model,
@@ -44,7 +42,6 @@ self.compiler = async function(data, inputTensorJSON, outputTensorJSON) {
       onEpochEnd: self.onEpochEnd
     }
   )
-  console.log('WB')
   await output.model.save('indexeddb://model')
   self.postMessage(['onEnd', output.train])
 }
