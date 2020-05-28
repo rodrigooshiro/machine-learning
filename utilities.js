@@ -228,6 +228,7 @@
         return { model }
       },
       compiler: async function(tf, model, data, inputTensorJSON, outputTensorJSON, callbacks) {
+        console.log('UA')
         let scope = (typeof window === 'undefined') ? global : window
         let inputData = scope[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
         let outputData = scope[outputTensorJSON.data['type']].from(outputTensorJSON.data['data'])
@@ -238,13 +239,13 @@
         if (loss in tf.losses) {
           loss = tf.losses[loss]
         }
-
+        console.log('UB')
         model.compile({
           optimizer: data.compilerOptimizerSelected,
           loss: loss,
           metrics: ['mse']
         })
-
+        console.log('UC')
         let train = await model.fit(inputTensor, outputTensor, {
           batchSize: data.batchSize,
           epochs: data.epochSize,
