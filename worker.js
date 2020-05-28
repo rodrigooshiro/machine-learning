@@ -18,22 +18,21 @@ if (typeof window === 'undefined') {
   window = self
 }
 self.importScripts('tf.min.js')
-self.importScripts('definitions.js')
+self.importScripts('utilities.js')
 
 self.onEpochEnd = async function(epoch, logs) {
   self.postMessage(['onEpochEnd', epoch, logs])
 }
 
 self.builder = async function(data) {
-  let output = await definitions.tasks.builder(tf, data)
+  let output = await utilities.tasks.builder(tf, data)
   await output.model.save('indexeddb://model')
   self.postMessage(['onEnd'])
 }
 
 self.compiler = async function(data, inputTensorJSON, outputTensorJSON) {
   let model = await tf.loadLayersModel('indexeddb://model')
-  let output = await definitions.tasks.compiler(
-    self,
+  let output = await utilities.tasks.compiler(
     tf,
     model,
     data,
@@ -47,15 +46,13 @@ self.compiler = async function(data, inputTensorJSON, outputTensorJSON) {
   self.postMessage(['onEnd', output.train])
 }
 
-self.predictor = async function(data, inputTensorJSON, normalizationData) {
+self.predictor = async function(data, inputTensorJSON) {
   let model = await tf.loadLayersModel('indexeddb://model')
-  let output = await definitions.tasks.predictor(
-    self,
+  let output = await utilities.tasks.predictor(
     tf,
     model,
     data,
-    inputTensorJSON,
-    normalizationData
+    inputTensorJSON
   )
   self.postMessage(['onEnd', output.predictTensorJSON])
 }
