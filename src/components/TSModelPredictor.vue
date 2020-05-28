@@ -42,9 +42,24 @@
       :hide-footer="true"
       size="lg"
     >
-      <center>
-        <div ref="draw"></div>
-      </center>
+      <b-carousel :interval="0" :indicators="true">
+        <b-carousel-slide :img-blank="true" v-if="scatterplot">
+          <template v-slot:img>
+            <div ref="scatterplot"></div>
+          </template>
+        </b-carousel-slide>
+        <b-carousel-slide :img-blank="true" v-if="perClassAccuracy">
+          <template v-slot:img>
+            <div ref="perClassAccuracy"></div>
+          </template>
+        </b-carousel-slide>
+        <b-carousel-slide :img-blank="true" v-if="confusionMatrix">
+          <template v-slot:img>
+            <div ref="confusionMatrix"></div>
+          </template>
+        </b-carousel-slide>
+      </b-carousel>
+      <footer class="modal-footer"></footer>
     </b-modal>
   </component-layout>
 </template>
@@ -69,6 +84,7 @@
 import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import jquery from 'jquery'
+import lodash from 'lodash'
 
 export default {
   name: 'TSModelPredictor',
@@ -79,6 +95,9 @@ export default {
       serializable: ['layerSize'],
       layerSize: 0,
       fileChart: false,
+      scatterplot: true,
+      perClassAccuracy: true,
+      confusionMatrix: true,
       toggleIcon: 'caret-up'
     }
     return this.importData(data)
@@ -95,10 +114,8 @@ export default {
     plugActionDisabled() {
       let disabled = 0
       disabled |= this.loading === true
-      disabled |=
-        this.inputData === null ||
-        this.inputData.model === null ||
-        !(this.inputData.model instanceof Object)
+      disabled |= this.global.model === null
+      disabled |= this.inputData === null || this.inputData.normalizationData === undefined
       disabled |= this.layerSize > this.indexMax
       return disabled === 1
     },
@@ -109,8 +126,8 @@ export default {
     },
     indexMax() {
       let indexMax = 0
-      if (this.inputData && this.inputData.model && this.inputData.model.layers) {
-        indexMax = this.inputData.model.layers.length
+      if (this.global.model && this.global.model.layers) {
+        indexMax = this.global.model.layers.length
       }
       return indexMax
     }
@@ -131,7 +148,6 @@ export default {
         delete this.$options.sockets.onerror
         delete this.$options.sockets.onopen
         delete this.$options.sockets.onmessage
-        delete this.$options.sockets.onclose
       }
     }
   },
@@ -146,85 +162,74 @@ export default {
     trashAction(event) {
       jquery(this.$refs['draw']).empty()
       this.fileChart = false
+      this.scatterplot = true
+      this.perClassAccuracy = true
+      this.confusionMatrix = true
+      this.inputTensor = null
+      this.outputTensor = null
       this.output = null
       this.loadData(this.data)
       this.loadData(this.component.data)
     },
     plugActionPost(predictTensorJSON) {
-      let { data, inputTensorJSON, outputTensorJSON, indexLabel, normalizationData } = this.inputData
+      let { normalizationData } = this.inputData
+      let predictData = global[predictTensorJSON.data['type']].from(predictTensorJSON.data['data'])
+      this.predictTensor = this.$tf.tensor(predictData, predictTensorJSON.shape)
 
-      let values = null
-      let inputMatrix = null
-      let inputData = global[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
-      let inputTensor = this.$tf.tensor(inputData, inputTensorJSON.shape)
+      if (Array.isArray(this.global.outputShape)) {
+        let outputMatrix = null
+        let outputShape = lodash.cloneDeep(this.global.outputShape)
+        if (this.global.evaluation !== null) {
+          outputMatrix = this.global.evaluation.outputMatrix
+          outputShape = lodash.cloneDeep(this.global.evaluation.outputShape)
+        }
+        outputShape.unshift(outputMatrix.length)
+        this.outputTensor = this.$tf.tensor(outputMatrix, outputShape)
+      } else {
+      }
 
       if (normalizationData.inputUnitsNormalize) {
-        let { inputMax, inputMin } = normalizationData
-        let maxData = global[inputMax.data['type']].from(inputMax.data['data'])
-        let maxTensor = this.$tf.tensor(maxData, inputMax.shape)
-        let minData = global[inputMin.data['type']].from(inputMin.data['data'])
-        let minTensor = this.$tf.tensor(minData, inputMin.shape)
-        values = inputTensor.mul(maxTensor.sub(minTensor)).add(minTensor)
-        inputMatrix = values.arraySync()
-        maxTensor.dispose()
-        minTensor.dispose()
-      } else {
-        values = inputTensor
-        inputMatrix = values.arraySync()
+        let { inputMin, inputMax } = normalizationData
+        let { unnormal } = this.unnormalizeTensor(this.inputTensor, inputMin, inputMax)
+        this.inputTensor.dispose()
+        this.inputTensor = unnormal
       }
-
-      let outputMatrix = null
-      let outputData = global[outputTensorJSON.data['type']].from(outputTensorJSON.data['data'])
-      let outputTensor = this.$tf.tensor(outputData, outputTensorJSON.shape)
-
-      let predictMatrix = null
-      let predictData = global[predictTensorJSON.data['type']].from(predictTensorJSON.data['data'])
-      let predictTensor = this.$tf.tensor(predictData, predictTensorJSON.shape)
 
       if (normalizationData.outputUnitsNormalize) {
-        let { outputMax, outputMin } = normalizationData
-        let maxData = global[outputMax.data['type']].from(outputMax.data['data'])
-        let maxTensor = this.$tf.tensor(maxData, outputMax.shape)
-        let minData = global[outputMin.data['type']].from(outputMin.data['data'])
-        let minTensor = this.$tf.tensor(minData, outputMin.shape)
-        values = outputTensor.mul(maxTensor.sub(minTensor)).add(minTensor)
-        outputMatrix = values.arraySync()
-        values = predictTensor.mul(maxTensor.sub(minTensor)).add(minTensor)
-        predictMatrix = values.arraySync()
-        maxTensor.dispose()
-        minTensor.dispose()
+        let { outputMin, outputMax } = normalizationData
+        let { unnormal } = this.unnormalizeTensor(this.predictTensor, outputMin, outputMax)
+        this.predictTensor.dispose()
+        this.predictTensor = unnormal
+      }
+
+      let inputMatrix = this.inputTensor.arraySync()
+      let outputMatrix = this.outputTensor.arraySync()
+      let predictMatrix = this.predictTensor.arraySync()
+
+      let classNames = []
+      let classNamesMap = []
+
+      if (this.global.labels !== null) {
+        if (this.global.evaluation.labels != null) {
+          classNamesMap = this.global.evaluation.labels
+        } else {
+          classNamesMap = this.global.labels
+        }
+        classNames = Array.from(new Set(classNamesMap))
       } else {
-        values = outputTensor
-        outputMatrix = values.arraySync()
-
-        values = predictTensor
-        predictMatrix = values.arraySync()
-      }
-      inputTensor.dispose()
-      outputTensor.dispose()
-      predictTensor.dispose()
-
-      let dataLabels = []
-      if (indexLabel !== -1) {
-        dataLabels = data.map(x => x[indexLabel])
-      }
-      let output = []
-      for (let i = 0; i < inputMatrix.length; i++) {
-        let row = []
-        for (let j = 0; j < inputTensor.shape[1]; j++) {
-          row.push(inputMatrix[i][j])
+        for (let i = 0; i < this.global.outputShape[0]; i++) {
+          classNames.push(String(i))
         }
-        for (let j = 0; j < predictTensor.shape[1]; j++) {
-          row.push(predictMatrix[i][j])
-        }
-        if (indexLabel !== -1) {
-          row.push(dataLabels[i])
-        }
-        output.push(row)
       }
-      this.output = output
 
-      if (inputTensor.shape[1] === 1 && outputTensor.shape[1] === 1 && predictTensor.shape[1] === 1) {
+      this.fileChart = false
+      this.scatterplot = false
+      this.perClassAccuracy = false
+      this.confusionMatrix = false
+
+      let mul = this.inputTensor.shape[1] * this.outputTensor.shape[1] * this.predictTensor.shape[1]
+      if (mul === 1) {
+        this.scatterplot = true
         let originalValues = []
         let predictedValues = []
         for (let i = 0; i < inputMatrix.length; i++) {
@@ -238,7 +243,7 @@ export default {
           })
         }
         this.$tfvis.render.scatterplot(
-          this.$refs['draw'],
+          this.$refs['scatterplot'],
           { values: [originalValues, predictedValues], series: ['original', 'predicted'] },
           {
             width: 700,
@@ -246,13 +251,110 @@ export default {
           }
         )
         this.fileChart = true
-      } else {
-        this.fileChart = false
       }
+
+      this.classNames = classNames
+      if (classNames.length !== 0 && this.outputTensor.shape[1] === this.predictTensor.shape[1]) {
+        this.$tf.tidy(
+          function() {
+            let tensorUse = ['perClassAccuracy', 'confusionMatrix']
+            this.perClassAccuracy = true
+            this.$tfvis.metrics
+              .perClassAccuracy(this.outputTensor.argMax(-1), this.predictTensor.argMax(-1))
+              .then(
+                function(classAccuracy) {
+                  this.$tfvis.show.perClassAccuracy(
+                    this.$refs['perClassAccuracy'],
+                    classAccuracy,
+                    classNames
+                  )
+                  this.fileChart = true
+                  tensorUse.pop()
+                  if (tensorUse.length === 0) {
+                    this.outputTensor.dispose()
+                    this.predictTensor.dispose()
+                  }
+                }.bind(this)
+              )
+
+            this.confusionMatrix = true
+            this.$tfvis.metrics
+              .confusionMatrix(this.outputTensor.argMax(-1), this.predictTensor.argMax(-1))
+              .then(
+                function(confusionMatrix) {
+                  this.$tfvis.render.confusionMatrix(
+                    this.$refs['confusionMatrix'],
+                    { values: confusionMatrix, tickLabels: classNames },
+                    {
+                      width: 700,
+                      height: 450
+                    }
+                  )
+                  this.fileChart = true
+                  tensorUse.pop()
+                  if (tensorUse.length === 0) {
+                    this.outputTensor.dispose()
+                    this.predictTensor.dispose()
+                  }
+                }.bind(this)
+              )
+          }.bind(this)
+        )
+      } else {
+        this.outputTensor.dispose()
+        this.predictTensor.dispose()
+      }
+
+      let output = []
+      for (let i = 0; i < inputMatrix.length; i++) {
+        let row = []
+        for (let j = 0; j < this.inputTensor.shape[1]; j++) {
+          row.push(inputMatrix[i][j])
+        }
+        for (let j = 0; j < this.predictTensor.shape[1]; j++) {
+          row.push(predictMatrix[i][j])
+        }
+        if (classNamesMap.length !== 0) {
+          row.push(classNamesMap[i])
+        }
+        output.push(row)
+      }
+      this.inputTensor.dispose()
+      this.output = output
     },
-    plugAction(event) {
-      this.loading = true
-      let { model, inputTensorJSON, normalizationData } = this.inputData
+    plugActionEvent(event) {
+      let { normalizationData } = this.inputData
+
+      if (Array.isArray(this.global.inputShape)) {
+        let inputMatrix = null
+        let inputShape = lodash.cloneDeep(this.global.inputShape)
+        if (this.global.evaluation !== null) {
+          inputMatrix = this.global.evaluation.inputMatrix
+          inputShape = lodash.cloneDeep(this.global.evaluation.inputShape)
+        }
+        inputShape.unshift(inputMatrix.length)
+        this.inputTensor = this.$tf.tensor(inputMatrix, inputShape)
+      } else {
+      }
+
+      if (normalizationData.inputMin && normalizationData.inputMax) {
+        let { normal } = this.normalizeTensor(
+          this.inputTensor,
+          normalizationData.inputMin,
+          normalizationData.inputMax
+        )
+        this.inputTensor.dispose()
+        this.inputTensor = normal
+      }
+
+      let inputTensorData = this.inputTensor.dataSync()
+      let inputTensorJSON = {
+        data: {
+          type: inputTensorData.constructor.name,
+          data: Object.values(inputTensorData)
+        },
+        shape: this.inputTensor.shape
+      }
 
       this.$options.sockets.onerror = function() {
         let worker = new Worker('worker.js')
@@ -266,7 +368,7 @@ export default {
             this.loading = false
           }
         }.bind(this)
-        model.save('indexeddb://model').then(
+        this.global.model.save('indexeddb://model').then(
           function() {
             worker.postMessage(['predictor', this.$data, inputTensorJSON, normalizationData])
           }.bind(this)
@@ -274,7 +376,7 @@ export default {
       }.bind(this)
 
       this.$options.sockets.onopen = function() {
-        model.save(this.$tf.io.browserHTTPRequest('./api/model')).then(
+        this.global.model.save(this.$tf.io.browserHTTPRequest('./api/model')).then(
           function() {
             this.$socket.sendObj({ data: ['predictor', this.$data, inputTensorJSON, normalizationData] })
           }.bind(this)
@@ -286,11 +388,8 @@ export default {
         if (event.data[0] === 'onEnd') {
           this.plugActionPost(event.data[1])
           this.$disconnect()
+          this.loading = false
         }
-      }.bind(this)
-
-      this.$options.sockets.onclose = function() {
-        this.loading = false
       }.bind(this)
 
       let websocket = new URL(process.env.VUE_APP_WEBSOCKET_API).hostname

@@ -20,10 +20,10 @@
         </div>
 
         <div class="indexInput">
-          <label>Output Reference</label>
+          <label>Target</label>
           <b-form-select
-            v-model="componentOutputReferenceSelected"
-            :options="componentOutputReferenceOptions"
+            v-model="reference"
+            :options="['Input', 'Output']"
             :disabled="editActionDisabled"
           ></b-form-select>
         </div>
@@ -61,12 +61,8 @@ export default {
       serializable: ['labelSize', 'output_ref'],
       toggleIcon: 'caret-up',
       labelSize: 1,
-      output_ref: 'pipeline_0',
-      componentOutputReferenceOptions: []
+      reference: 'Output'
     }
-    let index = parseInt(this.component.index.replace(/pipeline_/g, ''))
-    data.componentOutputReferenceOptions = Array.from({ length: this.length }, (v, k) => k)
-    data.componentOutputReferenceOptions = data.componentOutputReferenceOptions.filter(v => v !== index)
     return this.importData(data)
   },
   computed: {
@@ -74,7 +70,6 @@ export default {
       let disabled = 0
       disabled |= this.loading === true
       disabled |= this.inputData === null
-      disabled |= this.$parent.$parent.$refs[this.output_ref][0].output === null
       return disabled === 1
     },
     trashActionDisabled() {
@@ -85,14 +80,6 @@ export default {
     },
     plugActionDisabled() {
       return this.editActionDisabled
-    },
-    componentOutputReferenceSelected: {
-      get() {
-        return parseInt(this.output_ref.replace(/pipeline_/g, ''))
-      },
-      set(value) {
-        this.output_ref = 'pipeline_' + value
-      }
     }
   },
   watch: {
@@ -112,20 +99,23 @@ export default {
       this.output = null
       this.loadData(this.data)
       this.loadData(this.component.data)
-      let output = this.$parent.$parent.$refs[this.output_ref][0].output
-      delete output.datasetLabels
-      delete output.datasetLabelsSize
     },
-    plugAction(event) {
-      this.loading = true
-      let output = this.$parent.$parent.$refs[this.output_ref][0].output
-      output.datasetLabels = new Uint8Array(this.inputData)
-      output.datasetLabelsSize = this.labelSize
-      setTimeout(
-        function() {
+    plugActionEvent(event) {
+      let datasetLabels = new Uint8Array(this.inputData)
+      let bufferSize = datasetLabels.length
+      let tensor = this.$tf.tensor(datasetLabels, [bufferSize / this.labelSize, this.labelSize])
+      tensor.array().then(
+        function(matrix) {
+          tensor.dispose()
+          if (this.reference === 'Output') {
+            this.global.outputShape = [this.labelSize]
+            this.global.outputMatrix = matrix
+          } else {
+            this.global.inputShape = [this.labelSize]
+            this.global.inputMatrix = matrix
+          }
           this.loading = false
-        }.bind(this),
-        1
+        }.bind(this)
       )
     }
   }

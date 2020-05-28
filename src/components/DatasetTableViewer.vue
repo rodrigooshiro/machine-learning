@@ -196,8 +196,9 @@ export default {
     },
     inputDataTable: {
       get() {
-        let data = []
+        let data = null
         if (this.inputData !== null) {
+          data = []
           let value = ''
           if (Array.isArray(this.inputData)) {
             value = this.inputData
@@ -242,7 +243,7 @@ export default {
             }
           }
         }
-        if (this.header) {
+        if (this.header === true && data !== null) {
           let items = []
           for (let i = 0; i < data.length; i++) {
             let row = {}
@@ -261,10 +262,12 @@ export default {
           }
           data = items
         }
-        if (this.header === false) {
+        if (this.header === false && data !== null) {
           this.output = data
-        } else {
+        } else if (data !== null) {
           this.output = data.map(x => Object.values(x))
+        } else {
+          data = []
         }
         return data
       }

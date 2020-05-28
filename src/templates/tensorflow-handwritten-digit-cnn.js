@@ -43,18 +43,34 @@ module.exports = [
       'we **reference** the output of pipeline 1, so it will have this information added to it.',
     type: 'DatasetLabel',
     data: {
-      labelSize: 10,
-      output_ref: 'pipeline_1'
+      labelSize: 10
     }
   },
   {
     index: 'pipeline_4',
+    type: 'DatasetSplitter',
+    title: 'Dataset Splitter',
+    description:
+      'Because javascript has limitations regarding the total memory it may use, the complete ' +
+      'datasource will not be loaded in the pipeline. To run this CNN only **10%** of the total ' +
+      'dataset will be selected and ' +
+      'shuffled. With **65000** digits in the example, only **6500** will be used and split between ' +
+      'training (**70%**) and evaluation (**30%**) sets.',
+    data: {
+      sampleSplit: 0.1,
+      shuffle: true,
+      trainingRatio: 0.7,
+      evaluationRatio: 0.3
+    }
+  },
+  {
+    index: 'pipeline_5',
+    input_ref: 'pipeline_4',
     type: 'TSModelBuilder',
     title: 'Define the model architecture',
     description:
       "This is how the neural network is defined, it's important to have the last layer with **10**, " +
       'units as each unit will categorize the digits.',
-    input_ref: 'pipeline_1',
     data: {
       layerSize: 6,
       layerName: ['conv2d', 'maxPooling2d', 'conv2d', 'maxPooling2d', 'flatten', 'dense'],
@@ -69,20 +85,20 @@ module.exports = [
     }
   },
   {
-    index: 'pipeline_5',
+    index: 'pipeline_6',
+    input_ref: 'pipeline_5',
     type: 'TSModelCompiler',
     title: 'Train the Model',
     description:
-      'The training uses **all** 65000 digits loaded, having 15% of those digits as ' +
-      '**validation** to prevent overfitting. So the training size will be 55250 and the validation ' +
-      'size will be 9750. **Shuffling** is turned on, as most of the digits are ordered in ' +
-      'sequence and have the same handwriting. It takes a **long** time to train, this example ' +
-      'should have tensorflow running in a backend as running entirely in the browser can be ' +
+      'The training uses 4550 digits, having 15% of those digits as ' +
+      '**validation** to prevent overfitting. So the training size will be 3868 and the validation ' +
+      'size will be 682. **Shuffling** is turned on, as most of the digits are ordered in ' +
+      'sequence and have the same handwriting. It takes a **long** time to train in the broser, this ' +
+      'example should have tensorflow running in a backend because running entirely in the browser is ' +
       'quite **slow**.\n\nThe backend runs with the package **@tensorflow/tfjs-node**, you can ' +
       'set it up in your own machine and use the **GPU** if you have **Linux**. My machine cannot not ' +
-      'run this example running javascript in the browser, but with **C++** bindings it completes ' +
-      'the training.',
-    input_ref: 'pipeline_4',
+      'run this example in javascript in the browser, but with **C++** bindings it completes ' +
+      'the training and evaluation.',
     data: {
       epochSize: 10,
       batchSize: 512,
@@ -93,13 +109,14 @@ module.exports = [
     }
   },
   {
-    index: 'pipeline_6',
+    index: 'pipeline_7',
+    input_ref: 'pipeline_6',
     type: 'TSModelPredictor',
     title: 'Evaluate our model',
     description:
+      'The remaining 1950 digits from the sample are used to evaluate the model. ' +
       'All six layers will be used to validate the CNN, the last layer (output) should classify the ' +
       'digit if the training was successful.',
-    input_ref: 'pipeline_5',
     data: {
       layerSize: 6
     }

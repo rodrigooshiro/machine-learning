@@ -22,28 +22,21 @@
     <b-collapse :visible="toggleIcon === 'caret-up'">
       <b-form inline>
         <div class="indexInput">
-          <label>
-            Input Units
-            <span v-if="!unitsActionDisabled">({{ inputSize }})</span>
-          </label>
-          <b-dropdown
-            :text="unitsActionDisabled ? 'datasetImages' : 'Columns'"
-            no-flip
-            split
-            split-variant="outline-secondary"
-            block
-            variant="secondary"
-            :disabled="editActionDisabled || unitsActionDisabled"
-          >
-            <b-dropdown-form style="text-align: left">
-              <template v-for="item in inputUnits">
-                <b-form v-bind:key="item.key" inline>
-                  <b-form-checkbox v-model="item.checked" :options="[true, false]"></b-form-checkbox>
-                  {{ item.label }}
-                </b-form>
-              </template>
-            </b-dropdown-form>
-          </b-dropdown>
+          <label>Compiler Optimizer</label>
+          <b-form-select
+            v-model="compilerOptimizerSelected"
+            :options="compilerOptimizerOptions"
+            :disabled="editActionDisabled"
+          ></b-form-select>
+        </div>
+
+        <div class="indexInput">
+          <label>Compiler Loss</label>
+          <b-form-select
+            v-model="compilerLossSelected"
+            :options="compilerLossOptions"
+            :disabled="editActionDisabled"
+          ></b-form-select>
         </div>
 
         <div class="indexInput">
@@ -53,31 +46,6 @@
             :options="[true, false]"
             :disabled="editActionDisabled"
           ></b-form-select>
-        </div>
-
-        <div class="indexInput">
-          <label>
-            Output Units
-            <span v-if="!unitsActionDisabled">({{ outputSize }})</span>
-          </label>
-          <b-dropdown
-            :text="unitsActionDisabled ? 'datasetLabels' : 'Columns'"
-            no-flip
-            split
-            split-variant="outline-secondary"
-            block
-            variant="secondary"
-            :disabled="editActionDisabled || unitsActionDisabled"
-          >
-            <b-dropdown-form style="text-align: left">
-              <template v-for="item in outputUnits">
-                <b-form v-bind:key="item.key" inline>
-                  <b-form-checkbox v-model="item.checked" :options="[true, false]"></b-form-checkbox>
-                  {{ item.label }}
-                </b-form>
-              </template>
-            </b-dropdown-form>
-          </b-dropdown>
         </div>
 
         <div class="indexInput">
@@ -128,26 +96,6 @@
           <b-form-select v-model="shuffle" :options="[true, false]" :disabled="editActionDisabled"></b-form-select>
         </div>
       </b-form>
-
-      <b-form inline>
-        <div class="indexInput">
-          <label>Compiler Optimizer</label>
-          <b-form-select
-            v-model="compilerOptimizerSelected"
-            :options="compilerOptimizerOptions"
-            :disabled="editActionDisabled"
-          ></b-form-select>
-        </div>
-
-        <div class="indexInput">
-          <label>Compiler Loss</label>
-          <b-form-select
-            v-model="compilerLossSelected"
-            :options="compilerLossOptions"
-            :disabled="editActionDisabled"
-          ></b-form-select>
-        </div>
-      </b-form>
     </b-collapse>
     <div style="margin-top: 8px;"></div>
 
@@ -183,6 +131,7 @@
 import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import jquery from 'jquery'
+import lodash from 'lodash'
 import * as definitions from '../config/definitions.js'
 
 export default {
@@ -196,9 +145,7 @@ export default {
         'epochSize',
         'batchSize',
         'validationSplit',
-        'inputUnits',
         'inputUnitsNormalize',
-        'outputUnits',
         'outputUnitsNormalize',
         'compilerOptimizerSelected',
         'compilerLossSelected'
@@ -208,9 +155,7 @@ export default {
       epochSize: 0,
       batchSize: 0,
       validationSplit: 0,
-      inputUnits: [],
       inputUnitsNormalize: false,
-      outputUnits: [],
       outputUnitsNormalize: false,
       compilerOptimizerSelected: null,
       compilerOptimizerOptions: definitions.tf.train.options,
@@ -221,69 +166,23 @@ export default {
     return this.importData(data)
   },
   computed: {
-    unitsActionDisabled() {
-      let disabled = 0
-      disabled |= this.loading === true
-      if (this.inputData !== null && 'data' in this.inputData) {
-        let { data } = this.inputData
-        disabled |= 'datasetImages' in data && 'datasetLabels' in data
-      }
-      return disabled === 1
-    },
     editActionDisabled() {
       let disabled = 0
       disabled |= this.loading === true
-      disabled |= this.inputSize === 0
-      disabled |= this.outputSize === 0
+      disabled |= this.global.model === null
+      disabled |= this.global.inputShape === null
       return disabled === 1
     },
     trashActionDisabled() {
       return this.editActionDisabled
     },
     plugActionDisabled() {
-      let disabled = 0
-      disabled |= this.loading === true
-      if (!this.unitsActionDisabled && this.inputData !== null) {
-        disabled |= this.inputUnits.filter(unit => unit.checked === true).length !== this.inputSize
-        disabled |= this.outputUnits.filter(unit => unit.checked === true).length !== this.outputSize
-      }
-      return disabled === 1
+      return this.editActionDisabled
     },
     imageActionDisabled() {
       let disabled = 0
       disabled |= this.fileChart === false
       return disabled === 1
-    },
-    inputSize() {
-      let inputSize = 0
-      if (
-        this.inputData &&
-        this.inputData.model &&
-        this.inputData.model.layers &&
-        this.inputData.model.layers.length > 1
-      ) {
-        inputSize = this.inputData.model.layers[0].batchInputShape[1]
-      }
-      return inputSize
-    },
-    outputSize() {
-      let outputSize = 0
-      if (
-        this.inputData &&
-        this.inputData.model &&
-        this.inputData.model.layers &&
-        this.inputData.model.layers.length > 1
-      ) {
-        outputSize = this.inputData.model.layers[this.inputData.model.layers.length - 1].units
-      }
-      return outputSize
-    },
-    dataSize() {
-      let dataSize = 0
-      if (this.inputData && this.inputData.data && this.inputData.data.length) {
-        dataSize = this.inputData.data[0].length
-      }
-      return dataSize
     }
   },
   watch: {
@@ -297,7 +196,6 @@ export default {
         delete this.$options.sockets.onerror
         delete this.$options.sockets.onopen
         delete this.$options.sockets.onmessage
-        delete this.$options.sockets.onclose
       }
     }
   },
@@ -315,123 +213,46 @@ export default {
       this.output = null
       this.loadData(this.data)
       this.loadData(this.component.data)
-      if (this.inputData && this.inputData.data && this.inputData.data.length) {
-        for (let i = 0; i < this.dataSize; i++) {
-          if (this.inputUnits.filter(unit => unit.key === i).length === 0) {
-            this.inputUnits.push({
-              key: i,
-              checked: false,
-              label: 'Column ' + i
-            })
-          }
-          if (this.outputUnits.filter(unit => unit.key === i).length === 0) {
-            this.outputUnits.push({
-              key: i,
-              checked: false,
-              label: 'Column ' + i
-            })
-          }
-        }
-      }
     },
-    plugAction(event) {
-      this.loading = true
-      let { model, data } = this.inputData
+    plugActionEvent(event) {
       let inputTensor = null
       let outputTensor = null
-      let inputMatrix = null
-      let outputMatrix = null
+      let inputMatrix = this.global.inputMatrix
+      let outputMatrix = this.global.outputMatrix
       let normalizationData = {
         inputUnitsNormalize: this.inputUnitsNormalize,
         outputUnitsNormalize: this.outputUnitsNormalize
       }
-      if ('datasetImages' in data) {
-        inputMatrix = data['datasetImages']
-        // inputMatrix = inputMatrix.slice(0, inputMatrix.length / 10)
-        let size = data.spriteWidth * data.spriteHeight * data.spriteChannels
-        let length = parseInt(inputMatrix.length / size)
-        let tensor = this.$tf.tensor2d(inputMatrix, [length, size])
-        inputTensor = tensor.reshape([length, data.spriteWidth, data.spriteHeight, data.spriteChannels])
-      } else {
-        inputMatrix = []
-        for (let i = 0; i < data.length; i++) {
-          let inputRow = []
-          for (let j = 0; j < this.dataSize; j++) {
-            if (this.inputUnits.filter(unit => unit.key === j && unit.checked === true).length) {
-              inputRow.push(parseFloat(data[i][j]))
-            }
-          }
-          inputMatrix.push(inputRow)
-        }
-        inputTensor = this.$tf.tensor2d(inputMatrix)
+
+      let inputShape = lodash.cloneDeep(this.global.inputShape)
+      if (this.global.training !== null) {
+        inputMatrix = this.global.training.inputMatrix
+        inputShape = lodash.cloneDeep(this.global.training.inputShape)
       }
-      if ('datasetLabels' in data) {
-        outputMatrix = data['datasetLabels']
-        // outputMatrix = outputMatrix.slice(0, outputMatrix.length / 10)
-        let size = data['datasetLabelsSize']
-        let length = parseInt(outputMatrix.length / size)
-        outputTensor = this.$tf.tensor2d(outputMatrix, [length, size])
-      } else {
-        outputMatrix = []
-        for (let i = 0; i < data.length; i++) {
-          let outputRow = []
-          for (let j = 0; j < this.dataSize; j++) {
-            if (this.outputUnits.filter(unit => unit.key === j && unit.checked === true).length) {
-              outputRow.push(parseFloat(data[i][j]))
-            }
-          }
-          outputMatrix.push(outputRow)
-        }
-        outputTensor = this.$tf.tensor2d(outputMatrix)
+      inputShape.unshift(inputMatrix.length)
+      inputTensor = this.$tf.tensor(inputMatrix, inputShape)
+
+      let outputShape = lodash.cloneDeep(this.global.outputShape)
+      if (this.global.training !== null) {
+        outputMatrix = this.global.training.outputMatrix
+        outputShape = lodash.cloneDeep(this.global.training.outputShape)
       }
-      let dataSync = null
+      outputShape.unshift(outputMatrix.length)
+      outputTensor = this.$tf.tensor(outputMatrix, outputShape)
+
       if (this.inputUnitsNormalize) {
-        let max = inputTensor.max()
-        let min = inputTensor.min()
-        let tensor = inputTensor.sub(min).div(max.sub(min))
-        inputTensor = tensor
-        dataSync = max.dataSync()
-        normalizationData.inputMax = {
-          data: {
-            type: dataSync.constructor.name,
-            data: Object.values(dataSync)
-          },
-          shape: dataSync.shape
-        }
-        dataSync = min.dataSync()
-        normalizationData.inputMin = {
-          data: {
-            type: dataSync.constructor.name,
-            data: Object.values(dataSync)
-          },
-          shape: dataSync.shape
-        }
-        max.dispose()
-        min.dispose()
+        let { normal, min, max } = this.normalizeTensor(inputTensor)
+        inputTensor.dispose()
+        inputTensor = normal
+        normalizationData.inputMin = min
+        normalizationData.inputMax = max
       }
       if (this.outputUnitsNormalize) {
-        let max = outputTensor.max()
-        let min = outputTensor.min()
-        let tensor = outputTensor.sub(min).div(max.sub(min))
-        outputTensor = tensor
-        dataSync = max.dataSync()
-        normalizationData.outputMax = {
-          data: {
-            type: dataSync.constructor.name,
-            data: Object.values(dataSync)
-          },
-          shape: dataSync.shape
-        }
-        dataSync = min.dataSync()
-        normalizationData.outputMin = {
-          data: {
-            type: dataSync.constructor.name,
-            data: Object.values(dataSync)
-          },
-          shape: dataSync.shape
-        }
-        max.dispose()
-        min.dispose()
+        let { normal, min, max } = this.normalizeTensor(outputTensor)
+        outputTensor.dispose()
+        outputTensor = normal
+        normalizationData.outputMin = min
+        normalizationData.outputMax = max
       }
 
       let callbacks = this.$tfvis.show.fitCallbacks(this.$refs['draw'], ['loss', 'mse'], {
@@ -467,12 +288,11 @@ export default {
             let train = event.data[1]
             this.$tf.loadLayersModel('indexeddb://model').then(
               function(model) {
-                this.inputData.model = model
+                this.global.model.dispose()
+                this.global.model = model
                 this.output = {
                   ...this.inputData,
                   train: train,
-                  inputTensorJSON: inputTensorJSON,
-                  outputTensorJSON: outputTensorJSON,
                   normalizationData: normalizationData
                 }
                 worker.terminate()
@@ -484,7 +304,7 @@ export default {
             callbacks[event.data[0]](event.data[1], event.data[2])
           }
         }.bind(this)
-        model.save('indexeddb://model').then(
+        this.global.model.save('indexeddb://model').then(
           function() {
             worker.postMessage(['compiler', this.$data, inputTensorJSON, outputTensorJSON])
             inputTensor.dispose()
@@ -494,9 +314,11 @@ export default {
       }.bind(this)
 
       this.$options.sockets.onopen = function() {
-        model.save(this.$tf.io.browserHTTPRequest('./api/model')).then(
+        this.global.model.save(this.$tf.io.browserHTTPRequest('./api/model')).then(
           function() {
             this.$socket.sendObj({ data: ['compiler', this.$data, inputTensorJSON, outputTensorJSON] })
+            inputTensor.dispose()
+            outputTensor.dispose()
           }.bind(this)
         )
       }.bind(this)
@@ -507,25 +329,21 @@ export default {
           let train = event.data[1]
           this.$tf.loadLayersModel('./api/model/model.json').then(
             function(model) {
-              this.inputData.model = model
+              this.global.model.dispose()
+              this.global.model = model
               this.output = {
                 ...this.inputData,
                 train: train,
-                inputTensorJSON: inputTensorJSON,
-                outputTensorJSON: outputTensorJSON,
                 normalizationData: normalizationData
               }
               this.$disconnect()
+              this.loading = false
             }.bind(this)
           )
         } else {
           this.fileChart = true
           callbacks[event.data[0]](event.data[1], event.data[2])
         }
-      }.bind(this)
-
-      this.$options.sockets.onclose = function() {
-        this.loading = false
       }.bind(this)
 
       let websocket = new URL(process.env.VUE_APP_WEBSOCKET_API).hostname
@@ -535,20 +353,6 @@ export default {
       } else {
         this.$options.sockets.onerror()
       }
-      /*
-      this.$tf.loadLayersModel('./api/model/!model.json').then(
-        function(model) {
-          this.inputData.model = model
-          this.output = {
-            ...this.inputData,
-            inputTensorJSON: inputTensorJSON,
-            outputTensorJSON: outputTensorJSON,
-            normalizationData: normalizationData
-          }
-          this.loading = false
-        }.bind(this)
-      )
-      */
     }
   }
 }

@@ -22,41 +22,6 @@
     <b-collapse :visible="toggleIcon === 'caret-up'">
       <b-form inline>
         <div class="indexInput">
-          <label>Input Index (Start)</label>
-          <b-form-spinbutton
-            v-model="indexStart"
-            min="-1"
-            :max="indexMax"
-            :formatter-fn="indexFormatter"
-            :disabled="indexActionDisabled"
-          ></b-form-spinbutton>
-        </div>
-
-        <div class="indexInput">
-          <label>Input Index (End)</label>
-          <b-form-spinbutton
-            v-model="indexEnd"
-            min="-1"
-            :max="indexMax"
-            :formatter-fn="indexFormatter"
-            :disabled="indexActionDisabled"
-          ></b-form-spinbutton>
-        </div>
-
-        <div class="indexInput">
-          <label>Label Index</label>
-          <b-form-spinbutton
-            v-model="indexLabel"
-            min="-1"
-            :max="indexMax"
-            :formatter-fn="indexFormatter"
-            :disabled="indexActionDisabled"
-          ></b-form-spinbutton>
-        </div>
-      </b-form>
-
-      <b-form inline>
-        <div class="indexInput">
           <label>Total Layers</label>
           <b-form-spinbutton
             v-model="layerSize"
@@ -64,48 +29,6 @@
             placeholder="--"
             :disabled="editActionDisabled"
           ></b-form-spinbutton>
-        </div>
-
-        <div class="indexInput">
-          <label>Input Shape</label>
-          <b-dropdown
-            text="shape"
-            no-flip
-            split
-            split-variant="outline-secondary"
-            block
-            variant="secondary"
-            :disabled="editActionDisabled"
-          >
-            <b-dropdown-form style="text-align: left">
-              <b-form inline>
-                <div class="indexInput">
-                  <label>Dimensions</label>
-                  <b-form-spinbutton
-                    v-model="inputShapeLength"
-                    min="1"
-                    :formatter-fn="positiveFormatter"
-                    :disabled="true"
-                  ></b-form-spinbutton>
-                </div>
-              </b-form>
-
-              <label v-if="inputShape.length > 0">Values</label>
-              <template v-for="i in inputShape.length">
-                <b-form v-bind:key="i" inline>
-                  <div class="indexInput">
-                    <b-form-spinbutton
-                      v-model="inputShape[i-1]"
-                      min="1"
-                      :max="shapeMax"
-                      :formatter-fn="positiveFormatter"
-                      :disabled="!indexActionDisabled && editActionDisabled"
-                    ></b-form-spinbutton>
-                  </div>
-                </b-form>
-              </template>
-            </b-dropdown-form>
-          </b-dropdown>
         </div>
       </b-form>
 
@@ -285,9 +208,6 @@
         </b-carousel-slide>
       </b-carousel>
       <footer class="modal-footer"></footer>
-      <footer class="modal-footer"></footer>
-      <footer class="modal-footer"></footer>
-      <footer class="modal-footer"></footer>
     </b-modal>
   </component-layout>
 </template>
@@ -322,11 +242,7 @@ export default {
   data() {
     let data = {
       serializable: [
-        'indexStart',
-        'indexEnd',
-        'indexLabel',
         'layerSize',
-        'inputShape',
         'layerName',
         'units',
         'kernelSize',
@@ -338,11 +254,7 @@ export default {
         'biasInitializer'
       ],
       toggleIcon: 'caret-up',
-      indexStart: -1,
-      indexEnd: -1,
-      indexLabel: -1,
       layerSize: 0,
-      inputShape: [],
       layerName: [],
       units: [],
       kernelSize: [],
@@ -356,80 +268,36 @@ export default {
       activationOptions: definitions.tf.layer.activation.options,
       kernelInitializerOptions: definitions.tf.initializers.options,
       biasInitializerOptions: definitions.tf.initializers.options,
-      inputShapeLength: 0,
       stridesLength: [],
       poolSizeLength: [],
+      inputShape: null,
       fileChart: false
     }
     return this.importData(data)
   },
   computed: {
-    indexActionDisabled() {
-      let disabled = 0
-      disabled |= this.editActionDisabled === true
-      disabled |= !Array.isArray(this.inputData) && Object.isExtensible(this.inputData)
-      return disabled === 1
-    },
     editActionDisabled() {
       let disabled = 0
-      disabled |= this.indexMax === 0
+      disabled |= this.loading === true
+      disabled |= this.global.inputShape === null
       return disabled === 1
-    },
-    downloadActionDisabled() {
-      return true
     },
     trashActionDisabled() {
       let disabled = 0
-      disabled |= this.indexMax === 0
+      disabled |= this.loading === true
+      disabled |= this.global.model === null
       return disabled === 1
     },
     plugActionDisabled() {
-      let disabled = 0
-      disabled |= this.loading === true
-      disabled |= this.indexMax === 0
-      disabled |= this.shapeMax === 0
-      disabled |= !this.indexActionDisabled && this.indexEnd <= this.indexStart
-      return disabled === 1
+      return this.editActionDisabled
     },
     imageActionDisabled() {
       let disabled = 0
       disabled |= this.fileChart === false
       return disabled === 1
-    },
-    indexMax() {
-      let indexMax = 0
-      if (this.inputData && Array.isArray(this.inputData) && this.inputData.length > 0) {
-        indexMax = this.inputData[0].length - 1
-      } else if (this.inputData && Object.isExtensible(this.inputData)) {
-        if ('datasetImages' in this.inputData) {
-          indexMax = this.inputData['datasetImages'].length - 1
-        }
-      }
-      return indexMax
-    },
-    shapeMax() {
-      let shapeMax = this.indexEnd - this.indexStart + 1
-      return shapeMax
     }
   },
   watch: {
-    inputShape: {
-      deep: true,
-      handler(next, prev) {
-        this.inputShapeLength = this.inputShape.length
-      }
-    },
-    inputShapeLength: {
-      deep: true,
-      handler(value, prev) {
-        while (this.inputShape.length > value) {
-          this.inputShape.pop()
-        }
-        while (this.inputShape.length < value) {
-          this.inputShape.push(1)
-        }
-      }
-    },
     strides: {
       deep: true,
       handler(next, prev) {
@@ -479,29 +347,10 @@ export default {
     layerSize(next, prev) {
       this.validateData()
     },
-    shapeMax(next, prev) {
-      if (this.inputShape > next) {
-        if (this.indexActionDisabled === false) {
-          this.inputShape[0] = next
-        }
-      }
-    },
     inputLoading(next, prev) {
       if (next === false) {
         this.trashAction()
-        if (this.inputData !== null) {
-          if (
-            'spriteWidth' in this.inputData &&
-            'spriteHeight' in this.inputData &&
-            'spriteChannels' in this.inputData
-          ) {
-            this.inputShape = [
-              this.inputData['spriteWidth'],
-              this.inputData['spriteHeight'],
-              this.inputData['spriteChannels']
-            ]
-          }
-        }
+        this.inputShape = this.global.inputShape
       }
     },
     loading(next, prev) {
@@ -509,7 +358,6 @@ export default {
         delete this.$options.sockets.onerror
         delete this.$options.sockets.onopen
         delete this.$options.sockets.onmessage
-        delete this.$options.sockets.onclose
       }
     }
   },
@@ -522,7 +370,7 @@ export default {
       }
     },
     onShowModal() {
-      this.$tfvis.show.modelSummary(this.$refs['draw'], this.output.model)
+      this.$tfvis.show.modelSummary(this.$refs['draw'], this.global.model)
     },
     validateData() {
       let keys = [
@@ -570,13 +418,14 @@ export default {
       jquery(this.$refs['draw']).empty()
       jquery(this.$refs['graph']).empty()
       this.fileChart = false
-      this.output = null
+      if (this.global.model !== null) {
+        this.global.model.dispose()
+        this.global.model = null
+      }
       this.loadData(this.data)
       this.loadData(this.component.data)
     },
-    plugAction(event) {
-      this.loading = true
-
+    plugActionEvent(event) {
       this.$options.sockets.onerror = function() {
         let worker = new Worker('worker.js')
         worker.onmessage = function(event) {
@@ -586,13 +435,9 @@ export default {
           } else if (event.data[0] === 'onEnd') {
             this.$tf.loadLayersModel('indexeddb://model').then(
               function(model) {
+                this.global.model = model
                 this.fileChart = true
-                this.output = {
-                  model: model,
-                  data: this.inputData,
-                  indexLabel: this.indexLabel
-                }
-                let modelView = new ModelView(model, {
+                let modelView = new ModelView(this.global.model, {
                   width: 765,
                   height: 465,
                   appendImmediately: false,
@@ -622,13 +467,9 @@ export default {
         if (event.data[0] === 'onEnd') {
           this.$tf.loadLayersModel('./api/model/model.json').then(
             function(model) {
+              this.global.model = model
               this.fileChart = true
-              this.output = {
-                model: model,
-                data: this.inputData,
-                indexLabel: this.indexLabel
-              }
-              let modelView = new ModelView(model, {
+              let modelView = new ModelView(this.global.model, {
                 width: 765,
                 height: 465,
                 appendImmediately: false,
@@ -641,13 +482,10 @@ export default {
               jquery(this.$refs['graph']).empty()
               this.$refs['graph'].appendChild(modelView.getDOMElement())
               this.$disconnect()
+              this.loading = false
             }.bind(this)
           )
         }
-      }.bind(this)
-
-      this.$options.sockets.onclose = function() {
-        this.loading = false
       }.bind(this)
 
       let websocket = new URL(process.env.VUE_APP_WEBSOCKET_API).hostname

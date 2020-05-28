@@ -89,11 +89,12 @@ export default {
   components: {
     PageLayout,
     ComponentFooter,
-    DatasetLoader: () => import('../components/DatasetLoader'),
-    DatasetTextViewer: () => import('../components/DatasetTextViewer'),
-    DatasetTableViewer: () => import('../components/DatasetTableViewer'),
-    DatasetSpriteViewer: () => import('../components/DatasetSpriteViewer'),
     DatasetLabel: () => import('../components/DatasetLabel'),
+    DatasetLoader: () => import('../components/DatasetLoader'),
+    DatasetSplitter: () => import('../components/DatasetSplitter'),
+    DatasetSpriteViewer: () => import('../components/DatasetSpriteViewer'),
+    DatasetTableViewer: () => import('../components/DatasetTableViewer'),
+    DatasetTextViewer: () => import('../components/DatasetTextViewer'),
     TSModelBuilder: () => import('../components/TSModelBuilder'),
     TSModelCompiler: () => import('../components/TSModelCompiler'),
     TSModelPredictor: () => import('../components/TSModelPredictor')
@@ -128,7 +129,29 @@ export default {
       }.bind(this)
     )
   },
-  mounted() {},
+  mounted() {
+    let store = {
+      namespaced: false,
+      state: {
+        global: {
+          model: null,
+          inputShape: null,
+          inputMatrix: null,
+          outputShape: null,
+          outputMatrix: null,
+          labels: null,
+          training: null,
+          evaluation: null
+        }
+      },
+      mutations: {
+        setGlobal(state, value) {
+          state.global = value
+        }
+      }
+    }
+    this.$store.registerModule('pipeline', store)
+  },
   data() {
     return {
       template: 'pipeline_0',
@@ -136,11 +159,12 @@ export default {
       loading: true,
       componentSelected: 'DatasetLoader',
       componentOptions: [
-        'DatasetLoader',
-        'DatasetTextViewer',
-        'DatasetTableViewer',
-        'DatasetSpriteViewer',
         'DatasetLabel',
+        'DatasetLoader',
+        'DatasetSplitter',
+        'DatasetSpriteViewer',
+        'DatasetTableViewer',
+        'DatasetTextViewer',
         'TSModelBuilder',
         'TSModelCompiler',
         'TSModelPredictor'

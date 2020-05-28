@@ -38,6 +38,14 @@
             :disabled="editActionDisabled"
           ></b-form-spinbutton>
         </div>
+        <div class="indexInput">
+          <label>Target</label>
+          <b-form-select
+            v-model="reference"
+            :options="['Input', 'Output']"
+            :disabled="editActionDisabled"
+          ></b-form-select>
+        </div>
       </b-form>
     </b-collapse>
 
@@ -106,6 +114,7 @@ export default {
       spriteWidth: 1,
       spriteHeight: 1,
       spriteChannels: 1,
+      reference: 'Input',
       datasetImages: []
     }
     return this.importData(data)
@@ -253,8 +262,7 @@ export default {
       this.loadData(this.data)
       this.loadData(this.component.data)
     },
-    plugAction(event) {
-      this.loading = true
+    plugActionEvent(event) {
       let blob = new Blob([this.inputData])
       let img = new Image()
       let urlCreator = window.URL || window.webkitURL
@@ -287,13 +295,24 @@ export default {
         this.datasetImages = new Float32Array(datasetBytesBuffer)
         this.imagePage = 0
         this.fileChart = true
-        this.loading = false
-        this.output = {
-          spriteWidth: this.spriteWidth,
-          spriteHeight: this.spriteHeight,
-          spriteChannels: this.spriteChannels,
-          datasetImages: this.datasetImages
-        }
+
+        let arraySize = this.spriteWidth * this.spriteHeight * this.spriteChannels
+        let bufferSize = this.datasetImages.length
+        let tensor = this.$tf.tensor(this.datasetImages, [bufferSize / arraySize, arraySize])
+
+        tensor.array().then(
+          function(matrix) {
+            tensor.dispose()
+            if (this.reference === 'Output') {
+              this.global.outputShape = [this.spriteWidth, this.spriteHeight, this.spriteChannels]
+              this.global.outputMatrix = matrix
+            } else {
+              this.global.inputShape = [this.spriteWidth, this.spriteHeight, this.spriteChannels]
+              this.global.inputMatrix = matrix
+            }
+            this.loading = false
+          }.bind(this)
+        )
       }.bind(this)
       img.src = urlCreator.createObjectURL(blob)
     }

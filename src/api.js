@@ -28,6 +28,13 @@ const upload = multer({
       cb(null, 'model')
     },
     filename: function(req, file, cb) {
+      // to avoid buffer overflow, data can be exchanged with files
+      // let data = [1,2,3,4,5,6,7,8,9,10]
+      // let model = tf.sequential()
+      // model.add(tf.layers.dense({units: 1, inputShape: data.length}))
+      // tensor = f.tensor(data).reshape([data.length, 1])
+      // SAVE: model.layers[0].setWeights([tensor, model.layers[0].getWeights()[1]])
+      // LOAD: model.layers[0].getWeights()[0].dataSync()
       cb(null, file.fieldname)
     }
   })
