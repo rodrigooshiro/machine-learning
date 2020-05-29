@@ -227,7 +227,6 @@ export default {
       let inputShape = lodash.cloneDeep(this.global.inputShape)
       if (this.global.training !== null) {
         inputMatrix = this.global.training.inputMatrix
-        inputShape = lodash.cloneDeep(this.global.training.inputShape)
       }
       inputShape.unshift(inputMatrix.length)
       inputTensor = this.$tf.tensor(inputMatrix, inputShape)
@@ -235,7 +234,6 @@ export default {
       let outputShape = lodash.cloneDeep(this.global.outputShape)
       if (this.global.training !== null) {
         outputMatrix = this.global.training.outputMatrix
-        outputShape = lodash.cloneDeep(this.global.training.outputShape)
       }
       outputShape.unshift(outputMatrix.length)
       outputTensor = this.$tf.tensor(outputMatrix, outputShape)

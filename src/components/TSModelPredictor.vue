@@ -166,8 +166,14 @@ export default {
       this.scatterplot = true
       this.perClassAccuracy = true
       this.confusionMatrix = true
-      this.inputTensor = null
-      this.outputTensor = null
+      if (this.inputTensor !== undefined) {
+        this.inputTensor.dispose()
+        delete this.inputTensor
+      }
+      if (this.outputTensor !== undefined) {
+        this.outputTensor.dispose()
+        delete this.outputTensor
+      }
       this.output = null
       this.loadData(this.data)
       this.loadData(this.component.data)
@@ -176,30 +182,6 @@ export default {
       let { normalizationData } = this.inputData
       let predictData = global[predictTensorJSON.data['type']].from(predictTensorJSON.data['data'])
       this.predictTensor = this.$tf.tensor(predictData, predictTensorJSON.shape)
-
-      if (Array.isArray(this.global.outputShape)) {
-        let outputMatrix = null
-        let outputShape = lodash.cloneDeep(this.global.outputShape)
-        if (this.global.evaluation !== null) {
-          outputMatrix = this.global.evaluation.outputMatrix
-          outputShape = lodash.cloneDeep(this.global.evaluation.outputShape)
-        }
-        outputShape.unshift(outputMatrix.length)
-        this.outputTensor = this.$tf.tensor(outputMatrix, outputShape)
-      } else {
-      }
-
-      if (normalizationData.inputUnitsNormalize) {
-        let { inputMin, inputMax } = normalizationData
-        let { unnormal } = utilities.tasks.unnormalizeTensor(
-          this.$tf,
-          this.inputTensor,
-          inputMin,
-          inputMax
-        )
-        this.inputTensor.dispose()
-        this.inputTensor = unnormal
-      }
 
       if (normalizationData.outputUnitsNormalize) {
         let { outputMin, outputMax } = normalizationData
@@ -212,10 +194,23 @@ export default {
         this.predictTensor.dispose()
         this.predictTensor = unnormal
       }
-
-      let inputMatrix = this.inputTensor.arraySync()
-      let outputMatrix = this.outputTensor.arraySync()
       let predictMatrix = this.predictTensor.arraySync()
+
+      let inputMatrix = this.global.inputMatrix
+      let inputShape = lodash.cloneDeep(this.global.inputShape)
+      if (this.global.evaluation !== null) {
+        inputMatrix = this.global.evaluation.inputMatrix
+      }
+      inputShape.unshift(inputMatrix.length)
+      this.inputTensor = this.$tf.tensor(inputMatrix, inputShape)
+
+      let outputMatrix = this.global.outputMatrix
+      let outputShape = lodash.cloneDeep(this.global.outputShape)
+      if (this.global.evaluation !== null) {
+        outputMatrix = this.global.evaluation.outputMatrix
+      }
+      outputShape.unshift(outputMatrix.length)
+      this.outputTensor = this.$tf.tensor(outputMatrix, outputShape)
 
       let classNames = []
       let classNamesMap = []
@@ -335,37 +330,32 @@ export default {
     },
     plugActionEvent(event) {
       let { normalizationData } = this.inputData
-
-      if (Array.isArray(this.global.inputShape)) {
-        let inputMatrix = null
-        let inputShape = lodash.cloneDeep(this.global.inputShape)
-        if (this.global.evaluation !== null) {
-          inputMatrix = this.global.evaluation.inputMatrix
-          inputShape = lodash.cloneDeep(this.global.evaluation.inputShape)
-        }
-        inputShape.unshift(inputMatrix.length)
-        this.inputTensor = this.$tf.tensor(inputMatrix, inputShape)
-      } else {
+      let inputMatrix = this.global.inputMatrix
+      let inputShape = lodash.cloneDeep(this.global.inputShape)
+      if (this.global.evaluation !== null) {
+        inputMatrix = this.global.evaluation.inputMatrix
       }
+      inputShape.unshift(inputMatrix.length)
+      let inputTensor = this.$tf.tensor(inputMatrix, inputShape)
 
       if (normalizationData.inputMin && normalizationData.inputMax) {
         let { normal } = utilities.tasks.normalizeTensor(
           this.$tf,
-          this.inputTensor,
+          inputTensor,
           normalizationData.inputMin,
           normalizationData.inputMax
         )
-        this.inputTensor.dispose()
-        this.inputTensor = normal
+        inputTensor.dispose()
+        inputTensor = normal
       }
 
-      let inputTensorData = this.inputTensor.dataSync()
+      let inputTensorData = inputTensor.dataSync()
       let inputTensorJSON = {
         data: {
           type: inputTensorData.constructor.toString().replace(/.* (.*)\(\)(.|\n)*/g, '$1'),
           data: Object.values(inputTensorData)
         },
-        shape: this.inputTensor.shape
+        shape: inputTensor.shape
       }
 
       this.$options.sockets.onerror = function() {

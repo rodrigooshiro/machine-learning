@@ -102,21 +102,14 @@ export default {
     },
     plugActionEvent(event) {
       let datasetLabels = new Uint8Array(this.inputData)
-      let bufferSize = datasetLabels.length
-      let tensor = this.$tf.tensor(datasetLabels, [bufferSize / this.labelSize, this.labelSize])
-      tensor.array().then(
-        function(matrix) {
-          tensor.dispose()
-          if (this.reference === 'Output') {
-            this.global.outputShape = [this.labelSize]
-            this.global.outputMatrix = matrix
-          } else {
-            this.global.inputShape = [this.labelSize]
-            this.global.inputMatrix = matrix
-          }
-          this.loading = false
-        }.bind(this)
-      )
+      if (this.reference === 'Output') {
+        this.global.outputShape = [this.labelSize]
+        this.global.outputMatrix = datasetLabels
+      } else {
+        this.global.inputShape = [this.labelSize]
+        this.global.inputMatrix = datasetLabels
+      }
+      this.loading = false
     }
   }
 }

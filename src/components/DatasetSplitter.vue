@@ -191,11 +191,15 @@ export default {
       if (Array.isArray(this.inputData) && this.inputData.length > 0) {
         indexMax = this.inputData.length
       }
-      if (Array.isArray(this.global.inputMatrix)) {
-        indexMax = Math.min(indexMax, this.global.inputMatrix.length)
+      if (ArrayBuffer.isView(this.global.inputMatrix)) {
+        let product = this.global.inputShape.reduce((a, b) => a * b, 1)
+        let length = this.global.inputMatrix.length / product
+        indexMax = Math.min(indexMax, length)
       }
-      if (Array.isArray(this.global.outputMatrix)) {
-        indexMax = Math.min(indexMax, this.global.outputMatrix.length)
+      if (ArrayBuffer.isView(this.global.outputMatrix)) {
+        let product = this.global.inputShape.reduce((a, b) => a * b, 1)
+        let length = this.global.inputMatrix.length / product
+        indexMax = Math.min(indexMax, length)
       }
       return indexMax
     },
@@ -307,6 +311,21 @@ export default {
         this.global.inputShape = [this.inputUnits.filter(unit => unit.checked === true).length]
         this.global.outputMatrix = outputMatrix
         this.global.outputShape = [this.outputUnits.filter(unit => unit.checked === true).length]
+      } else {
+        let inputMatrix = []
+        let outputMatrix = []
+        let inputProduct = this.global.inputShape.reduce((a, b) => a * b, 1)
+        let outputProduct = this.global.outputShape.reduce((a, b) => a * b, 1)
+        for (let i = 0; i < indexSize; i++) {
+          inputMatrix.push(
+            this.global.inputMatrix.subarray(i * inputProduct, i * inputProduct + inputProduct)
+          )
+          outputMatrix.push(
+            this.global.outputMatrix.subarray(i * outputProduct, i * outputProduct + outputProduct)
+          )
+        }
+        this.global.inputMatrix = inputMatrix
+        this.global.outputMatrix = outputMatrix
       }
 
       indexSize = parseInt(this.sampleSplit * indexSize)
@@ -315,16 +334,12 @@ export default {
         training: {
           inputMatrix: [],
           outputMatrix: [],
-          labels: [],
-          inputShape: this.global.inputShape,
-          outputShape: this.global.outputShape
+          labels: []
         },
         evaluation: {
           inputMatrix: [],
           outputMatrix: [],
-          labels: [],
-          inputShape: this.global.inputShape,
-          outputShape: this.global.outputShape
+          labels: []
         }
       }
       for (let i = 0; i < indexSize; i++) {
@@ -343,6 +358,8 @@ export default {
       if (this.evaluationRatio === 0) {
         output.evaluation = output.training
       }
+      this.global.inputMatrix = null
+      this.global.outputMatrix = null
       this.global.training = output.training
       this.global.evaluation = output.evaluation
       this.loading = false

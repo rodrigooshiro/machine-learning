@@ -296,23 +296,14 @@ export default {
         this.imagePage = 0
         this.fileChart = true
 
-        let arraySize = this.spriteWidth * this.spriteHeight * this.spriteChannels
-        let bufferSize = this.datasetImages.length
-        let tensor = this.$tf.tensor(this.datasetImages, [bufferSize / arraySize, arraySize])
-
-        tensor.array().then(
-          function(matrix) {
-            tensor.dispose()
-            if (this.reference === 'Output') {
-              this.global.outputShape = [this.spriteWidth, this.spriteHeight, this.spriteChannels]
-              this.global.outputMatrix = matrix
-            } else {
-              this.global.inputShape = [this.spriteWidth, this.spriteHeight, this.spriteChannels]
-              this.global.inputMatrix = matrix
-            }
-            this.loading = false
-          }.bind(this)
-        )
+        if (this.reference === 'Output') {
+          this.global.outputShape = [this.spriteWidth, this.spriteHeight, this.spriteChannels]
+          this.global.outputMatrix = this.datasetImages
+        } else {
+          this.global.inputShape = [this.spriteWidth, this.spriteHeight, this.spriteChannels]
+          this.global.inputMatrix = this.datasetImages
+        }
+        this.loading = false
       }.bind(this)
       img.src = urlCreator.createObjectURL(blob)
     }

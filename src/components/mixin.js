@@ -227,10 +227,11 @@ export const mixin = {
     },
     plugAction(event) {
       this.loading = true
-      setImmediate(
+      setTimeout(
         function() {
           this.plugActionEvent(event)
-        }.bind(this)
+        }.bind(this),
+        100
       )
     }
   }
