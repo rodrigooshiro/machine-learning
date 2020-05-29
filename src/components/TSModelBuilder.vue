@@ -371,6 +371,18 @@ export default {
     },
     onShowModal() {
       this.$tfvis.show.modelSummary(this.$refs['draw'], this.global.model)
+      let modelView = new ModelView(this.global.model, {
+        width: 765,
+        height: 465,
+        appendImmediately: true,
+        renderer: 'd3',
+        radius: 15,
+        layerPadding: 100,
+        printStats: false,
+        renderLinks: true
+      })
+      jquery(this.$refs['graph']).empty()
+      this.$refs['graph'].appendChild(modelView.getDOMElement())
     },
     validateData() {
       let keys = [
@@ -437,18 +449,6 @@ export default {
               function(model) {
                 this.global.model = model
                 this.fileChart = true
-                let modelView = new ModelView(this.global.model, {
-                  width: 765,
-                  height: 465,
-                  appendImmediately: false,
-                  renderer: 'd3',
-                  radius: 10,
-                  layerPadding: 100,
-                  printStats: false,
-                  renderLinks: true
-                })
-                jquery(this.$refs['graph']).empty()
-                this.$refs['graph'].appendChild(modelView.getDOMElement())
                 worker.terminate()
                 this.loading = false
               }.bind(this)
@@ -469,18 +469,6 @@ export default {
             function(model) {
               this.global.model = model
               this.fileChart = true
-              let modelView = new ModelView(this.global.model, {
-                width: 765,
-                height: 465,
-                appendImmediately: false,
-                renderer: 'd3',
-                radius: 10,
-                layerPadding: 100,
-                printStats: false,
-                renderLinks: true
-              })
-              jquery(this.$refs['graph']).empty()
-              this.$refs['graph'].appendChild(modelView.getDOMElement())
               this.$disconnect()
               this.loading = false
             }.bind(this)
