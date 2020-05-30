@@ -181,6 +181,9 @@ export default {
     plugActionPost(predictTensorJSON) {
       let { normalizationData } = this.inputData
       let predictData = global[predictTensorJSON.data['type']].from(predictTensorJSON.data['data'])
+      if (this.predictTensor !== undefined) {
+        this.predictTensor.dispose()
+      }
       this.predictTensor = this.$tf.tensor(predictData, predictTensorJSON.shape)
 
       if (normalizationData.outputUnitsNormalize) {
@@ -202,6 +205,9 @@ export default {
         inputMatrix = this.global.evaluation.inputMatrix
       }
       inputShape.unshift(inputMatrix.length)
+      if (this.inputTensor !== undefined) {
+        this.inputTensor.dispose()
+      }
       this.inputTensor = this.$tf.tensor(inputMatrix, inputShape)
 
       let outputMatrix = this.global.outputMatrix
@@ -210,6 +216,9 @@ export default {
         outputMatrix = this.global.evaluation.outputMatrix
       }
       outputShape.unshift(outputMatrix.length)
+      if (this.outputTensor !== undefined) {
+        this.outputTensor.dispose()
+      }
       this.outputTensor = this.$tf.tensor(outputMatrix, outputShape)
 
       let classNames = []
@@ -228,7 +237,6 @@ export default {
         }
       }
 
-      this.fileChart = false
       this.scatterplot = false
       this.perClassAccuracy = false
       this.confusionMatrix = false
@@ -329,6 +337,11 @@ export default {
       this.output = output
     },
     plugActionEvent(event) {
+      this.fileChart = false
+      this.scatterplot = true
+      this.perClassAccuracy = true
+      this.confusionMatrix = true
+
       let { normalizationData } = this.inputData
       let inputMatrix = this.global.inputMatrix
       let inputShape = lodash.cloneDeep(this.global.inputShape)
@@ -357,6 +370,7 @@ export default {
         },
         shape: inputTensor.shape
       }
+      inputTensor.dispose()
 
       this.$options.sockets.onerror = function() {
         let worker = new Worker('worker.js')
