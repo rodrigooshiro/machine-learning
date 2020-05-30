@@ -17,7 +17,11 @@ module.exports = [
     input_ref: 'pipeline_0',
     type: 'DatasetTableViewer',
     data: {
-      header: true
+      header: true,
+      xAxis: 0,
+      yAxis: 1,
+      zAxis: 2,
+      lAxis: 8
     }
   },
   {
@@ -97,7 +101,11 @@ module.exports = [
     input_ref: 'pipeline_3',
     type: 'DatasetTableViewer',
     data: {
-      header: true
+      header: true,
+      xAxis: 0,
+      yAxis: 1,
+      zAxis: 2,
+      lAxis: 8
     }
   },
   {
