@@ -104,7 +104,7 @@ export default {
         this.global.inputShape = [this.labelSize]
         this.global.inputMatrix = datasetLabels
       }
-      this.loading = false
+      this.plugActionEnd(event)
     }
   }
 }

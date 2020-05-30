@@ -18,6 +18,7 @@
           v-on:onAddComponent="onAddComponent"
           v-on:onMoveDownComponent="onMoveDownComponent"
           v-on:onMoveUpComponent="onMoveUpComponent"
+          v-on:onPlugAction="onPlugAction"
         ></component>
       </template>
       <component-footer
@@ -177,6 +178,7 @@ export default {
       template: 'pipeline_0',
       index: null,
       loading: true,
+      componentLoading: false,
       componentSelected: 'DatasetLoader',
       componentOptions: [
         'DatasetLabel',
@@ -201,6 +203,8 @@ export default {
   computed: {
     playActionDisabled() {
       let disabled = 0
+      disabled |= this.loading === true
+      disabled |= this.componentLoading === true
       disabled |= this.queue.length > 0
       return disabled === 1
     }
@@ -474,6 +478,9 @@ export default {
         })
       }
       this.$refs[this.queue[0]][0].plugAction()
+    },
+    onPlugAction(loading) {
+      this.componentLoading = loading
     }
   }
 }
@@ -486,7 +493,7 @@ export default {
   right: 20px;
   width: 50px;
   height: 50px;
-  z-index: 2;
+  z-index: 10;
 }
 .playBadge {
   position: fixed;
@@ -494,7 +501,7 @@ export default {
   right: 13px;
   border-style: solid;
   border-width: 2px;
-  z-index: 2;
+  z-index: 10;
   border-color: #aaaaaa;
   opacity: 0.65;
 }

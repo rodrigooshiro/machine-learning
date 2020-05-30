@@ -443,14 +443,14 @@ export default {
         worker.onmessage = function(event) {
           if (event.data[0] === 'onEnd' && event.error) {
             worker.terminate()
-            this.loading = false
+            this.plugActionEnd(event)
           } else if (event.data[0] === 'onEnd') {
             this.$tf.loadLayersModel('indexeddb://model').then(
               function(model) {
                 this.global.model = model
                 this.fileChart = true
                 worker.terminate()
-                this.loading = false
+                this.plugActionEnd(event)
               }.bind(this)
             )
           }
@@ -470,7 +470,7 @@ export default {
               this.global.model = model
               this.fileChart = true
               this.$disconnect()
-              this.loading = false
+              this.plugActionEnd(event)
             }.bind(this)
           )
         }

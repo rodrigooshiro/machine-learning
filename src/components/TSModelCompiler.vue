@@ -281,7 +281,7 @@ export default {
         worker.onmessage = function(event) {
           if (event.data[0] === 'onEnd' && event.error) {
             worker.terminate()
-            this.loading = false
+            this.plugActionEnd(event)
           } else if (event.data[0] === 'onEnd') {
             let train = event.data[1]
             this.$tf.loadLayersModel('indexeddb://model').then(
@@ -294,7 +294,7 @@ export default {
                   normalizationData: normalizationData
                 }
                 worker.terminate()
-                this.loading = false
+                this.plugActionEnd(event)
               }.bind(this)
             )
           } else {
@@ -335,7 +335,7 @@ export default {
                 normalizationData: normalizationData
               }
               this.$disconnect()
-              this.loading = false
+              this.plugActionEnd(event)
             }.bind(this)
           )
         } else {

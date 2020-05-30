@@ -377,11 +377,11 @@ export default {
         worker.onmessage = function(event) {
           if (event.data[0] === 'onEnd' && event.error) {
             worker.terminate()
-            this.loading = false
+            this.plugActionEnd(event)
           } else if (event.data[0] === 'onEnd') {
             this.plugActionPost(event.data[1])
             worker.terminate()
-            this.loading = false
+            this.plugActionEnd(event)
           }
         }.bind(this)
         this.global.model.save('indexeddb://model').then(
@@ -404,7 +404,7 @@ export default {
         if (event.data[0] === 'onEnd') {
           this.plugActionPost(event.data[1])
           this.$disconnect()
-          this.loading = false
+          this.plugActionEnd(event)
         }
       }.bind(this)
 

@@ -61,7 +61,7 @@ export default {
   methods: {
     loadFileContent(content) {
       this.output = content
-      this.loading = false
+      this.plugActionEnd(event)
     },
     selectLocalFile(event) {
       if (event instanceof MouseEvent) {
@@ -69,6 +69,7 @@ export default {
       } else if (event instanceof Event) {
         if (event.target.files.length) {
           this.loading = true
+          this.$emit('onPlugAction', this.loading)
           let file = event.target.files[0]
           let reader = new FileReader()
           this.fileName = file.name
@@ -82,6 +83,7 @@ export default {
     selectRemoteFile() {
       let content = null
       this.loading = true
+      this.$emit('onPlugAction', this.loading)
       this.$axios
         .get(this.remoteFile, { responseType: 'arraybuffer' })
         .then(response => {

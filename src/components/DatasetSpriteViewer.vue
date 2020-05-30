@@ -177,6 +177,7 @@ export default {
     },
     loadPage() {
       this.loading = true
+      this.$emit('onPlugAction', this.loading)
       jquery(this.$refs['draw-loading']).show()
       jquery(this.$refs['draw']).hide()
       jquery(this.$refs['draw']).empty()
@@ -224,6 +225,7 @@ export default {
             jquery(this.$refs['draw-loading']).hide()
             jquery(this.$refs['draw']).show()
             this.loading = false
+            this.$emit('onPlugAction', this.loading)
           }
         })
       }
@@ -300,7 +302,7 @@ export default {
           this.global.inputShape = [this.spriteWidth, this.spriteHeight, this.spriteChannels]
           this.global.inputMatrix = this.datasetImages
         }
-        this.loading = false
+        this.plugActionEnd(event)
       }.bind(this)
       img.src = urlCreator.createObjectURL(blob)
     }

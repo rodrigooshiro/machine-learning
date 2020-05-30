@@ -222,11 +222,17 @@ export const mixin = {
       })
       return data
     },
+    plugActionEnd(event) {
+      this.loading = false
+      this.$emit('onPlugAction', this.loading)
+    },
     plugActionEvent(event) {
       this.loading = false
+      this.$emit('onPlugAction', this.loading)
     },
     plugAction(event) {
       this.loading = true
+      this.$emit('onPlugAction', this.loading)
       setTimeout(
         function() {
           this.plugActionEvent(event)

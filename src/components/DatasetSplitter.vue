@@ -362,7 +362,7 @@ export default {
       this.global.outputMatrix = null
       this.global.training = output.training
       this.global.evaluation = output.evaluation
-      this.loading = false
+      this.plugActionEnd(event)
     }
   }
 }
