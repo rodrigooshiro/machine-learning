@@ -118,6 +118,9 @@ export default {
             this.loadFileContent(content.response)
           }
         })
+    },
+    plugActionEvent(event) {
+      this.selectRemoteFile(event)
     }
   }
 }

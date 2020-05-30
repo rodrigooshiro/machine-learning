@@ -60,6 +60,26 @@
         </b-button>
       </b-input-group>
     </b-modal>
+    <div v-if="pipeline.length" class="playButton">
+      <b-button
+        @click="onPlayPipeline"
+        variant="transparent"
+        class="playIcon"
+        :disabled="playActionDisabled"
+      >
+        <b-iconstack font-scale="1.55">
+          <b-icon icon="circle-fill" variant="secondary"></b-icon>
+          <b-icon icon="circle" style="color: #aaa"></b-icon>
+          <b-icon
+            icon="play-fill"
+            class="rounded-circle bg-danger"
+            shift-h="1"
+            style="color: white"
+          ></b-icon>
+        </b-iconstack>
+      </b-button>
+    </div>
+    <b-badge v-if="queue.length > 0" pill class="playBadge">{{ pipeline.length - queue.length }}</b-badge>
   </page-layout>
 </template>
 
@@ -174,7 +194,15 @@ export default {
       componentInputIndex: null,
       componentInputReferenceSelected: null,
       componentInputReferenceOptions: [],
-      pipeline: []
+      pipeline: [],
+      queue: []
+    }
+  },
+  computed: {
+    playActionDisabled() {
+      let disabled = 0
+      disabled |= this.queue.length > 0
+      return disabled === 1
     }
   },
   watch: {
@@ -417,10 +445,67 @@ export default {
         templates[0].key = Math.random()
         this.pipeline = value
       }
+    },
+    onPlayPipeline() {
+      let stack = 0
+      if (this.queue.length === 0) {
+        this.pipeline.forEach(item => {
+          this.queue.push(item.index)
+          item.unwatch = this.$watch(
+            function() {
+              return this.$refs[item.index][0].loading
+            },
+            function(next, prev) {
+              if (next) {
+                stack++
+              } else {
+                stack--
+                let index = this.queue.indexOf(this.item.index)
+                this.queue.splice(index, 1)
+                this.item.unwatch()
+              }
+              if (stack === 0) {
+                if (this.queue.length) {
+                  this.onPlayPipeline()
+                }
+              }
+            }.bind({ ...this, item: item })
+          )
+        })
+      }
+      this.$refs[this.queue[0]][0].plugAction()
     }
   }
 }
 </script>
 
 <style scoped>
+.playButton {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  z-index: 2;
+}
+.playBadge {
+  position: fixed;
+  top: 65px;
+  right: 13px;
+  border-style: solid;
+  border-width: 2px;
+  z-index: 2;
+  border-color: #aaaaaa;
+  opacity: 0.65;
+}
+.playIcon,
+.playIcon:focus,
+.playIcon:hover,
+.playIcon:active {
+  margin: 0;
+  padding: 0;
+  border: 0px;
+  box-shadow: none;
+  outline: 0px;
+}
 </style>

@@ -82,11 +82,6 @@ export default {
       return this.editActionDisabled
     }
   },
-  watch: {
-    inputLoading(next, prev) {
-      this.loading = next
-    }
-  },
   methods: {
     onToggleToolbar() {
       if (this.toggleIcon === 'caret-up') {

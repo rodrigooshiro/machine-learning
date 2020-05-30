@@ -158,9 +158,6 @@ export default {
     }
   },
   watch: {
-    inputLoading(next, prev) {
-      this.loading = next
-    },
     spriteChannels(next, prev) {
       if (next === 2 && prev === 1) {
         this.spriteChannels = 3
