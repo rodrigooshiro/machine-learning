@@ -16,7 +16,7 @@ module.exports = [
     js: 'tensorflow-handwritten-digit-cnn.js'
   },
   {
-    name: 'Tensorflow: Predict baseball pitch types in Node.js',
+    name: 'Tensorflow: Predict baseball pitch types',
     js: 'tensorflow-training-and-prediction.js'
   }
 ]

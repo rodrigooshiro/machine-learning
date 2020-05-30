@@ -237,6 +237,7 @@ export default {
       }
       outputShape.unshift(outputMatrix.length)
       outputTensor = this.$tf.tensor(outputMatrix, outputShape)
+      this.global.loss = this.compilerLossSelected
 
       if (this.inputUnitsNormalize) {
         let { normal, min, max } = utilities.tasks.normalizeTensor(this.$tf, inputTensor)

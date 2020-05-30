@@ -82,7 +82,7 @@ module.exports = [
     title: 'Dataset Splitter',
     data: {
       sampleSplit: 1,
-      shuffle: false,
+      shuffle: true,
       trainingRatio: 1,
       evaluationRatio: 0,
       inputUnits: [

@@ -160,6 +160,7 @@ export default {
           inputMatrix: null,
           outputShape: null,
           outputMatrix: null,
+          loss: null,
           labels: null,
           training: null,
           evaluation: null
@@ -207,6 +208,14 @@ export default {
       disabled |= this.componentLoading === true
       disabled |= this.queue.length > 0
       return disabled === 1
+    },
+    global: {
+      get() {
+        return this.$store.state['pipeline'].global
+      },
+      set(value) {
+        this.$store.commit('pipeline/setGlobal', value)
+      }
     }
   },
   watch: {
@@ -423,11 +432,20 @@ export default {
         // name = 'Tensorflow: Making More Predictions from 2D'
         // name = 'Tensorflow: Autoencoder'
         // name = 'Tensorflow: Handwritten digit recognition with CNNs'
+        // name = 'Tensorflow: Predict baseball pitch types'
       }
       let templates = this.$refs['layout'].$refs['header'].templates.filter(
         template => template.name === name
       )
       if (templates.length && templates[0].value === null) {
+        this.global.inputShape = null
+        this.global.inputMatrix = null
+        this.global.outputShape = null
+        this.global.outputMatrix = null
+        this.global.loss = null
+        this.global.labels = null
+        this.global.training = null
+        this.global.evaluation = null
         this.loading = true
         this.pipeline = []
         let module = () => import('../templates/' + templates[0].js)

@@ -136,10 +136,10 @@ module.exports = [
     input_ref: 'pipeline_5',
     type: 'DatasetTableViewer',
     data: {
-      xAxis: 4,
-      yAxis: 5,
-      zAxis: 6,
-      lAxis: 7
+      xAxis: 8,
+      yAxis: 9,
+      zAxis: 10,
+      lAxis: 11
     }
   }
 ]

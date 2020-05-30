@@ -203,6 +203,8 @@ export default {
       let inputShape = lodash.cloneDeep(this.global.inputShape)
       if (this.global.evaluation !== null) {
         inputMatrix = this.global.evaluation.inputMatrix
+      } else if (this.global.evaluation === null && this.global.training !== null) {
+        inputMatrix = this.global.training.inputMatrix
       }
       inputShape.unshift(inputMatrix.length)
       if (this.inputTensor !== undefined) {
@@ -214,8 +216,21 @@ export default {
       let outputShape = lodash.cloneDeep(this.global.outputShape)
       if (this.global.evaluation !== null) {
         outputMatrix = this.global.evaluation.outputMatrix
+      } else if (this.global.evaluation === null && this.global.training !== null) {
+        outputMatrix = this.global.training.outputMatrix
       }
       outputShape.unshift(outputMatrix.length)
+      if (this.global.loss === 'sparseCategoricalCrossentropy') {
+        for (let i = 0; i < outputMatrix.length; i++) {
+          let value = parseInt(outputMatrix[i][0])
+          let outputRow = []
+          for (let j = 0; j < this.predictTensor.shape[1]; j++) {
+            outputRow.push(value === j ? 1 : 0)
+          }
+          outputMatrix[i] = outputRow
+        }
+        outputShape = [outputMatrix.length, this.predictTensor.shape[1]]
+      }
       if (this.outputTensor !== undefined) {
         this.outputTensor.dispose()
       }
@@ -225,8 +240,10 @@ export default {
       let classNamesMap = []
 
       if (this.global.labels !== null) {
-        if (this.global.evaluation.labels != null) {
+        if (this.global.evaluation !== null) {
           classNamesMap = this.global.evaluation.labels
+        } else if (this.global.evaluation === null && this.global.training !== null) {
+          classNamesMap = this.global.training.labels
         } else {
           classNamesMap = this.global.labels
         }
@@ -325,6 +342,9 @@ export default {
         for (let j = 0; j < this.inputTensor.shape[1]; j++) {
           row.push(inputMatrix[i][j])
         }
+        for (let j = 0; j < this.outputTensor.shape[1]; j++) {
+          row.push(outputMatrix[i][j])
+        }
         for (let j = 0; j < this.predictTensor.shape[1]; j++) {
           row.push(predictMatrix[i][j])
         }
@@ -347,6 +367,8 @@ export default {
       let inputShape = lodash.cloneDeep(this.global.inputShape)
       if (this.global.evaluation !== null) {
         inputMatrix = this.global.evaluation.inputMatrix
+      } else if (this.global.evaluation === null && this.global.training !== null) {
+        inputMatrix = this.global.training.inputMatrix
       }
       inputShape.unshift(inputMatrix.length)
       let inputTensor = this.$tf.tensor(inputMatrix, inputShape)

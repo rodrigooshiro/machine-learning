@@ -111,6 +111,7 @@
         options: [
           'absoluteDifference',
           'categoricalCrossentropy',
+          'sparseCategoricalCrossentropy',
           'computeWeightedLoss',
           'cosineDistance',
           'hingeLoss',
@@ -134,8 +135,8 @@
           minTensor = tf.tensor(minData, minJSON.shape)
           maxTensor = tf.tensor(maxData, maxJSON.shape)
         } else {
-          minTensor = tensor.min()
-          maxTensor = tensor.max()
+          minTensor = tensor.min(0)
+          maxTensor = tensor.max(0)
         }
         let tSub = tensor.sub(minTensor)
         let tDiv = maxTensor.sub(minTensor)

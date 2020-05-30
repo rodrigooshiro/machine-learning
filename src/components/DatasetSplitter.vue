@@ -181,8 +181,12 @@ export default {
     plugActionDisabled() {
       let disabled = 0
       disabled |= this.sampleSplit === 0
-      disabled |= this.trainingRatio === 0
       disabled |= this.indexMax === Infinity
+      if (Array.isArray(this.inputData) && this.inputData.length > 0) {
+        let inputSize = this.inputUnits.filter(unit => unit.checked === true).length
+        let outputSize = this.inputUnits.filter(unit => unit.checked === true).length
+        disabled |= inputSize + outputSize === 0
+      }
       disabled |= this.loading === true
       return disabled === 1
     },
@@ -257,9 +261,15 @@ export default {
       this.global.inputMatrix = null
       this.global.outputShape = null
       this.global.outputMatrix = null
-      this.global.labels = null
-      this.global.training = null
-      this.global.evaluation = null
+      if (this.trainingRatio > 0) {
+        this.global.training = null
+      }
+      if (this.evaluationRatio > 0) {
+        this.global.evaluation = null
+      }
+      if (this.indexLabel !== -1) {
+        this.global.labels = null
+      }
       for (let i = 0; i < this.dataSize; i++) {
         if (this.inputUnits.filter(unit => unit.key === i).length === 0) {
           this.inputUnits.push({
@@ -276,6 +286,12 @@ export default {
           })
         }
       }
+      this.inputUnits.sort(function(a, b) {
+        return a.key === b.key ? 0 : a.key < b.key ? -1 : 1
+      })
+      this.outputUnits.sort(function(a, b) {
+        return a.key === b.key ? 0 : a.key < b.key ? -1 : 1
+      })
     },
     plugActionEvent(event) {
       let indexSize = this.indexMax
@@ -355,13 +371,14 @@ export default {
           output[property].outputMatrix.push(this.global.outputMatrix[indexes[i]])
         }
       }
-      if (this.evaluationRatio === 0) {
-        output.evaluation = output.training
-      }
       this.global.inputMatrix = null
+      if (this.trainingRatio > 0) {
+        this.global.training = output.training
+      }
       this.global.outputMatrix = null
-      this.global.training = output.training
-      this.global.evaluation = output.evaluation
+      if (this.evaluationRatio > 0) {
+        this.global.evaluation = output.evaluation
+      }
       this.plugActionEnd(event)
     }
   }
