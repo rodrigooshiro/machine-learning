@@ -14,5 +14,9 @@ module.exports = [
   {
     name: 'Tensorflow: Handwritten digit recognition with CNNs',
     js: 'tensorflow-handwritten-digit-cnn.js'
+  },
+  {
+    name: 'Tensorflow: Predict baseball pitch types in Node.js',
+    js: 'tensorflow-training-and-prediction.js'
   }
 ]

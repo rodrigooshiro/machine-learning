@@ -22,6 +22,7 @@ import VueNativeSock from 'vue-native-websocket'
 import Pipeline from './layouts/Pipeline.vue'
 import About from './layouts/About.vue'
 import Blank from './layouts/Blank.vue'
+import infiniteScroll from 'vue-infinite-scroll'
 import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
@@ -52,6 +53,7 @@ Vue.use(VueNativeSock, `${protocol}//${hostname}:8001`, {
 })
 Vue.use(BootstrapVue)
 Vue.use(IconsPlugin)
+Vue.use(infiniteScroll)
 Vue.use({
   install(Vue) {
     Vue.prototype.$axios = axios

@@ -100,8 +100,8 @@
     </b-collapse>
 
     <b-input-group class="mb-2">
-      <div class="fileTable">
-        <b-table striped hover :fields="headersDataTable" :items="inputDataTable"></b-table>
+      <div class="fileTable" v-infinite-scroll="onLoadMore">
+        <b-table striped hover :fields="headersDataTable" :items="inputDataTableList"></b-table>
       </div>
     </b-input-group>
 
@@ -160,7 +160,8 @@ export default {
       filterSelected: null,
       filterOptions: [],
       toggleIcon: 'caret-down',
-      fileChart: false
+      fileChart: false,
+      inputDataTableList: []
     }
     return this.importData(data)
   },
@@ -268,7 +269,9 @@ export default {
           this.output = data.map(x => Object.values(x))
         } else {
           data = []
+          this.inputDataTableList = []
         }
+        this.inputDataTableList.push(...data.slice(0, 10))
         return data
       }
     },
@@ -304,6 +307,16 @@ export default {
     }
   },
   methods: {
+    onLoadMore() {
+      if (this.inputDataTableList.length < this.inputDataTable.length) {
+        this.inputDataTableList.push(
+          ...this.inputDataTable.slice(
+            this.inputDataTableList.length,
+            this.inputDataTableList.length + 10
+          )
+        )
+      }
+    },
     onHeaderChange(key) {
       let header = this.headers.filter(h => h.key === key)[0]
       if (header.state === 1) {
