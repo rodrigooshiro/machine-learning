@@ -68,7 +68,7 @@
         class="playIcon"
         :disabled="playActionDisabled"
       >
-        <b-iconstack font-scale="1.55">
+        <b-iconstack style="width: 50px; height: 50px;">
           <b-icon icon="circle-fill" variant="secondary"></b-icon>
           <b-icon icon="circle" style="color: #aaa"></b-icon>
           <b-icon
@@ -509,6 +509,9 @@ export default {
 .playIcon:focus,
 .playIcon:hover,
 .playIcon:active {
+  font-size:10px;
+  width: 50px;
+  height: 50px;
   margin: 0;
   padding: 0;
   border: 0px;
