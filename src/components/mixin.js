@@ -246,6 +246,7 @@ export const mixin = {
       this.$emit('onPlugAction', this.loading)
     },
     plugAction(event) {
+      this.$el.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
       this.loading = true
       this.$emit('onPlugAction', this.loading)
       setTimeout(
