@@ -318,7 +318,7 @@ export default {
           disabled |= this.kernelSize[i] === 0
         }
         if (this.utilities.tf.layer.args[this.layerName[i]].indexOf('filters') !== -1) {
-          disabled |= this.filters[i] !== 0
+          disabled |= this.filters[i] === 0
         }
       }
       return disabled === 1

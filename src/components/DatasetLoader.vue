@@ -58,6 +58,13 @@ export default {
     }
     return this.importData(data)
   },
+  computed: {
+    plugActionDisabled() {
+      let disabled = 0
+      disabled |= this.loading === true
+      return disabled === 1
+    }
+  },
   methods: {
     loadFileContent(content) {
       this.output = content

@@ -249,6 +249,7 @@ export default {
   },
   methods: {
     resetPipeline() {
+      this.componentLoading = false
       this.pipeline.forEach(item => {
         if (item.unwatch !== undefined) {
           item.unwatch()
@@ -513,7 +514,18 @@ export default {
       this.$refs[this.queue[0]][0].plugAction()
     },
     onPlugAction(loading) {
-      this.componentLoading = loading
+      if (loading !== undefined) {
+        this.componentLoading = loading
+      } else {
+        this.componentLoading = false
+        this.pipeline.forEach(item => {
+          if (item.unwatch !== undefined) {
+            item.unwatch()
+            delete item.unwatch
+          }
+        })
+        this.queue = []
+      }
     }
   }
 }
