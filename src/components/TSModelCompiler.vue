@@ -64,6 +64,7 @@
           <b-form-spinbutton
             v-model="epochSize"
             min="1"
+            max="9999"
             placeholder="--"
             :disabled="editActionDisabled"
           ></b-form-spinbutton>
@@ -74,6 +75,7 @@
           <b-form-spinbutton
             v-model="batchSize"
             min="1"
+            max="9999"
             placeholder="--"
             :disabled="editActionDisabled"
           ></b-form-spinbutton>
