@@ -248,6 +248,24 @@ export default {
     }
   },
   methods: {
+    resetPipeline() {
+      this.pipeline.forEach(item => {
+        if (item.unwatch !== undefined) {
+          item.unwatch()
+          delete item.unwatch
+        }
+      })
+      this.global.model = null
+      this.global.inputShape = null
+      this.global.inputMatrix = null
+      this.global.outputShape = null
+      this.global.outputMatrix = null
+      this.global.loss = null
+      this.global.labels = null
+      this.global.training = null
+      this.global.evaluation = null
+      this.queue = []
+    },
     setupComponent() {
       this.pipeline[this.index].key = Math.random()
       this.pipeline[this.index].title = this.componentTitle
@@ -439,14 +457,7 @@ export default {
         template => template.name === name
       )
       if (templates.length && templates[0].value === null) {
-        this.global.inputShape = null
-        this.global.inputMatrix = null
-        this.global.outputShape = null
-        this.global.outputMatrix = null
-        this.global.loss = null
-        this.global.labels = null
-        this.global.training = null
-        this.global.evaluation = null
+        this.resetPipeline()
         this.loading = true
         this.pipeline = []
         let module = () => import('../templates/' + templates[0].js)
@@ -472,6 +483,7 @@ export default {
     onPlayPipeline() {
       let stack = 0
       if (this.queue.length === 0) {
+        this.resetPipeline()
         this.pipeline.forEach(item => {
           this.queue.push(item.index)
           item.unwatch = this.$watch(
@@ -486,6 +498,7 @@ export default {
                 let index = this.queue.indexOf(this.item.index)
                 this.queue.splice(index, 1)
                 this.item.unwatch()
+                delete this.item.unwatch
               }
               if (stack === 0) {
                 if (this.queue.length) {
