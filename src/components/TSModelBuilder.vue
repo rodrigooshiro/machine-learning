@@ -38,12 +38,15 @@
             <label>Layer {{ i }} (class)</label>
             <b-form-select
               v-model="layerName[i-1]"
-              :options="layerNameOptions"
+              :options="utilities.tf.layer.options"
               :disabled="editActionDisabled"
             ></b-form-select>
           </div>
 
-          <div class="indexInput">
+          <div
+            class="indexInput"
+            v-if="utilities.tf.layer.args[layerName[i-1]].indexOf('units') !== -1"
+          >
             <label>Layer {{ i }} (units)</label>
             <b-form-spinbutton
               v-model="units[i-1]"
@@ -53,7 +56,10 @@
             ></b-form-spinbutton>
           </div>
 
-          <div class="indexInput">
+          <div
+            class="indexInput"
+            v-if="utilities.tf.layer.args[layerName[i-1]].indexOf('kernelSize') !== -1"
+          >
             <label>Layer {{ i }} (kernelSize)</label>
             <b-form-spinbutton
               v-model="kernelSize[i-1]"
@@ -63,7 +69,10 @@
             ></b-form-spinbutton>
           </div>
 
-          <div class="indexInput">
+          <div
+            class="indexInput"
+            v-if="utilities.tf.layer.args[layerName[i-1]].indexOf('filters') !== -1"
+          >
             <label>Layer {{ i }} (filters)</label>
             <b-form-spinbutton
               v-model="filters[i-1]"
@@ -73,7 +82,10 @@
             ></b-form-spinbutton>
           </div>
 
-          <div class="indexInput">
+          <div
+            class="indexInput"
+            v-if="utilities.tf.layer.args[layerName[i-1]].indexOf('strides') !== -1"
+          >
             <label>Layer {{ i }} (strides)</label>
             <b-dropdown
               text="strides"
@@ -114,7 +126,10 @@
             </b-dropdown>
           </div>
 
-          <div class="indexInput">
+          <div
+            class="indexInput"
+            v-if="utilities.tf.layer.args[layerName[i-1]].indexOf('poolSize') !== -1"
+          >
             <label>Layer {{ i }} (poolSize)</label>
             <b-dropdown
               text="poolSize"
@@ -155,31 +170,40 @@
             </b-dropdown>
           </div>
 
-          <div class="indexInput">
+          <div
+            class="indexInput"
+            v-if="utilities.tf.layer.args[layerName[i-1]].indexOf('activation') !== -1"
+          >
             <label>
               <span>Layer {{ i }} (activation)</span>
             </label>
             <b-form-select
               v-model="activation[i-1]"
-              :options="activationOptions"
+              :options="utilities.tf.layer.activation.options"
               :disabled="editActionDisabled"
             ></b-form-select>
           </div>
 
-          <div class="indexInput">
+          <div
+            class="indexInput"
+            v-if="utilities.tf.layer.args[layerName[i-1]].indexOf('kernelInitializer') !== -1"
+          >
             <label>Layer ({{ i }} kernel initializer)</label>
             <b-form-select
               v-model="kernelInitializer[i-1]"
-              :options="kernelInitializerOptions"
+              :options="utilities.tf.initializers.options"
               :disabled="editActionDisabled"
             ></b-form-select>
           </div>
 
-          <div class="indexInput">
+          <div
+            class="indexInput"
+            v-if="utilities.tf.layer.args[layerName[i-1]].indexOf('biasInitializer') !== -1"
+          >
             <label>Layer {{ i }} (bias initializer)</label>
             <b-form-select
               v-model="biasInitializer[i-1]"
-              :options="biasInitializerOptions"
+              :options="utilities.tf.initializers.options"
               :disabled="editActionDisabled"
             ></b-form-select>
           </div>
@@ -254,6 +278,7 @@ export default {
         'biasInitializer'
       ],
       toggleIcon: 'caret-up',
+      utilities: utilities,
       layerSize: 0,
       layerName: [],
       units: [],
@@ -264,10 +289,6 @@ export default {
       activation: [],
       kernelInitializer: [],
       biasInitializer: [],
-      layerNameOptions: utilities.tf.layer.options,
-      activationOptions: utilities.tf.layer.activation.options,
-      kernelInitializerOptions: utilities.tf.initializers.options,
-      biasInitializerOptions: utilities.tf.initializers.options,
       stridesLength: [],
       poolSizeLength: [],
       inputShape: null,
@@ -286,7 +307,16 @@ export default {
       return this.editActionDisabled
     },
     plugActionDisabled() {
-      return this.editActionDisabled
+      let disabled = 0
+      disabled |= this.loading === true
+      disabled |= this.global.inputShape === null
+      for (let i = 0; i < this.layerSize; i++) {
+        if (this.layerName[i] === 'dense') {
+          disabled |= this.units[i] === 0
+          disabled |= this.activation[i] === '--'
+        }
+      }
+      return disabled === 1
     },
     imageActionDisabled() {
       let disabled = 0
@@ -376,50 +406,47 @@ export default {
       this.$refs['graph'].appendChild(modelView.getDOMElement())
     },
     validateActionEvent(event) {
-      if (event === undefined) {
-        let keys = [
-          'layerName',
-          'units',
-          'kernelSize',
-          'filters',
-          'strides',
-          'poolSize',
-          'activation',
-          'kernelInitializer',
-          'biasInitializer'
-        ]
-        keys.forEach(value => {
-          while (this[value].length > this.layerSize) {
-            this[value].pop()
-          }
-        })
-        while (this.layerName.length < this.layerSize) {
-          this.layerName.push('dense')
+      let keys = [
+        'layerName',
+        'units',
+        'kernelSize',
+        'filters',
+        'strides',
+        'poolSize',
+        'activation',
+        'kernelInitializer',
+        'biasInitializer'
+      ]
+      keys.forEach(value => {
+        while (this[value].length > this.layerSize) {
+          this[value].pop()
         }
-        keys = ['units', 'kernelSize']
-        keys.forEach(value => {
-          while (this[value].length < this.layerSize) {
-            this[value].push(0)
-          }
-        })
-        while (this.filters.length < this.layerSize) {
-          this.filters.push(-1)
-        }
-        keys = ['strides', 'poolSize']
-        keys.forEach(value => {
-          while (this[value].length < this.layerSize) {
-            this[value].push([])
-          }
-        })
-        keys = ['activation', 'kernelInitializer', 'biasInitializer']
-        keys.forEach(value => {
-          while (this[value].length < this.layerSize) {
-            this[value].push('--')
-          }
-        })
-      } else if (event === false) {
-        this.trashAction()
+      })
+      while (this.layerName.length < this.layerSize) {
+        this.layerName.push('dense')
       }
+      keys = ['units', 'kernelSize']
+      keys.forEach(value => {
+        while (this[value].length < this.layerSize) {
+          this[value].push(0)
+        }
+      })
+      while (this.filters.length < this.layerSize) {
+        this.filters.push(-1)
+      }
+      keys = ['strides', 'poolSize']
+      keys.forEach(value => {
+        while (this[value].length < this.layerSize) {
+          this[value].push([])
+        }
+      })
+      keys = ['activation', 'kernelInitializer', 'biasInitializer']
+      keys.forEach(value => {
+        while (this[value].length < this.layerSize) {
+          this[value].push('--')
+        }
+      })
+      this.inputShape = this.global.inputShape
     },
     trashActionEvent(event) {
       jquery(this.$refs['draw']).empty()
@@ -429,7 +456,6 @@ export default {
         this.global.model.dispose()
         this.global.model = null
       }
-      this.inputShape = this.global.inputShape
     },
     plugActionEvent(event) {
       this.$options.sockets.onerror = function() {

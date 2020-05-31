@@ -255,6 +255,7 @@ export default {
           delete item.unwatch
         }
       })
+      this.$tf.disposeVariables()
       this.global.model = null
       this.global.inputShape = null
       this.global.inputMatrix = null

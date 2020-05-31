@@ -25,7 +25,7 @@
           <label>Compiler Optimizer</label>
           <b-form-select
             v-model="compilerOptimizerSelected"
-            :options="compilerOptimizerOptions"
+            :options="utilities.tf.train.options"
             :disabled="editActionDisabled"
           ></b-form-select>
         </div>
@@ -34,7 +34,7 @@
           <label>Compiler Loss</label>
           <b-form-select
             v-model="compilerLossSelected"
-            :options="compilerLossOptions"
+            :options="utilities.tf.losses.options"
             :disabled="editActionDisabled"
           ></b-form-select>
         </div>
@@ -154,6 +154,7 @@ export default {
         'compilerLossSelected'
       ],
       toggleIcon: 'caret-up',
+      utilities: utilities,
       shuffle: true,
       epochSize: 0,
       batchSize: 0,
@@ -161,9 +162,7 @@ export default {
       inputUnitsNormalize: false,
       outputUnitsNormalize: false,
       compilerOptimizerSelected: null,
-      compilerOptimizerOptions: utilities.tf.train.options,
       compilerLossSelected: null,
-      compilerLossOptions: utilities.tf.losses.options,
       fileChart: false
     }
     return this.importData(data)
