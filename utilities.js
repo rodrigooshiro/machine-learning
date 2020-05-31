@@ -15,14 +15,11 @@
  * ============================================================================================================
  */
 /* eslint-disable */
-;(function(global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined'
-    ? factory(exports)
-    : typeof define === 'function' && define.amd
-    ? define(['exports'], factory)
-    : factory((global.utilities = global.utilities || {}))
-})(this, function(exports) {
-  'use strict'
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (factory((global.utilities = global.utilities || {})));
+}(this, (function (exports) { 'use strict';
   let utilities = {
     tf: {
       layer: {
@@ -987,7 +984,7 @@
           loss: loss,
           metrics: ['mse']
         })
-        let train = await model.fit(inputTensor, outputTensor, {
+        let history = await model.fit(inputTensor, outputTensor, {
           batchSize: data.batchSize,
           epochs: data.epochSize,
           shuffle: data.shuffle,
@@ -995,7 +992,7 @@
           callbacks: callbacks
         })
 
-        return { model, train }
+        return { model, history }
       },
       predictor: async function(tf, model, data, inputTensorJSON) {
         let scope = typeof window === 'undefined' ? global : window
@@ -1023,4 +1020,4 @@
   exports.tf = utilities.tf
   exports.tasks = utilities.tasks
   Object.defineProperty(exports, '__esModule', { value: true })
-})
+})));
