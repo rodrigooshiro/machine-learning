@@ -58,41 +58,50 @@ router.get('/model/:file', function(req, res, next) {
 const self = {
   builder: async function(ws, data) {
     let output = await utilities.tasks.builder(tf, data)
-    let dirname = __dirname.replace(/\\/g, '/').split(':').splice(-1)[0]
-    await output.model.save('file://' + path.dirname(dirname) + '/model')
-    ws.send(JSON.stringify({ data: ['onEnd'] }))
+    if (output instanceof Error) {
+      ws.send(JSON.stringify({ data: ['onError', output.message] }))
+    } else {
+      let dirname = __dirname
+        .replace(/\\/g, '/')
+        .split(':')
+        .splice(-1)[0]
+      await output.model.save('file://' + path.dirname(dirname) + '/model')
+      ws.send(JSON.stringify({ data: ['onEnd'] }))
+    }
     tf.disposeVariables()
   },
   compiler: async function(ws, data, inputTensorJSON, outputTensorJSON) {
     ws.onEpochEnd = async function(epoch, logs) {
       ws.send(JSON.stringify({ data: ['onEpochEnd', epoch, logs] }))
     }
-    let dirname = __dirname.replace(/\\/g, '/').split(':').splice(-1)[0]
+    let dirname = __dirname
+      .replace(/\\/g, '/')
+      .split(':')
+      .splice(-1)[0]
     let model = await tf.loadLayersModel('file://' + path.dirname(dirname) + '/model/model.json')
-    let output = await utilities.tasks.compiler(
-      tf,
-      model,
-      data,
-      inputTensorJSON,
-      outputTensorJSON,
-      {
-        onEpochEnd: ws.onEpochEnd
-      }
-    )
-    await output.model.save('file://' + path.dirname(dirname) + '/model')
-    ws.send(JSON.stringify({ data: ['onEnd', output.history] }))
+    let output = await utilities.tasks.compiler(tf, model, data, inputTensorJSON, outputTensorJSON, {
+      onEpochEnd: ws.onEpochEnd
+    })
+    if (output instanceof Error) {
+      ws.send(JSON.stringify({ data: ['onError', output.message] }))
+    } else {
+      await output.model.save('file://' + path.dirname(dirname) + '/model')
+      ws.send(JSON.stringify({ data: ['onEnd', output.history] }))
+    }
     tf.disposeVariables()
   },
   predictor: async function(ws, data, inputTensorJSON) {
-    let dirname = __dirname.replace(/\\/g, '/').split(':').splice(-1)[0]
+    let dirname = __dirname
+      .replace(/\\/g, '/')
+      .split(':')
+      .splice(-1)[0]
     let model = await tf.loadLayersModel('file://' + path.dirname(dirname) + '/model/model.json')
-    let output = await utilities.tasks.predictor(
-      tf,
-      model,
-      data,
-      inputTensorJSON
-    )
-    ws.send(JSON.stringify({ data: ['onEnd', output.predictTensorJSON] }))
+    let output = await utilities.tasks.predictor(tf, model, data, inputTensorJSON)
+    if (output instanceof Error) {
+      ws.send(JSON.stringify({ data: ['onError', output.message] }))
+    } else {
+      ws.send(JSON.stringify({ data: ['onEnd', output.predictTensorJSON] }))
+    }
     tf.disposeVariables()
   }
 }

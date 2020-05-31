@@ -296,6 +296,10 @@ export default {
                 this.plugActionEnd(event)
               }.bind(this)
             )
+          } else if (event.data[0] === 'onError') {
+            console.error(event.data[1])
+            worker.terminate()
+            this.plugActionEnd(event)
           } else {
             this.fileChart = true
             if (this.$refs['modal'].isShow) {
@@ -344,6 +348,10 @@ export default {
               this.plugActionEnd(event)
             }.bind(this)
           )
+        } else if (event.data[0] === 'onError') {
+          console.error(event.data[1])
+          this.$disconnect()
+          this.plugActionEnd(event)
         } else {
           this.fileChart = true
           if (this.$refs['modal'].isShow) {

@@ -76,8 +76,8 @@
             <label>Layer {{ i }} (filters)</label>
             <b-form-spinbutton
               v-model="filters[i-1]"
-              min="-1"
-              :formatter-fn="indexFormatter"
+              min="0"
+              :formatter-fn="positiveFormatter"
               :disabled="editActionDisabled"
             ></b-form-spinbutton>
           </div>
@@ -311,9 +311,14 @@ export default {
       disabled |= this.loading === true
       disabled |= this.global.inputShape === null
       for (let i = 0; i < this.layerSize; i++) {
-        if (this.layerName[i] === 'dense') {
+        if (this.utilities.tf.layer.args[this.layerName[i]].indexOf('units') !== -1) {
           disabled |= this.units[i] === 0
-          disabled |= this.activation[i] === '--'
+        }
+        if (this.utilities.tf.layer.args[this.layerName[i]].indexOf('kernelSize') !== -1) {
+          disabled |= this.kernelSize[i] === 0
+        }
+        if (this.utilities.tf.layer.args[this.layerName[i]].indexOf('filters') !== -1) {
+          disabled |= this.filters[i] !== 0
         }
       }
       return disabled === 1
@@ -425,15 +430,12 @@ export default {
       while (this.layerName.length < this.layerSize) {
         this.layerName.push('dense')
       }
-      keys = ['units', 'kernelSize']
+      keys = ['units', 'kernelSize', 'filters']
       keys.forEach(value => {
         while (this[value].length < this.layerSize) {
           this[value].push(0)
         }
       })
-      while (this.filters.length < this.layerSize) {
-        this.filters.push(-1)
-      }
       keys = ['strides', 'poolSize']
       keys.forEach(value => {
         while (this[value].length < this.layerSize) {
@@ -473,6 +475,10 @@ export default {
                 this.plugActionEnd(event)
               }.bind(this)
             )
+          } else if (event.data[0] === 'onError') {
+            console.error(event.data[1])
+            worker.terminate()
+            this.plugActionEnd(event)
           }
         }.bind(this)
         worker.postMessage(['builder', this.getData()])
@@ -493,6 +499,10 @@ export default {
               this.plugActionEnd(event)
             }.bind(this)
           )
+        } else if (event.data[0] === 'onError') {
+          console.error(event.data[1])
+          this.$disconnect()
+          this.plugActionEnd(event)
         }
       }.bind(this)
 

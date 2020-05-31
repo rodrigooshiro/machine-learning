@@ -394,6 +394,10 @@ export default {
             this.plugActionPost(event.data[1])
             worker.terminate()
             this.plugActionEnd(event)
+          } else if (event.data[0] === 'onError') {
+            console.error(event.data[1])
+            worker.terminate()
+            this.plugActionEnd(event)
           }
         }.bind(this)
         this.global.model.save('indexeddb://model').then(
@@ -415,6 +419,10 @@ export default {
         let event = JSON.parse(message.data)
         if (event.data[0] === 'onEnd') {
           this.plugActionPost(event.data[1])
+          this.$disconnect()
+          this.plugActionEnd(event)
+        } else if (event.data[0] === 'onError') {
+          console.error(event.data[1])
           this.$disconnect()
           this.plugActionEnd(event)
         }

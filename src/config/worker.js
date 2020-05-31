@@ -26,7 +26,11 @@ self.onEpochEnd = async function(epoch, logs) {
 
 self.builder = async function(data) {
   let output = await utilities.tasks.builder(tf, data)
-  await output.model.save('indexeddb://model')
+  if (output instanceof Error) {
+    self.postMessage(['onError', output.message])
+  } else {
+    await output.model.save('indexeddb://model')
+  }
   self.postMessage(['onEnd'])
   tf.disposeVariables()
 }
@@ -36,15 +40,23 @@ self.compiler = async function(data, inputTensorJSON, outputTensorJSON) {
   let output = await utilities.tasks.compiler(tf, model, data, inputTensorJSON, outputTensorJSON, {
     onEpochEnd: self.onEpochEnd
   })
-  await output.model.save('indexeddb://model')
-  self.postMessage(['onEnd', output.history])
+  if (output instanceof Error) {
+    self.postMessage(['onError', output.message])
+  } else {
+    await output.model.save('indexeddb://model')
+    self.postMessage(['onEnd', output.history])
+  }
   tf.disposeVariables()
 }
 
 self.predictor = async function(data, inputTensorJSON) {
   let model = await tf.loadLayersModel('indexeddb://model')
   let output = await utilities.tasks.predictor(tf, model, data, inputTensorJSON)
-  self.postMessage(['onEnd', output.predictTensorJSON])
+  if (output instanceof Error) {
+    self.postMessage(['onError', output.message])
+  } else {
+    self.postMessage(['onEnd', output.predictTensorJSON])
+  }
   tf.disposeVariables()
 }
 
