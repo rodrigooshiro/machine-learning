@@ -907,113 +907,126 @@
         return { unnormal }
       },
       builder: async function(tf, data) {
-        let model = tf.sequential()
-        for (let i = 0; i < data.layerSize; i++) {
-          let layer = {}
-          if (i === 0) {
-            if (data.inputShape.length === 1) {
-              layer.inputShape = data.inputShape[0]
-            } else {
-              layer.inputShape = data.inputShape
+        try {
+          let model = tf.sequential()
+          for (let i = 0; i < data.layerSize; i++) {
+            let layer = {}
+            if (i === 0) {
+              if (data.inputShape.length === 1) {
+                layer.inputShape = data.inputShape[0]
+              } else {
+                layer.inputShape = data.inputShape
+              }
             }
+            if (utilities.tf.layer.args[data.layerName[i]].indexOf('units') !== -1) {
+              if (data.units[i] !== 0) {
+                layer.units = data.units[i]
+              }
+            }
+            if (utilities.tf.layer.args[data.layerName[i]].indexOf('kernelSize') !== -1) {
+              if (data.kernelSize[i] !== 0) {
+                layer.kernelSize = data.kernelSize[i]
+              }
+            }
+            if (utilities.tf.layer.args[data.layerName[i]].indexOf('filters') !== -1) {
+              if (data.filters[i] !== -1) {
+                layer.filters = data.filters[i]
+              }
+            }
+            if (utilities.tf.layer.args[data.layerName[i]].indexOf('strides') !== -1) {
+              if (data.strides[i].length === 1) {
+                layer.strides = data.strides[i][0]
+              }
+              if (data.strides[i].length > 1) {
+                layer.strides = data.strides[i]
+              }
+            }
+            if (utilities.tf.layer.args[data.layerName[i]].indexOf('poolSize') !== -1) {
+              if (data.poolSize[i].length === 1) {
+                layer.poolSize = data.poolSize[i][0]
+              }
+              if (data.poolSize[i].length > 1) {
+                layer.poolSize = data.poolSize[i]
+              }
+            }
+            if (utilities.tf.layer.args[data.layerName[i]].indexOf('activation') !== -1) {
+              if (data.activation[i] !== '--') {
+                layer.activation = data.activation[i]
+              }
+            }
+            if (utilities.tf.layer.args[data.layerName[i]].indexOf('kernelInitializer') !== -1) {
+              if (data.kernelInitializer[i] !== '--') {
+                layer.kernelInitializer = data.kernelInitializer[i]
+              }
+            }
+            if (utilities.tf.layer.args[data.layerName[i]].indexOf('biasInitializer') !== -1) {
+              if (data.biasInitializer[i] !== '--') {
+                layer.useBias = true
+                layer.biasInitializer = data.biasInitializer[i]
+              }
+            }
+            model.add(tf.layers[data.layerName[i]](layer))
           }
-          if (utilities.tf.layer.args[data.layerName[i]].indexOf('units') !== -1) {
-            if (data.units[i] !== 0) {
-              layer.units = data.units[i]
-            }
-          }
-          if (utilities.tf.layer.args[data.layerName[i]].indexOf('kernelSize') !== -1) {
-            if (data.kernelSize[i] !== 0) {
-              layer.kernelSize = data.kernelSize[i]
-            }
-          }
-          if (utilities.tf.layer.args[data.layerName[i]].indexOf('filters') !== -1) {
-            if (data.filters[i] !== -1) {
-              layer.filters = data.filters[i]
-            }
-          }
-          if (utilities.tf.layer.args[data.layerName[i]].indexOf('strides') !== -1) {
-            if (data.strides[i].length === 1) {
-              layer.strides = data.strides[i][0]
-            }
-            if (data.strides[i].length > 1) {
-              layer.strides = data.strides[i]
-            }
-          }
-          if (utilities.tf.layer.args[data.layerName[i]].indexOf('poolSize') !== -1) {
-            if (data.poolSize[i].length === 1) {
-              layer.poolSize = data.poolSize[i][0]
-            }
-            if (data.poolSize[i].length > 1) {
-              layer.poolSize = data.poolSize[i]
-            }
-          }
-          if (utilities.tf.layer.args[data.layerName[i]].indexOf('activation') !== -1) {
-            if (data.activation[i] !== '--') {
-              layer.activation = data.activation[i]
-            }
-          }
-          if (utilities.tf.layer.args[data.layerName[i]].indexOf('kernelInitializer') !== -1) {
-            if (data.kernelInitializer[i] !== '--') {
-              layer.kernelInitializer = data.kernelInitializer[i]
-            }
-          }
-          if (utilities.tf.layer.args[data.layerName[i]].indexOf('biasInitializer') !== -1) {
-            if (data.biasInitializer[i] !== '--') {
-              layer.useBias = true
-              layer.biasInitializer = data.biasInitializer[i]
-            }
-          }
-          model.add(tf.layers[data.layerName[i]](layer))
+          return { model }
+        } catch(error) {
+          console.error(error)
+          return error
         }
-        return { model }
       },
       compiler: async function(tf, model, data, inputTensorJSON, outputTensorJSON, callbacks) {
-        let scope = typeof window === 'undefined' ? global : window
-        let inputData = scope[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
-        let outputData = scope[outputTensorJSON.data['type']].from(outputTensorJSON.data['data'])
-        let inputTensor = tf.tensor(inputData, inputTensorJSON.shape)
-        let outputTensor = tf.tensor(outputData, outputTensorJSON.shape)
+        try {
+          let scope = typeof window === 'undefined' ? global : window
+          let inputData = scope[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
+          let outputData = scope[outputTensorJSON.data['type']].from(outputTensorJSON.data['data'])
+          let inputTensor = tf.tensor(inputData, inputTensorJSON.shape)
+          let outputTensor = tf.tensor(outputData, outputTensorJSON.shape)
 
-        let loss = data.compilerLossSelected
-        if (loss in tf.losses) {
-          loss = tf.losses[loss]
+          let loss = data.compilerLossSelected
+          if (loss in tf.losses) {
+            loss = tf.losses[loss]
+          }
+          model.compile({
+            optimizer: data.compilerOptimizerSelected,
+            loss: loss,
+            metrics: ['mse']
+          })
+          let history = await model.fit(inputTensor, outputTensor, {
+            batchSize: data.batchSize,
+            epochs: data.epochSize,
+            shuffle: data.shuffle,
+            validationSplit: data.validationSplit,
+            callbacks: callbacks
+          })
+          return { model, history }
+        } catch(error) {
+          console.error(error)
+          return error
         }
-        model.compile({
-          optimizer: data.compilerOptimizerSelected,
-          loss: loss,
-          metrics: ['mse']
-        })
-        let history = await model.fit(inputTensor, outputTensor, {
-          batchSize: data.batchSize,
-          epochs: data.epochSize,
-          shuffle: data.shuffle,
-          validationSplit: data.validationSplit,
-          callbacks: callbacks
-        })
-
-        return { model, history }
       },
       predictor: async function(tf, model, data, inputTensorJSON) {
-        let scope = typeof window === 'undefined' ? global : window
-        let predictor = tf.sequential()
-        for (let i = 0; i < data.layerSize; i++) {
-          predictor.add(model.layers[i])
-        }
+        try {
+          let scope = typeof window === 'undefined' ? global : window
+          let predictor = tf.sequential()
+          for (let i = 0; i < data.layerSize; i++) {
+            predictor.add(model.layers[i])
+          }
 
-        let inputData = scope[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
-        let inputTensor = tf.tensor(inputData, inputTensorJSON.shape)
-        let predictTensor = predictor.predict(inputTensor)
-        let predictTensorData = predictTensor.dataSync()
-        let predictTensorJSON = {
-          data: {
-            type: predictTensorData.constructor.toString().replace(/.* (.*)\(\)(.|\n)*/g, '$1'),
-            data: Object.values(predictTensorData)
-          },
-          shape: predictTensor.shape
+          let inputData = scope[inputTensorJSON.data['type']].from(inputTensorJSON.data['data'])
+          let inputTensor = tf.tensor(inputData, inputTensorJSON.shape)
+          let predictTensor = predictor.predict(inputTensor)
+          let predictTensorData = predictTensor.dataSync()
+          let predictTensorJSON = {
+            data: {
+              type: predictTensorData.constructor.toString().replace(/.* (.*)\(\)(.|\n)*/g, '$1'),
+              data: Object.values(predictTensorData)
+            },
+            shape: predictTensor.shape
+          }
+          return { predictTensorJSON }
+        } catch(error) {
+          console.error(error)
+          return error
         }
-
-        return { predictTensorJSON }
       }
     }
   }
