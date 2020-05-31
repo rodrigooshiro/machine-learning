@@ -105,6 +105,7 @@
       :static="true"
       :hide-footer="true"
       size="lg"
+      ref="modal"
     >
       <div ref="draw"></div>
     </b-modal>
@@ -284,14 +285,17 @@ export default {
             worker.terminate()
             this.plugActionEnd(event)
           } else if (event.data[0] === 'onEnd') {
-            let train = event.data[1]
+            this.$tfvis.show.history(this.$refs['draw'], event.data[1], ['loss', 'mse'], {
+              width: 700,
+              height: 200
+            })
             this.$tf.loadLayersModel('indexeddb://model').then(
               function(model) {
                 this.global.model.dispose()
                 this.global.model = model
                 this.output = {
                   ...this.inputData,
-                  train: train,
+                  history: event.data[1],
                   normalizationData: normalizationData
                 }
                 worker.terminate()
@@ -300,7 +304,9 @@ export default {
             )
           } else {
             this.fileChart = true
-            callbacks[event.data[0]](event.data[1], event.data[2])
+            if (this.$refs['modal'].isShow) {
+              callbacks[event.data[0]](event.data[1], event.data[2])
+            }
           }
         }.bind(this)
         this.global.model.save('indexeddb://model').then(
@@ -325,14 +331,17 @@ export default {
       this.$options.sockets.onmessage = function(message) {
         let event = JSON.parse(message.data)
         if (event.data[0] === 'onEnd') {
-          let train = event.data[1]
+          this.$tfvis.show.history(this.$refs['draw'], event.data[1], ['loss', 'mse'], {
+            width: 700,
+            height: 200
+          })
           this.$tf.loadLayersModel('./api/model/model.json').then(
             function(model) {
               this.global.model.dispose()
               this.global.model = model
               this.output = {
                 ...this.inputData,
-                train: train,
+                history: event.data[1],
                 normalizationData: normalizationData
               }
               this.$disconnect()
@@ -341,7 +350,9 @@ export default {
           )
         } else {
           this.fileChart = true
-          callbacks[event.data[0]](event.data[1], event.data[2])
+          if (this.$refs['modal'].isShow) {
+            callbacks[event.data[0]](event.data[1], event.data[2])
+          }
         }
       }.bind(this)
 

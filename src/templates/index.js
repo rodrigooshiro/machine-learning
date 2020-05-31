@@ -1,15 +1,11 @@
 module.exports = [
   {
-    name: 'Tensorflow: Making Predictions from 2D',
+    name: 'Tensorflow: Making predictions from 2D',
     js: 'tensorflow-predictions-2d.js'
   },
   {
-    name: 'Tensorflow: Making More Predictions from 2D',
+    name: 'Tensorflow: Making more predictions from 2D',
     js: 'tensorflow-predictions-more-2d.js'
-  },
-  {
-    name: 'Tensorflow: Autoencoder',
-    js: 'tensorflow-autoencoder.js'
   },
   {
     name: 'Tensorflow: Handwritten digit recognition with CNNs',
@@ -18,5 +14,13 @@ module.exports = [
   {
     name: 'Tensorflow: Predict baseball pitch types',
     js: 'tensorflow-training-and-prediction.js'
+  },
+  {
+    name: 'Tensorflow: Flower classification',
+    js: 'tensorflow-flower-classification.js'
+  },
+  {
+    name: 'Tensorflow: Flower classification using Autoencoder',
+    js: 'tensorflow-flower-classification-autoencoder.js'
   }
 ]

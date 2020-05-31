@@ -6,8 +6,7 @@ module.exports = [
     description:
       'This pipeline uses the iris dataset from UCI Machile Learning ' +
       '[repository](https://archive.ics.uci.edu/ml/datasets/iris). It ' +
-      'uses **tensorflow** to create a model that exemplifies an **autoencoder** to reduce ' +
-      'dimensions.',
+      'uses **tensorflow** to create a model to classify flowers.',
     data: {
       remoteFile: 'https://raw.githubusercontent.com/pandas-dev/pandas/master/pandas/tests/data/iris.csv'
     }
@@ -31,9 +30,9 @@ module.exports = [
     title: 'Dataset Splitter',
     data: {
       sampleSplit: 1,
-      shuffle: false,
-      trainingRatio: 1,
-      evaluationRatio: 0,
+      shuffle: true,
+      trainingRatio: 0.7,
+      evaluationRatio: 0.3,
       inputUnits: [
         {
           key: 0,
@@ -54,28 +53,38 @@ module.exports = [
           key: 3,
           checked: true,
           label: 'Column 3'
+        },
+        {
+          key: 4,
+          checked: false,
+          label: 'Column 4'
         }
       ],
       outputUnits: [
         {
           key: 0,
-          checked: true,
+          checked: false,
           label: 'Column 0'
         },
         {
           key: 1,
-          checked: true,
+          checked: false,
           label: 'Column 1'
         },
         {
           key: 2,
-          checked: true,
+          checked: false,
           label: 'Column 2'
         },
         {
           key: 3,
-          checked: true,
+          checked: false,
           label: 'Column 3'
+        },
+        {
+          key: 4,
+          checked: true,
+          label: 'Column 4'
         }
       ],
       indexLabel: 4
@@ -85,50 +94,42 @@ module.exports = [
     index: 'pipeline_3',
     input_ref: 'pipeline_2',
     type: 'TSModelBuilder',
-    title: 'Autoencoder Model',
-    description:
-      'In this model, the input shape of 4 will be **reduced** to 3, then it ' +
-      'will reshape the output back to 4.',
+    title: 'Create model to classify the flower',
+    description: '',
     data: {
-      layerSize: 2,
-      units: [3, 4],
-      activation: ['relu', 'relu'],
-      kernelInitializer: ['randomNormal', 'randomNormal'],
-      biasInitializer: ['ones', 'ones']
+      layerSize: 3,
+      units: [10, 10, 3],
+      activation: ['relu', 'relu', 'softmax']
     }
   },
   {
     index: 'pipeline_4',
     input_ref: 'pipeline_3',
     type: 'TSModelCompiler',
-    title: 'Autoencoder Model',
+    title: 'Train model',
     description:
-      'When **training** this autoencoder, the model *output* will try to fit its ' +
-      '*input*, while a *hidden* layer will reduce the feature dimensions.',
+      '',
     data: {
-      epochSize: 30,
-      batchSize: 20,
+      epochSize: 200,
+      batchSize: 32,
       validationSplit: 0.1,
       shuffle: true,
       inputUnitsNormalize: false,
       outputUnitsNormalize: false,
-      compilerOptimizerSelected: 'sgd',
-      compilerLossSelected: 'meanSquaredError'
+      compilerOptimizerSelected: 'adamax',
+      compilerLossSelected: 'sparseCategoricalCrossentropy'
     }
   },
   {
     index: 'pipeline_5',
     input_ref: 'pipeline_4',
     type: 'TSModelPredictor',
-    title: 'Prediction: Encoder/Decoder',
+    title: 'Make Predictions',
     description:
-      'The prediction will use the hidden layer so output values will ' +
-      'have 3 feature dimensions encoding the total units of this layer. The last layer could be ' +
-      'used to predict back all the features, however we want to use the encoded features as inputs ' +
-      'for a different classifier for the labels. If you open the table chart you should be able to ' +
-      'identify **clusters** of the iris data.',
+      'The predictions are run over the evaluation dataset, the class accuracy and confusion matrix ' +
+      'can be viewed to evaluate if the training model is preducting the categories as desired.',
     data: {
-      layerSize: 1
+      layerSize: 3
     }
   },
   {
@@ -136,10 +137,10 @@ module.exports = [
     input_ref: 'pipeline_5',
     type: 'DatasetTableViewer',
     data: {
-      xAxis: 8,
-      yAxis: 9,
-      zAxis: 10,
-      lAxis: 11
+      xAxis: 7,
+      yAxis: 8,
+      zAxis: 9,
+      lAxis: 10
     }
   }
 ]

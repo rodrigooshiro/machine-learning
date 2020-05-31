@@ -158,6 +158,7 @@ export default {
       inputUnits: [],
       outputUnits: [],
       indexLabel: -1,
+      types: {},
       evaluationRatio: 0
     }
     return this.importData(data)
@@ -293,6 +294,19 @@ export default {
         return a.key === b.key ? 0 : a.key < b.key ? -1 : 1
       })
     },
+    parseColumn(column, value) {
+      let number = parseFloat(value)
+      if (isNaN(number)) {
+        if (!(column in this.types)) {
+          this.types[column] = new Map()
+        }
+        if (!this.types[column].has(value)) {
+          this.types[column].set(value, this.types[column].size)
+        }
+        number = Object.fromEntries(this.types[column])[value]
+      }
+      return number
+    },
     plugActionEvent(event) {
       let indexSize = this.indexMax
       let indexes = this.$tf.util.createShuffledIndices(indexSize)
@@ -308,20 +322,20 @@ export default {
           let inputRow = []
           for (let j = 0; j < this.dataSize; j++) {
             if (this.inputUnits.filter(unit => unit.key === j && unit.checked === true).length) {
-              inputRow.push(parseFloat(this.inputData[i][j]))
+              inputRow.push(this.parseColumn(j, this.inputData[i][j]))
             }
           }
           inputMatrix.push(inputRow)
           let outputRow = []
           for (let j = 0; j < this.dataSize; j++) {
             if (this.outputUnits.filter(unit => unit.key === j && unit.checked === true).length) {
-              outputRow.push(parseFloat(this.inputData[i][j]))
+              outputRow.push(this.parseColumn(j, this.inputData[i][j]))
             }
           }
           outputMatrix.push(outputRow)
         }
         if (this.indexLabel !== -1) {
-          this.global.labels = this.inputData.map(x => x[this.indexLabel])
+          this.global.labels = this.inputData.map(x => this.parseColumn(this.indexLabel, x[this.indexLabel]))
         }
         this.global.inputMatrix = inputMatrix
         this.global.inputShape = [this.inputUnits.filter(unit => unit.checked === true).length]

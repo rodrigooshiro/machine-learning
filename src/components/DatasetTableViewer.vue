@@ -30,14 +30,14 @@
         <div class="indexInput">
           <label>Filters</label>
           <b-dropdown
-            text="Headers"
+            :text="header === true ? 'Headers' : 'Columns'"
             no-flip
             split
             split-variant="outline-secondary"
             block
             variant="secondary"
           >
-            <b-dropdown-form style="text-align: left">
+            <b-dropdown-form v-if="header === true" style="text-align: left">
               <template v-for="item in headers">
                 <b-form v-bind:key="item.key" inline>
                   <b-form-checkbox
@@ -47,6 +47,21 @@
                     :value="item.key"
                     :unchecked-value="item.key"
                     @change="onHeaderChange"
+                  ></b-form-checkbox>
+                  {{ item.label }}
+                </b-form>
+              </template>
+            </b-dropdown-form>
+            <b-dropdown-form v-if="header === false" style="text-align: left">
+              <template v-for="item in columns">
+                <b-form v-bind:key="item.key" inline>
+                  <b-form-checkbox
+                    v-model="item.checked"
+                    :indeterminate="item.state===-1"
+                    :checked="item.key"
+                    :value="item.key"
+                    :unchecked-value="item.key"
+                    @change="onColumnChange"
                   ></b-form-checkbox>
                   {{ item.label }}
                 </b-form>
@@ -150,13 +165,14 @@ export default {
   mixins: [mixin],
   data() {
     let data = {
-      serializable: ['xAxis', 'yAxis', 'zAxis', 'lAxis', 'header', 'headers'],
+      serializable: ['xAxis', 'yAxis', 'zAxis', 'lAxis', 'header', 'headers', 'columns'],
       xAxis: -1,
       yAxis: -1,
       zAxis: -1,
       lAxis: -1,
       header: false,
       headers: [],
+      columns: [],
       filterSelected: null,
       filterOptions: [],
       toggleIcon: 'caret-down',
@@ -190,9 +206,24 @@ export default {
       }
       return disabled === 1
     },
+    dataSize() {
+      let dataSize = 0
+      if (Array.isArray(this.inputDataTable) && this.inputDataTable.length > 1) {
+        if (Array.isArray(this.inputDataTable[0])) {
+          dataSize = this.inputDataTable[0].length
+        }
+      }
+      return dataSize
+    },
     headersDataTable: {
       get() {
-        return this.headers.filter(header => header.state !== 0)
+        let headers = null
+        if (this.header) {
+          headers = this.headers.filter(header => header.state !== 0)
+        } else {
+          headers = this.columns.filter(column => column.state !== 0)
+        }
+        return headers
       }
     },
     inputDataTable: {
@@ -226,6 +257,17 @@ export default {
                   }
                   data = value.slice(1)
                 } else {
+                  if (this.columns.length === 0) {
+                    let dataSize = value[0].length
+                    for (let i = 0; i < dataSize; i++) {
+                      this.columns.push({
+                        key: 'Column ' + i,
+                        state: -1,
+                        checked: 'Column ' + i,
+                        label: 'Column ' + i
+                      })
+                    }
+                  }
                   data = value
                 }
               } else if (Object.isExtensible(value[0])) {
@@ -264,8 +306,25 @@ export default {
           data = items
         }
         if (this.header === false && data !== null) {
-          this.output = data
-        } else if (data !== null) {
+          let items = []
+          for (let i = 0; i < data.length; i++) {
+            let row = {}
+            let skip = false
+            for (let j = 0; j < this.columns.length; j++) {
+              if (this.columns[j].state !== 0) {
+                row[this.columns[j].key] = data[i][j]
+              }
+              if (this.columns[j].state === 1 && (data[i][j] === undefined || data[i][j] === null)) {
+                skip = true
+              }
+            }
+            if (skip === false) {
+              items.push(row)
+            }
+          }
+          data = items
+        }
+        if (data !== null) {
           this.output = data.map(x => Object.values(x))
         } else {
           data = []
@@ -279,11 +338,7 @@ export default {
       get() {
         let indexMax = 0
         if (this.inputDataTable.length > 0) {
-          if (this.header) {
-            indexMax = this.headersDataTable.length - 1
-          } else {
-            indexMax = this.inputDataTable[0].length - 1
-          }
+          indexMax = this.headersDataTable.length - 1
         }
         return indexMax
       }
@@ -328,6 +383,17 @@ export default {
         header.state = 1
       }
     },
+    onColumnChange(key) {
+      let column = this.columns.filter(h => h.key === key)[0]
+      if (column.state === 1) {
+        column.state = -1
+      } else if (column.state === -1) {
+        column.state = 0
+        column.checked = false
+      } else {
+        column.state = 1
+      }
+    },
     onToggleToolbar() {
       if (this.toggleIcon === 'caret-up') {
         this.toggleIcon = 'caret-down'
@@ -339,11 +405,7 @@ export default {
       if (this.fileChart === false) {
         let dimensions = []
         for (let i = 0; i <= this.indexMax; i++) {
-          if (this.header) {
-            dimensions.push(this.inputDataTable.map(x => Object.values(x)[i]))
-          } else {
-            dimensions.push(this.inputDataTable.map(x => x[i]))
-          }
+          dimensions.push(this.inputDataTable.map(x => Object.values(x)[i]))
         }
         let trace = {
           x: dimensions[this.xAxis],

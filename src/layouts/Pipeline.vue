@@ -428,11 +428,12 @@ export default {
     },
     onLoadPipeline(name) {
       if (name === undefined || name === null) {
-        name = 'Tensorflow: Making Predictions from 2D'
-        // name = 'Tensorflow: Making More Predictions from 2D'
-        // name = 'Tensorflow: Autoencoder'
+        name = 'Tensorflow: Making predictions from 2D'
+        // name = 'Tensorflow: Making more predictions from 2D'
         // name = 'Tensorflow: Handwritten digit recognition with CNNs'
         // name = 'Tensorflow: Predict baseball pitch types'
+        // name = 'Tensorflow: Flower classification'
+        // name = 'Tensorflow: Flower classification using Autoencoder'
       }
       let templates = this.$refs['layout'].$refs['header'].templates.filter(
         template => template.name === name

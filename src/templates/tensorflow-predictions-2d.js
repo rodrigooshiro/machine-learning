@@ -160,7 +160,7 @@ module.exports = [
     type: 'DatasetTableViewer',
     data: {
       xAxis: 0,
-      yAxis: 1
+      yAxis: 2
     }
   }
 ]
