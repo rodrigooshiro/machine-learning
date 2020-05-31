@@ -134,16 +134,6 @@ export default {
     }
   },
   watch: {
-    inputLoading(next, prev) {
-      if (next === false) {
-        this.trashAction()
-      }
-    },
-    indexMax(next, prev) {
-      if (this.layerSize > next) {
-        this.layerSize = next
-      }
-    },
     loading(next, prev) {
       if (next === false) {
         delete this.$options.sockets.onerror
@@ -160,7 +150,7 @@ export default {
         this.toggleIcon = 'caret-up'
       }
     },
-    trashAction(event) {
+    trashActionEvent(event) {
       jquery(this.$refs['draw']).empty()
       this.fileChart = false
       this.scatterplot = true
@@ -175,8 +165,6 @@ export default {
         delete this.outputTensor
       }
       this.output = null
-      this.loadData(this.data)
-      this.loadData(this.component.data)
     },
     plugActionPost(predictTensorJSON) {
       let { normalizationData } = this.inputData
@@ -221,15 +209,17 @@ export default {
       }
       outputShape.unshift(outputMatrix.length)
       if (this.global.loss === 'sparseCategoricalCrossentropy') {
+        let outputMatrixSparse = []
         for (let i = 0; i < outputMatrix.length; i++) {
           let value = parseInt(outputMatrix[i][0])
           let outputRow = []
           for (let j = 0; j < this.predictTensor.shape[1]; j++) {
             outputRow.push(value === j ? 1 : 0)
           }
-          outputMatrix[i] = outputRow
+          outputMatrixSparse.push(outputRow)
         }
-        outputShape = [outputMatrix.length, this.predictTensor.shape[1]]
+        outputShape = [outputMatrixSparse.length, this.predictTensor.shape[1]]
+        outputMatrix = outputMatrixSparse
       }
       if (this.outputTensor !== undefined) {
         this.outputTensor.dispose()

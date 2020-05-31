@@ -253,13 +253,11 @@ export default {
         this.loadPage()
       }
     },
-    trashAction(event) {
+    trashActionEvent(event) {
       jquery(this.$refs['draw']).empty()
       this.imagePage = 0
       this.fileChart = false
       this.output = null
-      this.loadData(this.data)
-      this.loadData(this.component.data)
     },
     plugActionEvent(event) {
       let blob = new Blob([this.inputData])

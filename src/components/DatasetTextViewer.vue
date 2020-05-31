@@ -61,23 +61,21 @@ export default {
       return this.downloadActionDisabled
     }
   },
-  watch: {
-    inputLoading(next, prev) {
-      this.loading = next
+  methods: {
+    validateActionEvent(event) {
+      if (typeof event === 'boolean') {
+        this.loading = event
+      }
       if (this.loading === false) {
         if (this.inputData !== null) {
           let decoder = new TextDecoder()
           this.output = decoder.decode(this.inputData).trim()
         }
       }
-    }
-  },
-  methods: {
-    trashAction(event) {
+    },
+    trashActionEvent(event) {
       this.inputData = null
       this.output = null
-      this.loadData(this.data)
-      this.loadData(this.component.data)
     },
     downloadAction(event) {
       if (event.isTrusted) {

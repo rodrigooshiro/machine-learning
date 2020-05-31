@@ -110,8 +110,6 @@
       losses: {
         options: [
           'absoluteDifference',
-          'categoricalCrossentropy',
-          'sparseCategoricalCrossentropy',
           'computeWeightedLoss',
           'cosineDistance',
           'hingeLoss',
@@ -119,7 +117,18 @@
           'logLoss',
           'meanSquaredError',
           'sigmoidCrossEntropy',
-          'softmaxCrossEntropy'
+          'softmaxCrossEntropy',
+          'binaryAccuracy',
+          'binaryCrossentropy',
+          'categoricalAccuracy',
+          'categoricalCrossentropy',
+          'cosineProximity',
+          'meanAbsoluteError',
+          'meanAbsolutePercentageError',
+          'meanSquaredError',
+          'precision',
+          'recall',
+          'sparseCategoricalCrossentropy'
         ]
       }
     },

@@ -356,12 +356,14 @@ export default {
     },
     lAxis(next, prev) {
       this.fileChart = false
-    },
-    inputLoading(next, prev) {
-      this.loading = next
     }
   },
   methods: {
+    validateActionEvent(event) {
+      if (typeof event === 'boolean') {
+        this.loading = event
+      }
+    },
     onLoadMore() {
       if (this.inputDataTableList.length < this.inputDataTable.length) {
         this.inputDataTableList.push(
@@ -483,12 +485,10 @@ export default {
         this.fileChart = true
       }
     },
-    trashAction(event) {
+    trashActionEvent(event) {
       jquery(this.$refs['draw']).empty()
       this.inputData = null
       this.output = null
-      this.loadData(this.data)
-      this.loadData(this.component.data)
     },
     downloadAction(event) {
       if (event.isTrusted) {

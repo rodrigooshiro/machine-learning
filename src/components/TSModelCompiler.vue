@@ -187,11 +187,6 @@ export default {
     }
   },
   watch: {
-    inputLoading(next, prev) {
-      if (next === false) {
-        this.trashAction()
-      }
-    },
     loading(next, prev) {
       if (next === false) {
         delete this.$options.sockets.onerror
@@ -208,12 +203,10 @@ export default {
         this.toggleIcon = 'caret-up'
       }
     },
-    trashAction(event) {
+    trashActionEvent(event) {
       jquery(this.$refs['draw']).empty()
       this.fileChart = false
       this.output = null
-      this.loadData(this.data)
-      this.loadData(this.component.data)
     },
     plugActionEvent(event) {
       let inputTensor = null

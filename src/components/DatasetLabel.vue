@@ -90,10 +90,8 @@ export default {
         this.toggleIcon = 'caret-up'
       }
     },
-    trashAction(event) {
+    trashActionEvent(event) {
       this.output = null
-      this.loadData(this.data)
-      this.loadData(this.component.data)
     },
     plugActionEvent(event) {
       let datasetLabels = new Uint8Array(this.inputData)

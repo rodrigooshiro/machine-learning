@@ -235,11 +235,6 @@ export default {
     }
   },
   watch: {
-    inputLoading(next, prev) {
-      if (next === false) {
-        this.trashAction()
-      }
-    },
     trainingRatio(next, prev) {
       this.evaluationRatio = 1 - next
     },
@@ -255,22 +250,7 @@ export default {
         this.toggleIcon = 'caret-up'
       }
     },
-    trashAction(event) {
-      this.loadData(this.data)
-      this.loadData(this.component.data)
-      this.global.inputShape = null
-      this.global.inputMatrix = null
-      this.global.outputShape = null
-      this.global.outputMatrix = null
-      if (this.trainingRatio > 0) {
-        this.global.training = null
-      }
-      if (this.evaluationRatio > 0) {
-        this.global.evaluation = null
-      }
-      if (this.indexLabel !== -1) {
-        this.global.labels = null
-      }
+    validateActionEvent(event) {
       for (let i = 0; i < this.dataSize; i++) {
         if (this.inputUnits.filter(unit => unit.key === i).length === 0) {
           this.inputUnits.push({
@@ -293,6 +273,21 @@ export default {
       this.outputUnits.sort(function(a, b) {
         return a.key === b.key ? 0 : a.key < b.key ? -1 : 1
       })
+    },
+    trashActionEvent(event) {
+      this.global.inputShape = null
+      this.global.inputMatrix = null
+      this.global.outputShape = null
+      this.global.outputMatrix = null
+      if (this.trainingRatio > 0) {
+        this.global.training = null
+      }
+      if (this.evaluationRatio > 0) {
+        this.global.evaluation = null
+      }
+      if (this.indexLabel !== -1) {
+        this.global.labels = null
+      }
     },
     parseColumn(column, value) {
       let number = parseFloat(value)
@@ -335,7 +330,9 @@ export default {
           outputMatrix.push(outputRow)
         }
         if (this.indexLabel !== -1) {
-          this.global.labels = this.inputData.map(x => this.parseColumn(this.indexLabel, x[this.indexLabel]))
+          this.global.labels = this.inputData.map(x =>
+            this.parseColumn(this.indexLabel, x[this.indexLabel])
+          )
         }
         this.global.inputMatrix = inputMatrix
         this.global.inputShape = [this.inputUnits.filter(unit => unit.checked === true).length]

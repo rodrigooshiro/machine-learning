@@ -61,7 +61,7 @@ export default {
   methods: {
     loadFileContent(content) {
       this.output = content
-      this.plugActionEnd(event)
+      this.plugActionEnd()
     },
     selectLocalFile(event) {
       if (event instanceof MouseEvent) {

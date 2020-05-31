@@ -127,6 +127,11 @@ export const mixin = {
       }
     }
   },
+  watch: {
+    inputLoading(next, prev) {
+      this.validateAction(next)
+    }
+  },
   methods: {
     indexFormatter(value) {
       if (value === -1) {
@@ -174,7 +179,6 @@ export const mixin = {
         this.$store.unregisterModule(this.component.index)
       }
     },
-    validateData() {},
     loadData(data) {
       if (data) {
         this.serializable.concat(['output']).forEach(item => {
@@ -182,7 +186,7 @@ export const mixin = {
             this[item] = lodash.cloneDeep(data[item])
           }
         })
-        this.validateData()
+        this.validateAction()
       }
     },
     importData(data) {
@@ -221,6 +225,17 @@ export const mixin = {
         }
       })
       return data
+    },
+    validateActionEvent(event) {},
+    validateAction(event) {
+      this.validateActionEvent(event)
+    },
+    trashActionEvent(event) {},
+    trashAction(event) {
+      this.loadData(this.data)
+      this.loadData(this.component.data)
+      this.validateAction(event)
+      this.trashActionEvent(event)
     },
     plugActionEnd(event) {
       this.loading = false

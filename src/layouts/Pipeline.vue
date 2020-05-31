@@ -528,7 +528,7 @@ export default {
 .playIcon:focus,
 .playIcon:hover,
 .playIcon:active {
-  font-size:10px;
+  font-size: 10px;
   width: 50px;
   height: 50px;
   margin: 0;

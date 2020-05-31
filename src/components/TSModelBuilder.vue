@@ -283,10 +283,7 @@ export default {
       return disabled === 1
     },
     trashActionDisabled() {
-      let disabled = 0
-      disabled |= this.loading === true
-      disabled |= this.global.model === null
-      return disabled === 1
+      return this.editActionDisabled
     },
     plugActionDisabled() {
       return this.editActionDisabled
@@ -345,13 +342,7 @@ export default {
       }
     },
     layerSize(next, prev) {
-      this.validateData()
-    },
-    inputLoading(next, prev) {
-      if (next === false) {
-        this.trashAction()
-        this.inputShape = this.global.inputShape
-      }
+      this.validateAction()
     },
     loading(next, prev) {
       if (next === false) {
@@ -384,49 +375,53 @@ export default {
       jquery(this.$refs['graph']).empty()
       this.$refs['graph'].appendChild(modelView.getDOMElement())
     },
-    validateData() {
-      let keys = [
-        'layerName',
-        'units',
-        'kernelSize',
-        'filters',
-        'strides',
-        'poolSize',
-        'activation',
-        'kernelInitializer',
-        'biasInitializer'
-      ]
-      keys.forEach(value => {
-        while (this[value].length > this.layerSize) {
-          this[value].pop()
+    validateActionEvent(event) {
+      if (event === undefined) {
+        let keys = [
+          'layerName',
+          'units',
+          'kernelSize',
+          'filters',
+          'strides',
+          'poolSize',
+          'activation',
+          'kernelInitializer',
+          'biasInitializer'
+        ]
+        keys.forEach(value => {
+          while (this[value].length > this.layerSize) {
+            this[value].pop()
+          }
+        })
+        while (this.layerName.length < this.layerSize) {
+          this.layerName.push('dense')
         }
-      })
-      while (this.layerName.length < this.layerSize) {
-        this.layerName.push('dense')
+        keys = ['units', 'kernelSize']
+        keys.forEach(value => {
+          while (this[value].length < this.layerSize) {
+            this[value].push(0)
+          }
+        })
+        while (this.filters.length < this.layerSize) {
+          this.filters.push(-1)
+        }
+        keys = ['strides', 'poolSize']
+        keys.forEach(value => {
+          while (this[value].length < this.layerSize) {
+            this[value].push([])
+          }
+        })
+        keys = ['activation', 'kernelInitializer', 'biasInitializer']
+        keys.forEach(value => {
+          while (this[value].length < this.layerSize) {
+            this[value].push('--')
+          }
+        })
+      } else if (event === false) {
+        this.trashAction()
       }
-      keys = ['units', 'kernelSize']
-      keys.forEach(value => {
-        while (this[value].length < this.layerSize) {
-          this[value].push(0)
-        }
-      })
-      while (this.filters.length < this.layerSize) {
-        this.filters.push(-1)
-      }
-      keys = ['strides', 'poolSize']
-      keys.forEach(value => {
-        while (this[value].length < this.layerSize) {
-          this[value].push([])
-        }
-      })
-      keys = ['activation', 'kernelInitializer', 'biasInitializer']
-      keys.forEach(value => {
-        while (this[value].length < this.layerSize) {
-          this[value].push('--')
-        }
-      })
     },
-    trashAction(event) {
+    trashActionEvent(event) {
       jquery(this.$refs['draw']).empty()
       jquery(this.$refs['graph']).empty()
       this.fileChart = false
@@ -434,8 +429,7 @@ export default {
         this.global.model.dispose()
         this.global.model = null
       }
-      this.loadData(this.data)
-      this.loadData(this.component.data)
+      this.inputShape = this.global.inputShape
     },
     plugActionEvent(event) {
       this.$options.sockets.onerror = function() {
