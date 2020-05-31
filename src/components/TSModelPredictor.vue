@@ -398,7 +398,7 @@ export default {
         }.bind(this)
         this.global.model.save('indexeddb://model').then(
           function() {
-            worker.postMessage(['predictor', this.$data, inputTensorJSON])
+            worker.postMessage(['predictor', this.getData(), inputTensorJSON])
           }.bind(this)
         )
       }.bind(this)
@@ -406,7 +406,7 @@ export default {
       this.$options.sockets.onopen = function() {
         this.global.model.save(this.$tf.io.browserHTTPRequest('./api/model')).then(
           function() {
-            this.$socket.sendObj({ data: ['predictor', this.$data, inputTensorJSON] })
+            this.$socket.sendObj({ data: ['predictor', this.getData(), inputTensorJSON] })
           }.bind(this)
         )
       }.bind(this)

@@ -475,11 +475,11 @@ export default {
             )
           }
         }.bind(this)
-        worker.postMessage(['builder', this.$data])
+        worker.postMessage(['builder', this.getData()])
       }.bind(this)
 
       this.$options.sockets.onopen = function() {
-        this.$socket.sendObj({ data: ['builder', this.$data] })
+        this.$socket.sendObj({ data: ['builder', this.getData()] })
       }.bind(this)
 
       this.$options.sockets.onmessage = function(message) {

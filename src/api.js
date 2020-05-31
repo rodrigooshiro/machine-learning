@@ -61,6 +61,7 @@ const self = {
     let dirname = __dirname.replace(/\\/g, '/').split(':').splice(-1)[0]
     await output.model.save('file://' + path.dirname(dirname) + '/model')
     ws.send(JSON.stringify({ data: ['onEnd'] }))
+    tf.disposeVariables()
   },
   compiler: async function(ws, data, inputTensorJSON, outputTensorJSON) {
     ws.onEpochEnd = async function(epoch, logs) {
@@ -79,7 +80,8 @@ const self = {
       }
     )
     await output.model.save('file://' + path.dirname(dirname) + '/model')
-    ws.send(JSON.stringify({ data: ['onEnd', output.train] }))
+    ws.send(JSON.stringify({ data: ['onEnd', output.history] }))
+    tf.disposeVariables()
   },
   predictor: async function(ws, data, inputTensorJSON) {
     let dirname = __dirname.replace(/\\/g, '/').split(':').splice(-1)[0]
@@ -91,6 +93,7 @@ const self = {
       inputTensorJSON
     )
     ws.send(JSON.stringify({ data: ['onEnd', output.predictTensorJSON] }))
+    tf.disposeVariables()
   }
 }
 
@@ -109,6 +112,7 @@ wss.on('connection', ws => {
   })
   ws.on('error', err => {
     ws.send(JSON.stringify({ data: ['onEnd'], error: err.message }))
+    tf.disposeVariables()
     console.error(err.message)
   })
 })

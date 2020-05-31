@@ -305,7 +305,7 @@ export default {
         }.bind(this)
         this.global.model.save('indexeddb://model').then(
           function() {
-            worker.postMessage(['compiler', this.$data, inputTensorJSON, outputTensorJSON])
+            worker.postMessage(['compiler', this.getData(), inputTensorJSON, outputTensorJSON])
             inputTensor.dispose()
             outputTensor.dispose()
           }.bind(this)
@@ -315,7 +315,9 @@ export default {
       this.$options.sockets.onopen = function() {
         this.global.model.save(this.$tf.io.browserHTTPRequest('./api/model')).then(
           function() {
-            this.$socket.sendObj({ data: ['compiler', this.$data, inputTensorJSON, outputTensorJSON] })
+            this.$socket.sendObj({
+              data: ['compiler', this.getData(), inputTensorJSON, outputTensorJSON]
+            })
             inputTensor.dispose()
             outputTensor.dispose()
           }.bind(this)

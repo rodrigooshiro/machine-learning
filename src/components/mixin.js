@@ -179,6 +179,9 @@ export const mixin = {
         this.$store.unregisterModule(this.component.index)
       }
     },
+    getData() {
+      return JSON.parse(JSON.stringify(this.$data))
+    },
     loadData(data) {
       if (data) {
         this.serializable.concat(['output']).forEach(item => {
