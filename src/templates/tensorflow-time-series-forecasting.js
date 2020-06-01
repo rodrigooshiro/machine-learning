@@ -24,5 +24,24 @@ module.exports = [
     data: {
       header: true
     }
+  },
+  {
+    index: 'pipeline_3',
+    input_ref: 'pipeline_2',
+    type: 'DatasetSplitter',
+    title: 'Dataset Splitter',
+    data: {
+      sampleSplit: 0.1,
+      shuffle: false,
+      trainingRatio: 0.6,
+      evaluationRatio: 0.4,
+      inputUnits: [
+        {
+          key: 2,
+          checked: true,
+          label: 'Column 2'
+        }
+      ]
+    }
   }
 ]
