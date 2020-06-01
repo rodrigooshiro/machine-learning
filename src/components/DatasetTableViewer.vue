@@ -177,6 +177,7 @@ export default {
       filterOptions: [],
       toggleIcon: 'caret-down',
       fileChart: false,
+      inputDataTable: [],
       inputDataTableList: []
     }
     return this.importData(data)
@@ -186,6 +187,11 @@ export default {
       let disabled = 0
       disabled |= this.indexMax === 0
       disabled |= this.inputDataTable.length === 0
+      return disabled === 1
+    },
+    plugActionDisabled() {
+      let disabled = 0
+      disabled |= this.inputData === null
       return disabled === 1
     },
     trashActionDisabled() {
@@ -226,114 +232,6 @@ export default {
         return headers
       }
     },
-    inputDataTable: {
-      get() {
-        let data = null
-        if (this.inputData !== null) {
-          data = []
-          let value = ''
-          if (Array.isArray(this.inputData)) {
-            value = this.inputData
-          } else if (Object.isExtensible(this.inputData)) {
-            let decoder = new TextDecoder()
-            value = decoder.decode(this.inputData).trim()
-          }
-          if (value.length > 0) {
-            try {
-              value = JSON.parse(value)
-            } catch (e) {}
-            if (typeof value === 'string' || value instanceof String) {
-              if (value.length > 0) {
-                value = csv.parse(value)
-              }
-            }
-            if (Array.isArray(value) && value.length > 0) {
-              if (Array.isArray(value[0])) {
-                if (this.header) {
-                  if (this.headers.length === 0) {
-                    this.headers = value[0].map(function(h) {
-                      return { key: h, label: h, state: -1, checked: h }
-                    })
-                  }
-                  data = value.slice(1)
-                } else {
-                  if (this.columns.length === 0) {
-                    let dataSize = value[0].length
-                    for (let i = 0; i < dataSize; i++) {
-                      this.columns.push({
-                        key: 'Column ' + i,
-                        state: -1,
-                        checked: 'Column ' + i,
-                        label: 'Column ' + i
-                      })
-                    }
-                  }
-                  data = value
-                }
-              } else if (Object.isExtensible(value[0])) {
-                this.header = true
-                if (this.headers.length === 0) {
-                  this.headers = Object.keys(value[0]).map(function(h) {
-                    return { key: h, label: h, state: -1, checked: h }
-                  })
-                }
-                let values = []
-                for (let i = 0; i < value.length; i++) {
-                  values.push(Object.values(value[i]))
-                }
-                data = values
-              }
-            }
-          }
-        }
-        if (this.header === true && data !== null) {
-          let items = []
-          for (let i = 0; i < data.length; i++) {
-            let row = {}
-            let skip = false
-            for (let j = 0; j < this.headers.length; j++) {
-              if (this.headers[j].state !== 0) {
-                row[this.headers[j].key] = data[i][j]
-              }
-              if (this.headers[j].state === 1 && (data[i][j] === undefined || data[i][j] === null)) {
-                skip = true
-              }
-            }
-            if (skip === false) {
-              items.push(row)
-            }
-          }
-          data = items
-        }
-        if (this.header === false && data !== null) {
-          let items = []
-          for (let i = 0; i < data.length; i++) {
-            let row = {}
-            let skip = false
-            for (let j = 0; j < this.columns.length; j++) {
-              if (this.columns[j].state !== 0) {
-                row[this.columns[j].key] = data[i][j]
-              }
-              if (this.columns[j].state === 1 && (data[i][j] === undefined || data[i][j] === null)) {
-                skip = true
-              }
-            }
-            if (skip === false) {
-              items.push(row)
-            }
-          }
-          data = items
-        }
-        if (data !== null) {
-          this.output = data.map(x => Object.values(x))
-        } else {
-          data = []
-          this.inputDataTableList = []
-        }
-        this.inputDataTableList.push(...data.slice(0, 10))
-        return data
-      }
-    },
     indexMax: {
       get() {
         let indexMax = 0
@@ -360,8 +258,8 @@ export default {
   },
   methods: {
     validateActionEvent(event) {
-      if (typeof event === 'boolean') {
-        this.loading = event
+      if (event === false && this.inputData !== null) {
+        this.plugAction(event)
       }
     },
     onLoadMore() {
@@ -490,6 +388,113 @@ export default {
       this.inputData = null
       this.output = null
     },
+    plugActionEvent(event) {
+      let data = null
+      if (this.inputData !== null) {
+        data = []
+        let value = ''
+        if (Array.isArray(this.inputData)) {
+          value = this.inputData
+        } else if (Object.isExtensible(this.inputData)) {
+          let decoder = new TextDecoder()
+          value = decoder.decode(this.inputData).trim()
+        }
+        if (value.length > 0) {
+          try {
+            value = JSON.parse(value)
+          } catch (e) {}
+          if (typeof value === 'string' || value instanceof String) {
+            if (value.length > 0) {
+              value = csv.parse(value)
+            }
+          }
+          if (Array.isArray(value) && value.length > 0) {
+            if (Array.isArray(value[0])) {
+              if (this.header) {
+                if (this.headers.length === 0) {
+                  this.headers = value[0].map(function(h) {
+                    return { key: h, label: h, state: -1, checked: h }
+                  })
+                }
+                data = value.slice(1)
+              } else {
+                if (this.columns.length === 0) {
+                  let dataSize = value[0].length
+                  for (let i = 0; i < dataSize; i++) {
+                    this.columns.push({
+                      key: 'Column ' + i,
+                      state: -1,
+                      checked: 'Column ' + i,
+                      label: 'Column ' + i
+                    })
+                  }
+                }
+                data = value
+              }
+            } else if (Object.isExtensible(value[0])) {
+              this.header = true
+              if (this.headers.length === 0) {
+                this.headers = Object.keys(value[0]).map(function(h) {
+                  return { key: h, label: h, state: -1, checked: h }
+                })
+              }
+              let values = []
+              for (let i = 0; i < value.length; i++) {
+                values.push(Object.values(value[i]))
+              }
+              data = values
+            }
+          }
+        }
+      }
+      if (this.header === true && data !== null) {
+        let items = []
+        for (let i = 0; i < data.length; i++) {
+          let row = {}
+          let skip = false
+          for (let j = 0; j < this.headers.length; j++) {
+            if (this.headers[j].state !== 0) {
+              row[this.headers[j].key] = data[i][j]
+            }
+            if (this.headers[j].state === 1 && (data[i][j] === undefined || data[i][j] === null)) {
+              skip = true
+            }
+          }
+          if (skip === false) {
+            items.push(row)
+          }
+        }
+        data = items
+      }
+      if (this.header === false && data !== null) {
+        let items = []
+        for (let i = 0; i < data.length; i++) {
+          let row = {}
+          let skip = false
+          for (let j = 0; j < this.columns.length; j++) {
+            if (this.columns[j].state !== 0) {
+              row[this.columns[j].key] = data[i][j]
+            }
+            if (this.columns[j].state === 1 && (data[i][j] === undefined || data[i][j] === null)) {
+              skip = true
+            }
+          }
+          if (skip === false) {
+            items.push(row)
+          }
+        }
+        data = items
+      }
+      if (data !== null) {
+        this.output = data.map(x => Object.values(x))
+      } else {
+        data = []
+        this.inputDataTableList = []
+      }
+      this.inputDataTableList.push(...data.slice(0, 10))
+      this.inputDataTable = data
+      this.plugActionEnd(event)
+    },
     downloadAction(event) {
       if (event.isTrusted) {
         let blob = new Blob([this.inputDataTable.join('\n')], { type: 'octet/stream' })
@@ -510,7 +515,7 @@ export default {
   height: 200px !important;
   border: 3px solid #ced4da !important;
   border-radius: 0.25rem !important;
-  resize: none;
+  white-space: nowrap;
   overflow: auto;
   resize: none;
 }

@@ -116,6 +116,7 @@ export default {
     DatasetSpriteViewer: () => import('../components/DatasetSpriteViewer'),
     DatasetTableViewer: () => import('../components/DatasetTableViewer'),
     DatasetTextViewer: () => import('../components/DatasetTextViewer'),
+    DatasetZipViewer: () => import('../components/DatasetZipViewer'),
     TSModelBuilder: () => import('../components/TSModelBuilder'),
     TSModelCompiler: () => import('../components/TSModelCompiler'),
     TSModelPredictor: () => import('../components/TSModelPredictor')
@@ -188,6 +189,7 @@ export default {
         'DatasetSpriteViewer',
         'DatasetTableViewer',
         'DatasetTextViewer',
+        'DatasetZipViewer',
         'TSModelBuilder',
         'TSModelCompiler',
         'TSModelPredictor'
@@ -454,6 +456,7 @@ export default {
         // name = 'Tensorflow: Predict baseball pitch types'
         // name = 'Tensorflow: Flower classification'
         // name = 'Tensorflow: Flower classification using Autoencoder'
+        // name = 'Tensorflow: Time series forecasting'
       }
       let templates = this.$refs['layout'].$refs['header'].templates.filter(
         template => template.name === name
