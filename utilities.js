@@ -923,6 +923,9 @@
                 layer.units = data.units[i]
               }
             }
+            if (utilities.tf.layer.args[data.layerName[i]].indexOf('returnSequences') !== -1) {
+              layer.returnSequences = data.returnSequences[i]
+            }
             if (utilities.tf.layer.args[data.layerName[i]].indexOf('kernelSize') !== -1) {
               if (data.kernelSize[i] !== 0) {
                 layer.kernelSize = data.kernelSize[i]
