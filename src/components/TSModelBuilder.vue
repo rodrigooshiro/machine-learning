@@ -172,6 +172,20 @@
 
           <div
             class="indexInput"
+            v-if="utilities.tf.layer.args[layerName[i-1]].indexOf('returnSequences') !== -1"
+          >
+            <label>
+              <span>Layer {{ i }} (returnSequences)</span>
+            </label>
+            <b-form-select
+              v-model="returnSequences[i-1]"
+              :options="[false, true]"
+              :disabled="editActionDisabled"
+            ></b-form-select>
+          </div>
+
+          <div
+            class="indexInput"
             v-if="utilities.tf.layer.args[layerName[i-1]].indexOf('activation') !== -1"
           >
             <label>
@@ -274,6 +288,7 @@ export default {
         'strides',
         'poolSize',
         'activation',
+        'returnSequences',
         'kernelInitializer',
         'biasInitializer'
       ],
@@ -287,6 +302,7 @@ export default {
       strides: [],
       poolSize: [],
       activation: [],
+      returnSequences: [],
       kernelInitializer: [],
       biasInitializer: [],
       stridesLength: [],
@@ -446,6 +462,12 @@ export default {
       keys.forEach(value => {
         while (this[value].length < this.layerSize) {
           this[value].push('--')
+        }
+      })
+      keys = ['returnSequences']
+      keys.forEach(value => {
+        while (this[value].length < this.layerSize) {
+          this[value].push(false)
         }
       })
       this.inputShape = this.global.inputShape

@@ -22,7 +22,9 @@ module.exports = [
     input_ref: 'pipeline_1',
     type: 'DatasetTableViewer',
     data: {
-      header: true
+      header: true,
+      xAxis: 0,
+      yAxis: 2
     }
   },
   {
@@ -37,11 +39,54 @@ module.exports = [
       evaluationRatio: 0.4,
       inputUnits: [
         {
+          key: 1,
+          checked: true,
+          label: 'Column 1'
+        },
+        {
+          key: 2,
+          checked: true,
+          label: 'Column 2'
+        },
+        {
+          key: 11,
+          checked: true,
+          label: 'Column 11'
+        }
+      ],
+      outputUnits: [
+        {
           key: 2,
           checked: true,
           label: 'Column 2'
         }
       ]
+    }
+  },
+  {
+    index: 'pipeline_4',
+    input_ref: 'pipeline_3',
+    type: 'TSModelBuilder',
+    title: 'Define the model architecture',
+    data: {
+      layerSize: 3,
+      units: [32, 16, 72],
+      returnSequences: [true, false, false],
+      layerName: ['lstm', 'lstm', 'dense'],
+      activation: ['--', 'relu', '--']
+    }
+  },
+  {
+    index: 'pipeline_5',
+    input_ref: 'pipeline_4',
+    type: 'TSModelCompiler',
+    title: 'Train the Model',
+    data: {
+      epochSize: 10,
+      batchSize: 200,
+      validationSplit: 0.15,
+      compilerOptimizerSelected: 'rmsprop',
+      compilerLossSelected: 'meanAbsoluteError'
     }
   }
 ]

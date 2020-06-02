@@ -519,15 +519,6 @@ export default {
     onPlugAction(loading) {
       if (loading !== undefined) {
         this.componentLoading = loading
-      } else {
-        this.componentLoading = false
-        this.pipeline.forEach(item => {
-          if (item.unwatch !== undefined) {
-            item.unwatch()
-            delete item.unwatch
-          }
-        })
-        this.queue = []
       }
     }
   }

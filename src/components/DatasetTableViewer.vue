@@ -129,6 +129,7 @@
       @show="onShowModal"
     >
       <center>
+        <b-spinner v-if="fileChartLoading" type="grow"></b-spinner>
         <div ref="draw"></div>
       </center>
     </b-modal>
@@ -158,6 +159,7 @@ import * as csv from 'csv-string'
 import jquery from 'jquery'
 import Plotly from 'plotly.js-dist'
 import randomcolor from 'randomcolor'
+import moment from 'moment'
 
 export default {
   name: 'DatasetTableViewer',
@@ -177,6 +179,7 @@ export default {
       filterOptions: [],
       toggleIcon: 'caret-down',
       fileChart: false,
+      fileChartLoading: false,
       inputDataTable: [],
       inputDataTableList: []
     }
@@ -303,90 +306,86 @@ export default {
     },
     onShowModal() {
       if (this.fileChart === false) {
-        let dimensions = []
-        for (let i = 0; i <= this.indexMax; i++) {
-          dimensions.push(this.inputDataTable.map(x => Object.values(x)[i]))
-        }
-        let trace = {
-          x: dimensions[this.xAxis],
-          y: dimensions[this.yAxis],
-          mode: 'markers',
-          marker: {
-            size: 12,
-            line: {
-              width: 0.5
-            },
-            opacity: 1.0
-          },
-          type: 'scatter2d'
-        }
-
-        let layout = {
-          margin: {
-            l: 0,
-            r: 0,
-            b: 0,
-            t: 0
-          },
-          scene: {
-            xaxis: { title: 'X axis' },
-            yaxis: { title: 'Y axis' }
-          }
-        }
-        if (this.header) {
-          layout.scene.xaxis.title = this.headersDataTable[this.xAxis].label
-          layout.scene.yaxis.title = this.headersDataTable[this.yAxis].label
-        }
-
-        if (this.zAxis !== -1) {
-          trace.z = dimensions[this.zAxis]
-          trace.type = 'scatter3d'
-          layout.scene.zaxis = { title: 'Z axis' }
-          if (this.header) {
-            layout.scene.zaxis.title = this.headersDataTable[this.zAxis].label
-          }
-        }
-
-        if (this.lAxis !== -1) {
-          let labels = dimensions[this.lAxis]
-          let keyLabels = Array.from(new Set(labels))
-          let colorMap = {}
-          keyLabels.forEach(label => {
-            colorMap[label] = randomcolor()
-          })
-          trace.text = labels
-          trace.marker.color = labels.map(d => colorMap[d])
-          trace.marker.line.color = '#000000'
-        }
-
-        if (this.zAxis !== -1) {
-          Plotly.newPlot(this.$refs['draw'], [trace], layout)
-        } else {
-          let values = []
-          for (let i = 0; i < this.inputDataTable.length; i++) {
-            values.push({
-              x: trace.x[i],
-              y: trace.y[i]
-            })
-          }
-          this.$tfvis.render.scatterplot(
-            this.$refs['draw'],
-            { values },
-            {
-              xLabel: layout.scene.xaxis.title,
-              yLabel: layout.scene.yaxis.title,
-              width: 700,
-              height: 450
-            }
-          )
-        }
         this.fileChart = true
+        this.fileChartLoading = true
+        setTimeout(() => {
+          let dimensions = []
+          for (let i = 0; i <= this.indexMax; i++) {
+            dimensions.push(this.inputDataTable.map(x => Object.values(x)[i]))
+          }
+
+          let trace = {
+            x: dimensions[this.xAxis],
+            y: dimensions[this.yAxis],
+            mode: 'markers',
+            marker: {
+              size: 12,
+              line: {
+                width: 0.5
+              },
+              opacity: 1.0
+            },
+            type: 'scatter2d'
+          }
+
+          let layout = {
+            scene: {
+              xaxis: { title: 'X axis' },
+              yaxis: { title: 'Y axis' }
+            }
+          }
+          if (this.header) {
+            layout.scene.xaxis.title = this.headersDataTable[this.xAxis].label
+            layout.scene.yaxis.title = this.headersDataTable[this.yAxis].label
+          }
+
+          if (this.zAxis !== -1) {
+            trace.z = dimensions[this.zAxis]
+            trace.type = 'scatter3d'
+            layout.margin = {
+              l: 0,
+              r: 0,
+              b: 0,
+              t: 0
+            }
+            layout.scene.zaxis = { title: 'Z axis' }
+            if (this.header) {
+              layout.scene.zaxis.title = this.headersDataTable[this.zAxis].label
+            }
+          }
+
+          for (let i = 0; i <= this.indexMax; i++) {
+            if (moment(dimensions[i][0]).isValid() && isNaN(Number(dimensions[i][0]))) {
+              trace.mode = 'lines'
+            }
+          }
+
+          if (this.lAxis !== -1) {
+            let labels = dimensions[this.lAxis]
+            let keyLabels = Array.from(new Set(labels))
+            let colorMap = {}
+            keyLabels.forEach(label => {
+              colorMap[label] = randomcolor()
+            })
+            trace.text = labels
+            trace.marker.color = labels.map(d => colorMap[d])
+            trace.marker.line.color = '#000000'
+          }
+
+          jquery(this.$refs['draw']).empty()
+          Plotly.newPlot(this.$refs['draw'], [trace], layout)
+          this.fileChartLoading = false
+        }, 500)
       }
     },
     trashActionEvent(event) {
       jquery(this.$refs['draw']).empty()
       this.inputData = null
       this.output = null
+      this.fileChart = false
+      this.fileChartLoading = false
+      this.inputDataTable = []
+      this.inputDataTableList = []
     },
     plugActionEvent(event) {
       let data = null
