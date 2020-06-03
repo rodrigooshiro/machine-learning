@@ -37,6 +37,11 @@ module.exports = [
       shuffle: false,
       trainingRatio: 0.6,
       evaluationRatio: 0.4,
+      inputShapeLength: 2,
+      historySize: 720,
+      stepSize: 6,
+      targetSize: 72,
+      inputShape: [3, 1],
       inputUnits: [
         {
           key: 1,

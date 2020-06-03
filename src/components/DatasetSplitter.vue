@@ -37,6 +37,47 @@
         </div>
 
         <div class="indexInput">
+          <label>Input (shape)</label>
+          <b-dropdown
+            text="shape"
+            no-flip
+            split
+            split-variant="outline-secondary"
+            block
+            variant="secondary"
+            :disabled="editActionDisabled"
+          >
+            <b-dropdown-form style="text-align: left">
+              <b-form inline>
+                <div class="indexInput">
+                  <label>Dimensions</label>
+                  <b-form-spinbutton
+                    v-model="inputShapeLength"
+                    min="0"
+                    :formatter-fn="positiveFormatter"
+                    :disabled="editActionDisabled || unitsActionDisabled"
+                  ></b-form-spinbutton>
+                </div>
+              </b-form>
+
+              <label v-if="inputShape.length > 0">Values</label>
+              <template v-for="i in inputShape.length">
+                <b-form v-bind:key="i" inline>
+                  <div class="indexInput">
+                    <b-form-spinbutton
+                      v-model="inputShape[i-1]"
+                      min="0"
+                      :formatter-fn="indexFormatter"
+                      :disabled="editActionDisabled || unitsActionDisabled"
+                    ></b-form-spinbutton>
+                  </div>
+                </b-form>
+              </template>
+            </b-dropdown-form>
+          </b-dropdown>
+        </div>
+
+        <div class="indexInput">
           <label>Output Units</label>
           <b-dropdown
             :text="unitsActionDisabled ? 'outputMatrix' : 'Columns'"
@@ -59,6 +100,47 @@
         </div>
 
         <div class="indexInput">
+          <label>Output (shape)</label>
+          <b-dropdown
+            text="shape"
+            no-flip
+            split
+            split-variant="outline-secondary"
+            block
+            variant="secondary"
+            :disabled="editActionDisabled"
+          >
+            <b-dropdown-form style="text-align: left">
+              <b-form inline>
+                <div class="indexInput">
+                  <label>Dimensions</label>
+                  <b-form-spinbutton
+                    v-model="outputShapeLength"
+                    min="0"
+                    :formatter-fn="positiveFormatter"
+                    :disabled="editActionDisabled || unitsActionDisabled"
+                  ></b-form-spinbutton>
+                </div>
+              </b-form>
+
+              <label v-if="outputShape.length > 0">Values</label>
+              <template v-for="i in outputShape.length">
+                <b-form v-bind:key="i" inline>
+                  <div class="indexInput">
+                    <b-form-spinbutton
+                      v-model="outputShape[i-1]"
+                      min="0"
+                      :formatter-fn="indexFormatter"
+                      :disabled="editActionDisabled || unitsActionDisabled"
+                    ></b-form-spinbutton>
+                  </div>
+                </b-form>
+              </template>
+            </b-dropdown-form>
+          </b-dropdown>
+        </div>
+
+        <div class="indexInput">
           <label>Label Index</label>
           <b-form-spinbutton
             v-model="indexLabel"
@@ -66,6 +148,41 @@
             :max="dataSize-1"
             :formatter-fn="indexFormatter"
             :disabled="editActionDisabled || unitsActionDisabled"
+          ></b-form-spinbutton>
+        </div>
+      </b-form>
+
+      <b-form inline>
+        <div class="indexInput">
+          <label>History Size</label>
+          <b-form-spinbutton
+            v-model="historySize"
+            min="0"
+            max="9999"
+            :formatter-fn="positiveFormatter"
+            :disabled="editActionDisabled"
+          ></b-form-spinbutton>
+        </div>
+
+        <div class="indexInput">
+          <label>Target Size</label>
+          <b-form-spinbutton
+            v-model="targetSize"
+            min="0"
+            max="9999"
+            :formatter-fn="positiveFormatter"
+            :disabled="editActionDisabled"
+          ></b-form-spinbutton>
+        </div>
+
+        <div class="indexInput">
+          <label>Step Size</label>
+          <b-form-spinbutton
+            v-model="stepSize"
+            min="0"
+            max="9999"
+            :formatter-fn="positiveFormatter"
+            :disabled="editActionDisabled"
           ></b-form-spinbutton>
         </div>
       </b-form>
@@ -149,6 +266,13 @@ export default {
         'evaluationRatio',
         'inputUnits',
         'outputUnits',
+        'inputShape',
+        'inputShapeLength',
+        'outputShape',
+        'outputShapeLength',
+        'historySize',
+        'targetSize',
+        'stepSize',
         'indexLabel'
       ],
       toggleIcon: 'caret-up',
@@ -157,7 +281,14 @@ export default {
       trainingRatio: 1,
       inputUnits: [],
       outputUnits: [],
+      inputShape: [],
+      inputShapeLength: 0,
+      outputShape: [],
+      outputShapeLength: 0,
       indexLabel: -1,
+      historySize: 0,
+      targetSize: 0,
+      stepSize: 0,
       types: {},
       evaluationRatio: 0
     }
@@ -187,6 +318,14 @@ export default {
         let inputSize = this.inputUnits.filter(unit => unit.checked === true).length
         let outputSize = this.inputUnits.filter(unit => unit.checked === true).length
         disabled |= inputSize + outputSize === 0
+        if (this.inputShapeLength > 0) {
+          let inputProduct = this.inputShape.reduce((a, b) => a * b, 1)
+          disabled |= inputProduct !== inputSize
+        }
+        if (this.outputShapeLength > 0) {
+          let outputProduct = this.outpuptShape.reduce((a, b) => a * b, 1)
+          disabled |= outputProduct !== outputSize
+        }
       }
       disabled |= this.loading === true
       return disabled === 1
@@ -240,6 +379,36 @@ export default {
     },
     evaluationRatio(next, prev) {
       this.trainingRatio = 1 - next
+    },
+    inputShape: {
+      handler(next, prev) {
+        this.inputShapeLength = this.inputShape.length
+      }
+    },
+    inputShapeLength: {
+      handler(next, prev) {
+        while (this.inputShape.length > this.inputShapeLength) {
+          this.inputShape.pop()
+        }
+        while (this.inputShape.length < this.inputShapeLength) {
+          this.inputShape.push(0)
+        }
+      }
+    },
+    outputShape: {
+      handler(next, prev) {
+        this.outputShapeLength = this.outputShape.length
+      }
+    },
+    outputShapeLength: {
+      handler(next, prev) {
+        while (this.outputShape.length > this.outputShapeLength) {
+          this.outputShape.pop()
+        }
+        while (this.outputShape.length < this.outputShapeLength) {
+          this.outputShape.push(0)
+        }
+      }
     }
   },
   methods: {
@@ -335,9 +504,17 @@ export default {
           )
         }
         this.global.inputMatrix = inputMatrix
-        this.global.inputShape = [this.inputUnits.filter(unit => unit.checked === true).length]
+        if (this.inputShapeLength > 0) {
+          this.global.inputShape = this.inputShape
+        } else {
+          this.global.inputShape = [this.inputUnits.filter(unit => unit.checked === true).length]
+        }
         this.global.outputMatrix = outputMatrix
-        this.global.outputShape = [this.outputUnits.filter(unit => unit.checked === true).length]
+        if (this.outputShapeLength > 0) {
+          this.global.outputShape = this.outputShape
+        } else {
+          this.global.outputShape = [this.outputUnits.filter(unit => unit.checked === true).length]
+        }
       } else {
         let inputMatrix = []
         let outputMatrix = []
