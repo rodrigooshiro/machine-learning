@@ -9,17 +9,12 @@ module.exports = [
       'working on this, please come back later...',
     data: {
       remoteFile:
-        'https://raw.githubusercontent.com/nknewlands/DeepLearningShortCourse/master/Day1/rnn/jena_climate_2009_2016.csv.zip'
+        'https://raw.githubusercontent.com/crlsierra/Eclipse2015/master/mpi_roof.csv'
     }
   },
   {
     index: 'pipeline_1',
     input_ref: 'pipeline_0',
-    type: 'DatasetZipViewer'
-  },
-  {
-    index: 'pipeline_2',
-    input_ref: 'pipeline_1',
     type: 'DatasetTableViewer',
     data: {
       header: true,
@@ -28,12 +23,12 @@ module.exports = [
     }
   },
   {
-    index: 'pipeline_3',
-    input_ref: 'pipeline_2',
+    index: 'pipeline_2',
+    input_ref: 'pipeline_1',
     type: 'DatasetSplitter',
     title: 'Dataset Splitter',
     data: {
-      sampleSplit: 0.75,
+      sampleSplit: 1,
       shuffle: true,
       trainingRatio: 0.99,
       evaluationRatio: 0.01,
@@ -71,8 +66,8 @@ module.exports = [
     }
   },
   {
-    index: 'pipeline_4',
-    input_ref: 'pipeline_3',
+    index: 'pipeline_3',
+    input_ref: 'pipeline_2',
     type: 'TSModelBuilder',
     title: 'Define the model architecture',
     data: {
@@ -84,8 +79,8 @@ module.exports = [
     }
   },
   {
-    index: 'pipeline_5',
-    input_ref: 'pipeline_4',
+    index: 'pipeline_4',
+    input_ref: 'pipeline_3',
     type: 'TSModelCompiler',
     title: 'Train the Model',
     data: {

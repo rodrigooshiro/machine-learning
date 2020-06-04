@@ -326,7 +326,7 @@ export default {
             disabled |= inputProduct !== inputSize
           }
           if (this.outputShapeLength > 0) {
-            let outputProduct = this.outpuptShape.reduce((a, b) => a * b, 1)
+            let outputProduct = this.outputShape.reduce((a, b) => a * b, 1)
             disabled |= outputProduct !== outputSize
           }
         }
@@ -377,45 +377,99 @@ export default {
       }
     }
   },
-  watch: {
-    trainingRatio(next, prev) {
-      this.evaluationRatio = 1 - next
-    },
-    evaluationRatio(next, prev) {
-      this.trainingRatio = 1 - next
-    },
-    inputShape: {
-      handler(next, prev) {
-        this.inputShapeLength = this.inputShape.length
-      }
-    },
-    inputShapeLength: {
-      handler(next, prev) {
-        while (this.inputShape.length > this.inputShapeLength) {
-          this.inputShape.pop()
-        }
-        while (this.inputShape.length < this.inputShapeLength) {
-          this.inputShape.push(0)
-        }
-      }
-    },
-    outputShape: {
-      handler(next, prev) {
-        this.outputShapeLength = this.outputShape.length
-      }
-    },
-    outputShapeLength: {
-      handler(next, prev) {
-        while (this.outputShape.length > this.outputShapeLength) {
-          this.outputShape.pop()
-        }
-        while (this.outputShape.length < this.outputShapeLength) {
-          this.outputShape.push(0)
-        }
-      }
-    }
+  mounted() {
+    this.updateWatchers(true)
   },
   methods: {
+    updateWatchers(enabled) {
+      if (enabled === true) {
+        if (this.trainingRatioWatcher === undefined) {
+          this.trainingRatioWatcher = this.$watch(
+            function() {
+              return this.trainingRatio
+            },
+            function(next, prev) {
+              this.evaluationRatio = 1 - next
+            }
+          )
+        }
+        if (this.evaluationRatioWatcher === undefined) {
+          this.evaluationRatioWatcher = this.$watch(
+            function() {
+              return this.evaluationRatio
+            },
+            function(next, prev) {
+              this.trainingRatio = 1 - next
+            }
+          )
+        }
+        if (this.inputShapeWatcher === undefined) {
+          this.inputShapeWatcher = this.$watch(
+            function() {
+              return this.inputShape
+            },
+            function(next, prev) {
+              this.inputShapeLength = this.inputShape.length
+            }
+          )
+        }
+        if (this.inputShapeLengthWatcher === undefined) {
+          this.inputShapeLengthWatcher = this.$watch(
+            function() {
+              return this.inputShapeLength
+            },
+            function(next, prev) {
+              while (this.inputShape.length > this.inputShapeLength) {
+                this.inputShape.pop()
+              }
+              while (this.inputShape.length < this.inputShapeLength) {
+                this.inputShape.push(0)
+              }
+            }
+          )
+        }
+        if (this.outputShapeWatcher === undefined) {
+          this.outputShapeWatcher = this.$watch(
+            function() {
+              return this.outputShape
+            },
+            function(next, prev) {
+              this.outputShapeLength = this.outputShape.length
+            }
+          )
+        }
+        if (this.outputShapeLengthWatcher === undefined) {
+          this.outputShapeLengthWatcher = this.$watch(
+            function() {
+              return this.outputShapeLength
+            },
+            function(next, prev) {
+              while (this.outputShape.length > this.outputShapeLength) {
+                this.outputShape.pop()
+              }
+              while (this.outputShape.length < this.outputShapeLength) {
+                this.outputShape.push(0)
+              }
+            }
+          )
+        }
+      } else {
+        let watchers = [
+          'trainingRatioWatcher',
+          'evaluationRatioWatcher',
+          'inputShapeWatcher',
+          'inputShapeLengthWatcher',
+          'outputShapeWatcher',
+          'outputShapeLengthWatcher'
+        ]
+        watchers.forEach(watch => {
+          if (this[watch] !== undefined) {
+            this[watch]()
+            delete this[watch]
+          }
+        })
+      }
+    },
     onToggleToolbar() {
       if (this.toggleIcon === 'caret-up') {
         this.toggleIcon = 'caret-down'
@@ -471,6 +525,7 @@ export default {
       return number
     },
     plugActionEvent(event) {
+      this.updateWatchers(false)
       let indexSize = parseInt(this.sampleSplit * this.indexMax)
       let inputMatrix = []
       let outputMatrix = []
@@ -581,6 +636,7 @@ export default {
       if (this.evaluationRatio > 0) {
         this.global.evaluation = output.evaluation
       }
+      this.updateWatchers(true)
       this.plugActionEnd(event)
     }
   }
