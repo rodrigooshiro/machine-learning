@@ -33,15 +33,17 @@ module.exports = [
     type: 'DatasetSplitter',
     title: 'Dataset Splitter',
     data: {
-      sampleSplit: 0.1,
-      shuffle: false,
-      trainingRatio: 0.6,
-      evaluationRatio: 0.4,
-      inputShapeLength: 2,
+      sampleSplit: 0.75,
+      shuffle: true,
+      trainingRatio: 0.99,
+      evaluationRatio: 0.01,
       historySize: 720,
       stepSize: 6,
       targetSize: 72,
-      inputShape: [3, 1],
+      inputShapeLength: 2,
+      inputShape: [120, 3],
+      outputShapeLength: 1,
+      outputShape: [72],
       inputUnits: [
         {
           key: 1,

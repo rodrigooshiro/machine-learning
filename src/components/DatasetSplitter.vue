@@ -316,15 +316,19 @@ export default {
       disabled |= this.indexMax === Infinity
       if (Array.isArray(this.inputData) && this.inputData.length > 0) {
         let inputSize = this.inputUnits.filter(unit => unit.checked === true).length
-        let outputSize = this.inputUnits.filter(unit => unit.checked === true).length
+        let outputSize = this.outputUnits.filter(unit => unit.checked === true).length
         disabled |= inputSize + outputSize === 0
-        if (this.inputShapeLength > 0) {
-          let inputProduct = this.inputShape.reduce((a, b) => a * b, 1)
-          disabled |= inputProduct !== inputSize
-        }
-        if (this.outputShapeLength > 0) {
-          let outputProduct = this.outpuptShape.reduce((a, b) => a * b, 1)
-          disabled |= outputProduct !== outputSize
+        if (this.historySize > 0) {
+          disabled |= this.historySize % this.stepSize !== 0
+        } else {
+          if (this.inputShapeLength > 0) {
+            let inputProduct = this.inputShape.reduce((a, b) => a * b, 1)
+            disabled |= inputProduct !== inputSize
+          }
+          if (this.outputShapeLength > 0) {
+            let outputProduct = this.outpuptShape.reduce((a, b) => a * b, 1)
+            disabled |= outputProduct !== outputSize
+          }
         }
       }
       disabled |= this.loading === true
@@ -336,13 +340,13 @@ export default {
         indexMax = this.inputData.length
       }
       if (ArrayBuffer.isView(this.global.inputMatrix)) {
-        let product = this.global.inputShape.reduce((a, b) => a * b, 1)
+        let product = this.inputShape.reduce((a, b) => a * b, 1)
         let length = this.global.inputMatrix.length / product
         indexMax = Math.min(indexMax, length)
       }
       if (ArrayBuffer.isView(this.global.outputMatrix)) {
-        let product = this.global.inputShape.reduce((a, b) => a * b, 1)
-        let length = this.global.inputMatrix.length / product
+        let product = this.outputShape.reduce((a, b) => a * b, 1)
+        let length = this.global.outputMatrix.length / product
         indexMax = Math.min(indexMax, length)
       }
       return indexMax
@@ -445,17 +449,12 @@ export default {
     },
     trashActionEvent(event) {
       this.global.inputShape = null
-      this.global.inputMatrix = null
       this.global.outputShape = null
-      this.global.outputMatrix = null
       if (this.trainingRatio > 0) {
         this.global.training = null
       }
       if (this.evaluationRatio > 0) {
         this.global.evaluation = null
-      }
-      if (this.indexLabel !== -1) {
-        this.global.labels = null
       }
     },
     parseColumn(column, value) {
@@ -472,16 +471,25 @@ export default {
       return number
     },
     plugActionEvent(event) {
-      let indexSize = this.indexMax
-      let indexes = this.$tf.util.createShuffledIndices(indexSize)
-      if (this.shuffle === false) {
-        indexes.sort()
+      let indexSize = parseInt(this.sampleSplit * this.indexMax)
+      let inputMatrix = []
+      let outputMatrix = []
+      let inputShape = []
+      let outputShape = []
+      let labels = []
+
+      if (this.inputShapeLength > 0) {
+        inputShape = this.inputShape
+      } else {
+        inputShape = [this.inputUnits.filter(unit => unit.checked === true).length]
+      }
+      if (this.outputShapeLength > 0) {
+        outputShape = this.outputShape
+      } else {
+        outputShape = [this.outputUnits.filter(unit => unit.checked === true).length]
       }
 
       if (Array.isArray(this.inputData)) {
-        let inputMatrix = []
-        let outputMatrix = []
-
         for (let i = 0; i < indexSize; i++) {
           let inputRow = []
           for (let j = 0; j < this.dataSize; j++) {
@@ -499,27 +507,11 @@ export default {
           outputMatrix.push(outputRow)
         }
         if (this.indexLabel !== -1) {
-          this.global.labels = this.inputData.map(x =>
-            this.parseColumn(this.indexLabel, x[this.indexLabel])
-          )
-        }
-        this.global.inputMatrix = inputMatrix
-        if (this.inputShapeLength > 0) {
-          this.global.inputShape = this.inputShape
-        } else {
-          this.global.inputShape = [this.inputUnits.filter(unit => unit.checked === true).length]
-        }
-        this.global.outputMatrix = outputMatrix
-        if (this.outputShapeLength > 0) {
-          this.global.outputShape = this.outputShape
-        } else {
-          this.global.outputShape = [this.outputUnits.filter(unit => unit.checked === true).length]
+          labels = this.inputData.map(x => this.parseColumn(this.indexLabel, x[this.indexLabel]))
         }
       } else {
-        let inputMatrix = []
-        let outputMatrix = []
-        let inputProduct = this.global.inputShape.reduce((a, b) => a * b, 1)
-        let outputProduct = this.global.outputShape.reduce((a, b) => a * b, 1)
+        let inputProduct = inputShape.reduce((a, b) => a * b, 1)
+        let outputProduct = outputShape.reduce((a, b) => a * b, 1)
         for (let i = 0; i < indexSize; i++) {
           inputMatrix.push(
             this.global.inputMatrix.subarray(i * inputProduct, i * inputProduct + inputProduct)
@@ -528,11 +520,33 @@ export default {
             this.global.outputMatrix.subarray(i * outputProduct, i * outputProduct + outputProduct)
           )
         }
-        this.global.inputMatrix = inputMatrix
-        this.global.outputMatrix = outputMatrix
       }
 
-      indexSize = parseInt(this.sampleSplit * indexSize)
+      if (this.historySize > 0) {
+        indexSize -= this.historySize + this.targetSize
+        let inputMatrixTemp = []
+        let outputMatrixTemp = []
+        if (this.outputUnits.filter(unit => unit.checked === true).length === 1) {
+          outputMatrix = outputMatrix.map(x => x[0])
+        }
+        for (let i = 0; i < indexSize; i++) {
+          let matrix = []
+          for (let j = 0; j < this.historySize / this.stepSize; j++) {
+            matrix.push(...inputMatrix.slice(i + j * this.stepSize, i + j * this.stepSize + 1))
+          }
+          inputMatrixTemp.push(matrix)
+          matrix = [...outputMatrix.slice(i + this.historySize, i + this.historySize + this.targetSize)]
+          outputMatrixTemp.push(matrix)
+        }
+        inputMatrix = inputMatrixTemp
+        outputMatrix = outputMatrixTemp
+      }
+
+      let indexes = this.$tf.util.createShuffledIndices(indexSize)
+      if (this.shuffle === false) {
+        indexes.sort()
+      }
+
       let trainingSize = parseInt(indexSize * this.trainingRatio)
       let output = {
         training: {
@@ -550,20 +564,20 @@ export default {
         let property = i < trainingSize ? 'training' : 'evaluation'
 
         if (this.indexLabel !== -1) {
-          output[property].labels.push(this.global.labels[indexes[i]])
+          output[property].labels.push(labels[indexes[i]])
         }
-        if (Array.isArray(this.global.inputMatrix)) {
-          output[property].inputMatrix.push(this.global.inputMatrix[indexes[i]])
+        if (Array.isArray(inputMatrix)) {
+          output[property].inputMatrix.push(inputMatrix[indexes[i]])
         }
-        if (Array.isArray(this.global.outputMatrix)) {
-          output[property].outputMatrix.push(this.global.outputMatrix[indexes[i]])
+        if (Array.isArray(outputMatrix)) {
+          output[property].outputMatrix.push(outputMatrix[indexes[i]])
         }
       }
-      this.global.inputMatrix = null
+      this.global.inputShape = inputShape
+      this.global.outputShape = outputShape
       if (this.trainingRatio > 0) {
         this.global.training = output.training
       }
-      this.global.outputMatrix = null
       if (this.evaluationRatio > 0) {
         this.global.evaluation = output.evaluation
       }

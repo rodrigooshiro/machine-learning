@@ -181,7 +181,8 @@ export default {
       fileChart: false,
       fileChartLoading: false,
       inputDataTable: [],
-      inputDataTableList: []
+      inputDataTableList: [],
+      headersDataTable: []
     }
     return this.importData(data)
   },
@@ -223,17 +224,6 @@ export default {
         }
       }
       return dataSize
-    },
-    headersDataTable: {
-      get() {
-        let headers = null
-        if (this.header) {
-          headers = this.headers.filter(header => header.state !== 0)
-        } else {
-          headers = this.columns.filter(column => column.state !== 0)
-        }
-        return headers
-      }
     },
     indexMax: {
       get() {
@@ -485,13 +475,21 @@ export default {
         data = items
       }
       if (data !== null) {
+        let headers = null
         this.output = data.map(x => Object.values(x))
+        this.inputDataTableList.push(...data.slice(0, 10))
+        this.inputDataTable = data
+        if (this.header) {
+          headers = this.headers.filter(header => header.state !== 0)
+        } else {
+          headers = this.columns.filter(column => column.state !== 0)
+        }
+        this.headersDataTable = headers
       } else {
         data = []
         this.inputDataTableList = []
+        this.headersDataTable = []
       }
-      this.inputDataTableList.push(...data.slice(0, 10))
-      this.inputDataTable = data
       this.plugActionEnd(event)
     },
     downloadAction(event) {

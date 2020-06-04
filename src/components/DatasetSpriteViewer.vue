@@ -294,10 +294,8 @@ export default {
         this.fileChart = true
 
         if (this.reference === 'Output') {
-          this.global.outputShape = [this.spriteWidth, this.spriteHeight, this.spriteChannels]
           this.global.outputMatrix = this.datasetImages
         } else {
-          this.global.inputShape = [this.spriteWidth, this.spriteHeight, this.spriteChannels]
           this.global.inputMatrix = this.datasetImages
         }
         this.plugActionEnd(event)

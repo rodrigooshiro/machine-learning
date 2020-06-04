@@ -229,14 +229,15 @@ export default {
       let classNames = []
       let classNamesMap = []
 
-      if (this.global.labels !== null) {
-        if (this.global.evaluation !== null) {
-          classNamesMap = this.global.evaluation.labels
-        } else if (this.global.evaluation === null && this.global.training !== null) {
-          classNamesMap = this.global.training.labels
-        } else {
-          classNamesMap = this.global.labels
-        }
+      if (this.global.evaluation !== null && this.global.evaluation.labels.length) {
+        classNamesMap = this.global.evaluation.labels
+        classNames = Array.from(new Set(classNamesMap))
+      } else if (
+        this.global.evaluation === null &&
+        this.global.training !== null &&
+        this.global.training.labels.length
+      ) {
+        classNamesMap = this.global.training.labels
         classNames = Array.from(new Set(classNamesMap))
       } else {
         for (let i = 0; i < this.global.outputShape[0]; i++) {

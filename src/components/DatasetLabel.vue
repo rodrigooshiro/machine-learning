@@ -96,10 +96,8 @@ export default {
     plugActionEvent(event) {
       let datasetLabels = new Uint8Array(this.inputData)
       if (this.reference === 'Output') {
-        this.global.outputShape = [this.labelSize]
         this.global.outputMatrix = datasetLabels
       } else {
-        this.global.inputShape = [this.labelSize]
         this.global.inputMatrix = datasetLabels
       }
       this.plugActionEnd(event)

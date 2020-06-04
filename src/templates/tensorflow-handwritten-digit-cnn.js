@@ -60,7 +60,11 @@ module.exports = [
       sampleSplit: 0.1,
       shuffle: true,
       trainingRatio: 0.7,
-      evaluationRatio: 0.3
+      evaluationRatio: 0.3,
+      inputShapeLength: 3,
+      inputShape: [28, 28, 1],
+      outputShapeLength: 1,
+      outputShape: [10]
     }
   },
   {
