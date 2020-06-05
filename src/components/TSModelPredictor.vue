@@ -31,6 +31,17 @@
             :disabled="editActionDisabled"
           ></b-form-spinbutton>
         </div>
+
+        <div class="indexInput">
+          <label>Label Index</label>
+          <b-form-spinbutton
+            v-model="indexSerie"
+            min="-1"
+            :max="dataSize-1"
+            :formatter-fn="indexFormatter"
+            :disabled="editActionDisabled"
+          ></b-form-spinbutton>
+        </div>
       </b-form>
     </b-collapse>
     <div style="margin-top: 8px;"></div>
@@ -41,11 +52,17 @@
       :static="true"
       :hide-footer="true"
       size="lg"
+      @show="onShowModal"
     >
-      <b-carousel :interval="0" :indicators="true">
-        <b-carousel-slide :img-blank="true" v-if="scatterplot">
+      <b-carousel :interval="0"
+        :indicators="scatterPlot || perClassAccuracy || confusionMatrix"
+        :controls="seriesPlot"
+        :class="'carousel-loading-' + loading"
+        ref="dataset-view-carousel"
+        >
+        <b-carousel-slide :img-blank="true" v-if="scatterPlot">
           <template v-slot:img>
-            <div ref="scatterplot"></div>
+            <div ref="scatterPlot"></div>
           </template>
         </b-carousel-slide>
         <b-carousel-slide :img-blank="true" v-if="perClassAccuracy">
@@ -56,6 +73,18 @@
         <b-carousel-slide :img-blank="true" v-if="confusionMatrix">
           <template v-slot:img>
             <div ref="confusionMatrix"></div>
+          </template>
+        </b-carousel-slide>
+        <b-carousel-slide :img-blank="true" v-if="seriesPlot">
+          <template v-slot:img>
+            <div class="text-center" ref="draw-loading">
+              <div style="width: 500px; height: 400px; margin: auto; margin: 0 auto;">
+                <div style="position: relative; top: 50%;">
+                  <b-spinner type="grow"></b-spinner>
+                </div>
+              </div>
+            </div>
+            <div class="text-center" ref="draw"></div>
           </template>
         </b-carousel-slide>
       </b-carousel>
@@ -85,6 +114,7 @@ import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import jquery from 'jquery'
 import lodash from 'lodash'
+import Plotly from 'plotly.js-dist'
 import * as utilities from '../config/utilities.js'
 
 export default {
@@ -93,15 +123,26 @@ export default {
   mixins: [mixin],
   data() {
     let data = {
-      serializable: ['layerSize'],
+      serializable: ['layerSize', 'indexSerie'],
       layerSize: 0,
+      indexSerie: -1,
+      imagePage: 0,
       fileChart: false,
-      scatterplot: true,
+      scatterPlot: true,
       perClassAccuracy: true,
       confusionMatrix: true,
+      seriesPlot: true,
       toggleIcon: 'caret-up'
     }
     return this.importData(data)
+  },
+  mounted() {
+    jquery(this.$refs['dataset-view-carousel'].$el)
+      .find('.carousel-control-prev')
+      .on('click', this.onPrevPage)
+    jquery(this.$refs['dataset-view-carousel'].$el)
+      .find('.carousel-control-next')
+      .on('click', this.onNextPage)
   },
   computed: {
     editActionDisabled() {
@@ -131,6 +172,13 @@ export default {
         indexMax = this.global.model.layers.length
       }
       return indexMax
+    },
+    dataSize() {
+      let dataSize = 0
+      if (Array.isArray(this.global.inputShape) && this.global.inputShape.length > 1) {
+        dataSize = this.global.inputShape[0]
+      }
+      return dataSize
     }
   },
   watch: {
@@ -150,12 +198,96 @@ export default {
         this.toggleIcon = 'caret-up'
       }
     },
+    loadPage() {
+      jquery(this.$refs['draw-loading']).show()
+      jquery(this.$refs['draw']).hide()
+      jquery(this.$refs['draw']).empty()
+      let inputIndex = this.indexSerie
+      let inputSize = this.global.inputShape[0]
+      let outputSize = this.global.outputShape[0]
+      let seriesOutputX = this.global.evaluation.timestamps[this.imagePage]
+      let seriesOutputY = [
+        ...this.output[this.imagePage].slice(0, inputSize).map(x => x[inputIndex])
+      ].concat(this.output[this.imagePage].slice(inputSize, inputSize + outputSize))
+      let seriesPredictX = this.global.evaluation.timestamps[this.imagePage].slice(-outputSize)
+      let seriesPredictY = [
+        ...this.output[this.imagePage].slice(
+          inputSize + outputSize,
+          inputSize + outputSize + outputSize
+        )
+      ]
+
+      let traceOutput = {
+        name: 'True Future',
+        x: seriesOutputX,
+        y: seriesOutputY,
+        mode: 'lines',
+        marker: {
+          size: 12,
+          line: {
+            width: 0.5
+          },
+          opacity: 1.0
+        },
+        type: 'scatter2d'
+      }
+
+      let tracePredict = {
+        name: 'Model Prediction',
+        x: seriesPredictX,
+        y: seriesPredictY,
+        mode: 'lines',
+        marker: {
+          size: 12,
+          line: {
+            width: 0.5
+          },
+          opacity: 1.0
+        },
+        type: 'scatter2d'
+      }
+
+      let layout = {
+        scene: {
+          xaxis: { title: 'X axis' },
+          yaxis: { title: 'Y axis' }
+        }
+      }
+
+      jquery(this.$refs['draw-loading']).hide()
+      jquery(this.$refs['draw']).show()
+      Plotly.newPlot(this.$refs['draw'], [traceOutput, tracePredict], layout)
+    },
+    onShowModal() {
+      if (this.seriesPlot) {
+        this.loadPage()
+      }
+    },
+    onPrevPage(event) {
+      if (this.loading === false) {
+        this.imagePage -= 1
+        if (this.imagePage < 0) {
+          this.imagePage = this.output.length - 1
+        }
+        this.loadPage()
+      }
+    },
+    onNextPage(event) {
+      if (this.loading === false) {
+        this.imagePage += 1
+        if (this.imagePage > this.output.length) {
+          this.imagePage = 0
+        }
+        this.loadPage()
+      }
+    },
     trashActionEvent(event) {
       jquery(this.$refs['draw']).empty()
       this.fileChart = false
-      this.scatterplot = true
+      this.scatterPlot = true
       this.perClassAccuracy = true
       this.confusionMatrix = true
+      this.seriesPlot = true
       if (this.inputTensor !== undefined) {
         this.inputTensor.dispose()
         delete this.inputTensor
@@ -245,13 +377,14 @@ export default {
         }
       }
 
-      this.scatterplot = false
+      this.scatterPlot = false
       this.perClassAccuracy = false
       this.confusionMatrix = false
+      this.seriesPlot = false
 
       let mul = this.inputTensor.shape[1] * this.outputTensor.shape[1] * this.predictTensor.shape[1]
       if (mul === 1) {
-        this.scatterplot = true
+        this.scatterPlot = true
         let originalValues = []
         let predictedValues = []
         for (let i = 0; i < inputMatrix.length; i++) {
@@ -265,7 +398,7 @@ export default {
           })
         }
         this.$tfvis.render.scatterplot(
-          this.$refs['scatterplot'],
+          this.$refs['scatterPlot'],
           { values: [originalValues, predictedValues], series: ['original', 'predicted'] },
           {
             width: 700,
@@ -276,7 +409,12 @@ export default {
       }
 
       this.classNames = classNames
-      if (classNames.length !== 0 && this.outputTensor.shape[1] === this.predictTensor.shape[1]) {
+      if (this.indexSerie > -1) {
+        this.fileChart = true
+        this.seriesPlot = true
+        this.outputTensor.dispose()
+        this.predictTensor.dispose()
+      } else if (classNames.length !== 0 && this.outputTensor.shape[1] === this.predictTensor.shape[1]) {
         this.$tf.tidy(
           function() {
             let tensorUse = ['perClassAccuracy', 'confusionMatrix']
@@ -349,9 +487,10 @@ export default {
     },
     plugActionEvent(event) {
       this.fileChart = false
-      this.scatterplot = true
+      this.scatterPlot = true
       this.perClassAccuracy = true
       this.confusionMatrix = true
+      this.seriesPlot = true
 
       let { normalizationData } = this.inputData
       let inputMatrix = this.global.inputMatrix

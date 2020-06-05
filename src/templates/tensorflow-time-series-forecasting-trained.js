@@ -68,40 +68,15 @@ module.exports = [
   {
     index: 'pipeline_3',
     input_ref: 'pipeline_2',
-    type: 'TSModelBuilder',
-    title: 'Define the model architecture',
+    type: 'TSModelLoader',
+    title: 'Load pre trained the model architecture',
     data: {
-      layerSize: 3,
-      units: [32, 16, 72],
-      returnSequences: [true, false, false],
-      layerName: ['lstm', 'lstm', 'dense'],
-      kernelInitializer: ['glorotNormal', 'glorotNormal', 'glorotNormal'],
-      biasInitializer: ['zeros', 'zeros', 'zeros'],
-      recurrentActivation: ['sigmoid', 'sigmoid', 'zeros'],
-      recurrentInitializer: ['orthogonal', 'orthogonal', '--'],
-      activation: ['tanh', 'relu', '--']
+      remoteFile: 'tensorflow-time-series-forecasting/model.json'
     }
   },
   {
     index: 'pipeline_4',
     input_ref: 'pipeline_3',
-    type: 'TSModelCompiler',
-    title: 'Train the Model',
-    data: {
-      epochs: 10,
-      batchSize: 32,
-      stepsPerEpoch: 200,
-      validationSteps: 50,
-      validationSplit: 0.15,
-      inputUnitsNormalize: true,
-      outputUnitsNormalize: true,
-      compilerOptimizerSelected: 'rmsprop',
-      compilerLossSelected: 'meanAbsoluteError'
-    }
-  },
-  {
-    index: 'pipeline_5',
-    input_ref: 'pipeline_4',
     type: 'TSModelPredictor',
     title: 'Make Predictions',
     data: {

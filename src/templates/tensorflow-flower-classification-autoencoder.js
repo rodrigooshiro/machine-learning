@@ -105,7 +105,7 @@ module.exports = [
       'When **training** this autoencoder, the model *output* will try to fit its ' +
       '*input*, while a *hidden* layer will reduce the feature dimensions from 4 to 3.',
     data: {
-      epochSize: 200,
+      epochs: 200,
       batchSize: 32,
       validationSplit: 0.1,
       shuffle: true,
@@ -282,7 +282,7 @@ module.exports = [
     title: 'Train model',
     description: '',
     data: {
-      epochSize: 200,
+      epochs: 200,
       batchSize: 32,
       validationSplit: 0.1,
       shuffle: true,

@@ -135,7 +135,7 @@ module.exports = [
       'the selected training model was good, but the epochs for the training was too low. Just be ' +
       'careful not to overfit.',
     data: {
-      epochSize: 200,
+      epochs: 200,
       batchSize: 32,
       validationSplit: 0.2,
       shuffle: true,

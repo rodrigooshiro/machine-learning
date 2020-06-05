@@ -186,6 +186,34 @@
 
           <div
             class="indexInput"
+            v-if="utilities.tf.layer.args[layerName[i-1]].indexOf('recurrentActivation') !== -1"
+          >
+            <label>
+              <span>Layer {{ i }} (recurrentActivation)</span>
+            </label>
+            <b-form-select
+              v-model="recurrentActivation[i-1]"
+              :options="utilities.tf.layer.activation.options"
+              :disabled="editActionDisabled"
+            ></b-form-select>
+          </div>
+
+          <div
+            class="indexInput"
+            v-if="utilities.tf.layer.args[layerName[i-1]].indexOf('recurrentInitializer') !== -1"
+          >
+            <label>
+              <span>Layer {{ i }} (recurrentInitializer)</span>
+            </label>
+            <b-form-select
+              v-model="recurrentInitializer[i-1]"
+              :options="utilities.tf.initializers.options"
+              :disabled="editActionDisabled"
+            ></b-form-select>
+          </div>
+
+          <div
+            class="indexInput"
             v-if="utilities.tf.layer.args[layerName[i-1]].indexOf('activation') !== -1"
           >
             <label>
@@ -289,6 +317,8 @@ export default {
         'poolSize',
         'activation',
         'returnSequences',
+        'recurrentActivation',
+        'recurrentInitializer',
         'kernelInitializer',
         'biasInitializer'
       ],
@@ -303,6 +333,8 @@ export default {
       poolSize: [],
       activation: [],
       returnSequences: [],
+      recurrentActivation: [],
+      recurrentInitializer: [],
       kernelInitializer: [],
       biasInitializer: [],
       stridesLength: [],
@@ -458,7 +490,13 @@ export default {
           this[value].push([])
         }
       })
-      keys = ['activation', 'kernelInitializer', 'biasInitializer']
+      keys = [
+        'activation',
+        'recurrentActivation',
+        'recurrentInitializer',
+        'kernelInitializer',
+        'biasInitializer'
+      ]
       keys.forEach(value => {
         while (this[value].length < this.layerSize) {
           this[value].push('--')

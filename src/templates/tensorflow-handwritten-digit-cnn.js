@@ -104,7 +104,7 @@ module.exports = [
       'run this example in javascript in the browser, but with **C++** bindings it completes ' +
       'the training and evaluation.',
     data: {
-      epochSize: 10,
+      epochs: 10,
       batchSize: 512,
       shuffle: true,
       validationSplit: 0.15,

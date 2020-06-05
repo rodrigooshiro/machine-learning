@@ -926,6 +926,12 @@
             if (utilities.tf.layer.args[data.layerName[i]].indexOf('returnSequences') !== -1) {
               layer.returnSequences = data.returnSequences[i]
             }
+            if (utilities.tf.layer.args[data.layerName[i]].indexOf('recurrentActivation') !== -1) {
+              layer.recurrentActivation = data.recurrentActivation[i]
+            }
+            if (utilities.tf.layer.args[data.layerName[i]].indexOf('recurrentInitializer') !== -1) {
+              layer.recurrentInitializer = data.recurrentInitializer[i]
+            }
             if (utilities.tf.layer.args[data.layerName[i]].indexOf('kernelSize') !== -1) {
               if (data.kernelSize[i] !== 0) {
                 layer.kernelSize = data.kernelSize[i]
@@ -993,13 +999,17 @@
             loss: loss,
             metrics: ['mse']
           })
-          let history = await model.fit(inputTensor, outputTensor, {
-            batchSize: data.batchSize,
-            epochs: data.epochSize,
+          let args = {
             shuffle: data.shuffle,
-            validationSplit: data.validationSplit,
             callbacks: callbacks
+          }
+          let params = ['epochs', 'batchSize', 'stepsPerEpoch', 'validationSteps', 'validationSplit']
+          params.forEach(param => {
+            if (data[param] > 0) {
+              args[param] = data[param]
+            }
           })
+          let history = await model.fit(inputTensor, outputTensor, args)
           return { model, history }
         } catch(error) {
           console.error(error)

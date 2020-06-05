@@ -24,6 +24,10 @@ module.exports = [
     js: 'tensorflow-flower-classification-autoencoder.js'
   },
   {
+    name: 'Tensorflow: Time series forecasting (trained)',
+    js: 'tensorflow-time-series-forecasting-trained.js'
+  },
+  {
     name: 'Tensorflow: Time series forecasting',
     js: 'tensorflow-time-series-forecasting.js'
   }

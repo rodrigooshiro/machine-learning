@@ -193,7 +193,7 @@ module.exports = [
       "the categories of the output into an array of 0's and 1's. Inputs are normalized and the " +
       'output is the category itself, so it is not normalized.',
     data: {
-      epochSize: 50,
+      epochs: 50,
       batchSize: 700,
       shuffle: true,
       inputUnitsNormalize: true,

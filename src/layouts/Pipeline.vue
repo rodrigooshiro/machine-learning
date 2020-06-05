@@ -112,7 +112,6 @@ export default {
     ComponentFooter,
     DatasetLabel: () => import('../components/DatasetLabel'),
     DatasetLoader: () => import('../components/DatasetLoader'),
-    DatasetSeries: () => import('../components/DatasetSeries'),
     DatasetSplitter: () => import('../components/DatasetSplitter'),
     DatasetSpriteViewer: () => import('../components/DatasetSpriteViewer'),
     DatasetTableViewer: () => import('../components/DatasetTableViewer'),
@@ -120,6 +119,7 @@ export default {
     DatasetZipViewer: () => import('../components/DatasetZipViewer'),
     TSModelBuilder: () => import('../components/TSModelBuilder'),
     TSModelCompiler: () => import('../components/TSModelCompiler'),
+    TSModelLoader: () => import('../components/TSModelLoader'),
     TSModelPredictor: () => import('../components/TSModelPredictor')
   },
   created() {
@@ -187,13 +187,13 @@ export default {
         'DatasetLabel',
         'DatasetLoader',
         'DatasetSplitter',
-        'DatasetSeries',
         'DatasetSpriteViewer',
         'DatasetTableViewer',
         'DatasetTextViewer',
         'DatasetZipViewer',
         'TSModelBuilder',
         'TSModelCompiler',
+        'TSModelLoader',
         'TSModelPredictor'
       ],
       componentTitle: null,
@@ -458,6 +458,7 @@ export default {
         // name = 'Tensorflow: Predict baseball pitch types'
         // name = 'Tensorflow: Flower classification'
         // name = 'Tensorflow: Flower classification using Autoencoder'
+        // name = 'Tensorflow: Time series forecasting (trained)'
         // name = 'Tensorflow: Time series forecasting'
       }
       let templates = this.$refs['layout'].$refs['header'].templates.filter(

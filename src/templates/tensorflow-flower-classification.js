@@ -107,10 +107,9 @@ module.exports = [
     input_ref: 'pipeline_3',
     type: 'TSModelCompiler',
     title: 'Train model',
-    description:
-      '',
+    description: '',
     data: {
-      epochSize: 200,
+      epochs: 200,
       batchSize: 32,
       validationSplit: 0.1,
       shuffle: true,

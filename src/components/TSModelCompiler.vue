@@ -56,13 +56,18 @@
             :disabled="editActionDisabled"
           ></b-form-select>
         </div>
+
+        <div class="indexInput">
+          <label>Shuffle</label>
+          <b-form-select v-model="shuffle" :options="[true, false]" :disabled="editActionDisabled"></b-form-select>
+        </div>
       </b-form>
 
       <b-form inline>
         <div class="indexInput">
           <label>Epochs</label>
           <b-form-spinbutton
-            v-model="epochSize"
+            v-model="epochs"
             min="1"
             max="9999"
             placeholder="--"
@@ -82,6 +87,28 @@
         </div>
 
         <div class="indexInput">
+          <label>Steps Per Epoch</label>
+          <b-form-spinbutton
+            v-model="stepsPerEpoch"
+            min="1"
+            max="9999"
+            placeholder="--"
+            :disabled="editActionDisabled"
+          ></b-form-spinbutton>
+        </div>
+
+        <div class="indexInput">
+          <label>Validation Steps</label>
+          <b-form-spinbutton
+            v-model="validationSteps"
+            min="1"
+            max="9999"
+            placeholder="--"
+            :disabled="editActionDisabled"
+          ></b-form-spinbutton>
+        </div>
+
+        <div class="indexInput">
           <label>Validation Split</label>
           <b-form-spinbutton
             v-model="validationSplit"
@@ -91,11 +118,6 @@
             :formatter-fn="percentageFormatter"
             :disabled="editActionDisabled"
           ></b-form-spinbutton>
-        </div>
-
-        <div class="indexInput">
-          <label>Shuffle</label>
-          <b-form-select v-model="shuffle" :options="[true, false]" :disabled="editActionDisabled"></b-form-select>
         </div>
       </b-form>
     </b-collapse>
@@ -145,8 +167,10 @@ export default {
     let data = {
       serializable: [
         'shuffle',
-        'epochSize',
+        'epochs',
         'batchSize',
+        'stepsPerEpoch',
+        'validationSteps',
         'validationSplit',
         'inputUnitsNormalize',
         'outputUnitsNormalize',
@@ -156,8 +180,10 @@ export default {
       toggleIcon: 'caret-up',
       utilities: utilities,
       shuffle: true,
-      epochSize: 0,
+      epochs: 0,
       batchSize: 0,
+      stepsPerEpoch: 0,
+      validationSteps: 0,
       validationSplit: 0,
       inputUnitsNormalize: false,
       outputUnitsNormalize: false,
