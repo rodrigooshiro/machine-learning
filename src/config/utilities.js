@@ -874,7 +874,7 @@
             type: dataSync.constructor.toString().replace(/.* (.*)\(\)(.|\n)*/g, '$1'),
             data: Object.values(dataSync)
           },
-          shape: dataSync.shape
+          shape: minTensor.shape
         }
         minTensor.dispose()
 
@@ -884,7 +884,7 @@
             type: dataSync.constructor.toString().replace(/.* (.*)\(\)(.|\n)*/g, '$1'),
             data: Object.values(dataSync)
           },
-          shape: dataSync.shape
+          shape: maxTensor.shape
         }
 
         maxTensor.dispose()
