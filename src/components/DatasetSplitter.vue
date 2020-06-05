@@ -139,11 +139,24 @@
             </b-dropdown-form>
           </b-dropdown>
         </div>
+      </b-form>
 
+      <b-form inline>
         <div class="indexInput">
           <label>Label Index</label>
           <b-form-spinbutton
             v-model="indexLabel"
+            min="-1"
+            :max="dataSize-1"
+            :formatter-fn="indexFormatter"
+            :disabled="editActionDisabled || unitsActionDisabled"
+          ></b-form-spinbutton>
+        </div>
+
+        <div class="indexInput">
+          <label>Timestamp Index</label>
+          <b-form-spinbutton
+            v-model="indexTimestamp"
             min="-1"
             :max="dataSize-1"
             :formatter-fn="indexFormatter"
@@ -273,7 +286,8 @@ export default {
         'historySize',
         'targetSize',
         'stepSize',
-        'indexLabel'
+        'indexLabel',
+        'indexTimestamp'
       ],
       toggleIcon: 'caret-up',
       shuffle: true,
@@ -286,6 +300,7 @@ export default {
       outputShape: [],
       outputShapeLength: 0,
       indexLabel: -1,
+      indexTimestamp: -1,
       historySize: 0,
       targetSize: 0,
       stepSize: 0,
@@ -532,6 +547,7 @@ export default {
       let inputShape = []
       let outputShape = []
       let labels = []
+      let timestamps = []
 
       if (this.inputShapeLength > 0) {
         inputShape = this.inputShape
@@ -545,24 +561,33 @@ export default {
       }
 
       if (Array.isArray(this.inputData)) {
-        for (let i = 0; i < indexSize; i++) {
-          let inputRow = []
-          for (let j = 0; j < this.dataSize; j++) {
-            if (this.inputUnits.filter(unit => unit.key === j && unit.checked === true).length) {
-              inputRow.push(this.parseColumn(j, this.inputData[i][j]))
-            }
-          }
-          inputMatrix.push(inputRow)
-          let outputRow = []
-          for (let j = 0; j < this.dataSize; j++) {
-            if (this.outputUnits.filter(unit => unit.key === j && unit.checked === true).length) {
-              outputRow.push(this.parseColumn(j, this.inputData[i][j]))
-            }
-          }
-          outputMatrix.push(outputRow)
-        }
+        let inputIndexes = this.inputUnits.filter(unit => unit.checked === true).map(x => x.key)
+        let outputIndexes = this.outputUnits.filter(unit => unit.checked === true).map(x => x.key)
+        let buffer = []
+        this.inputData.map(
+          function(x, index) {
+            buffer = []
+            this.inputIndexes.forEach(
+              function(index) {
+                buffer.push(this.parseColumn(index, x[index]))
+              }.bind(this.component)
+            )
+            inputMatrix.push(buffer)
+            buffer = []
+            this.outputIndexes.forEach(
+              function(index) {
+                buffer.push(this.parseColumn(index, x[index]))
+              }.bind(this.component)
+            )
+            outputMatrix.push(buffer)
+          },
+          { inputIndexes: inputIndexes, outputIndexes: outputIndexes, component: this }
+        )
         if (this.indexLabel !== -1) {
           labels = this.inputData.map(x => this.parseColumn(this.indexLabel, x[this.indexLabel]))
+        }
+        if (this.indexTimestamp !== -1) {
+          timestamps = this.inputData.map(x => x[this.indexTimestamp])
         }
       } else {
         let inputProduct = inputShape.reduce((a, b) => a * b, 1)
@@ -581,20 +606,31 @@ export default {
         indexSize -= this.historySize + this.targetSize
         let inputMatrixTemp = []
         let outputMatrixTemp = []
+        let timestampMatrixTemp = []
         if (this.outputUnits.filter(unit => unit.checked === true).length === 1) {
           outputMatrix = outputMatrix.map(x => x[0])
         }
         for (let i = 0; i < indexSize; i++) {
           let matrix = []
+          let times = []
           for (let j = 0; j < this.historySize / this.stepSize; j++) {
             matrix.push(...inputMatrix.slice(i + j * this.stepSize, i + j * this.stepSize + 1))
+            if (this.indexTimestamp !== -1) {
+              times.push(...timestamps.slice(i + j * this.stepSize, i + j * this.stepSize + 1))
+            }
           }
           inputMatrixTemp.push(matrix)
-          matrix = [...outputMatrix.slice(i + this.historySize, i + this.historySize + this.targetSize)]
-          outputMatrixTemp.push(matrix)
+          outputMatrixTemp.push([
+            ...outputMatrix.slice(i + this.historySize, i + this.historySize + this.targetSize)
+          ])
+          if (this.indexTimestamp !== -1) {
+            times.push(...timestamps.slice(i + this.historySize, i + this.historySize + this.targetSize))
+            timestampMatrixTemp.push(times)
+          }
         }
         inputMatrix = inputMatrixTemp
         outputMatrix = outputMatrixTemp
+        timestamps = timestampMatrixTemp
       }
 
       let indexes = this.$tf.util.createShuffledIndices(indexSize)
@@ -607,12 +643,14 @@ export default {
         training: {
           inputMatrix: [],
           outputMatrix: [],
-          labels: []
+          labels: [],
+          timestamps: []
         },
         evaluation: {
           inputMatrix: [],
           outputMatrix: [],
-          labels: []
+          labels: [],
+          timestamps: []
         }
       }
       for (let i = 0; i < indexSize; i++) {
@@ -620,6 +658,9 @@ export default {
 
         if (this.indexLabel !== -1) {
           output[property].labels.push(labels[indexes[i]])
+        }
+        if (this.indexTimestamp !== -1) {
+          output[property].timestamps.push(timestamps[indexes[i]])
         }
         if (Array.isArray(inputMatrix)) {
           output[property].inputMatrix.push(inputMatrix[indexes[i]])

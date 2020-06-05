@@ -30,6 +30,7 @@ module.exports = [
     data: {
       sampleSplit: 1,
       shuffle: true,
+      indexTimestamp: 0,
       trainingRatio: 0.99,
       evaluationRatio: 0.01,
       historySize: 720,
@@ -87,8 +88,27 @@ module.exports = [
       epochSize: 10,
       batchSize: 200,
       validationSplit: 0.15,
+      inputUnitsNormalize: true,
+      outputUnitsNormalize: true,
       compilerOptimizerSelected: 'rmsprop',
       compilerLossSelected: 'meanAbsoluteError'
+    }
+  },
+  {
+    index: 'pipeline_5',
+    input_ref: 'pipeline_4',
+    type: 'TSModelPredictor',
+    title: 'Make Predictions',
+    data: {
+      layerSize: 3
+    }
+  },
+  {
+    index: 'pipeline_6',
+    input_ref: 'pipeline_5',
+    type: 'DatasetSeries',
+    data: {
+      indexSerie: 1
     }
   }
 ]
