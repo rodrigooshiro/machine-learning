@@ -9,7 +9,7 @@ module.exports = [
       'uses **tensorflow** to create a model that exemplifies making an **autoencoder** to reduce ' +
       'dimensions. These dimensions are then used to classify the flowers.',
     data: {
-      remoteFile: 'https://raw.githubusercontent.com/pandas-dev/pandas/master/pandas/tests/data/iris.csv'
+      remoteFile: 'https://raw.githubusercontent.com/pandas-dev/pandas/0.19.x/pandas/tests/data/iris.csv'
     }
   },
   {

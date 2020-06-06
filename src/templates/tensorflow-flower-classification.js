@@ -8,7 +8,7 @@ module.exports = [
       '[repository](https://archive.ics.uci.edu/ml/datasets/iris). It ' +
       'uses **tensorflow** to create a model to classify flowers.',
     data: {
-      remoteFile: 'https://raw.githubusercontent.com/pandas-dev/pandas/master/pandas/tests/data/iris.csv'
+      remoteFile: 'https://raw.githubusercontent.com/pandas-dev/pandas/0.19.x/pandas/tests/data/iris.csv'
     }
   },
   {

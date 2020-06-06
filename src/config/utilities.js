@@ -989,6 +989,16 @@
           let outputData = scope[outputTensorJSON.data['type']].from(outputTensorJSON.data['data'])
           let inputTensor = tf.tensor(inputData, inputTensorJSON.shape)
           let outputTensor = tf.tensor(outputData, outputTensorJSON.shape)
+          let inputMatrix = inputTensor.arraySync()
+          let outputMatrix = outputTensor.arraySync()
+          let validationInputMatrix = inputMatrix.splice(inputMatrix.length * (1 - data.validationSplit))
+          let validationOutputMatrix = outputMatrix.splice(outputMatrix.length * (1 - data.validationSplit))
+          let inputDataset = tf.data.array(inputMatrix)
+          let outputDataset = tf.data.array(outputMatrix)
+          let inputValidationDataset = tf.data.array(validationInputMatrix)
+          let outputValidationDataset = tf.data.array(validationOutputMatrix)
+          let trainingData = tf.data.zip({xs: inputDataset, ys: outputDataset}).batch(data.batchSize)
+          let validationData = tf.data.zip({xs: inputValidationDataset, ys: outputValidationDataset}).batch(data.batchSize)
 
           let loss = data.compilerLossSelected
           if (loss in tf.losses) {
@@ -1001,15 +1011,16 @@
           })
           let args = {
             shuffle: data.shuffle,
+            validationData: validationData,
             callbacks: callbacks
           }
-          let params = ['epochs', 'batchSize', 'stepsPerEpoch', 'validationSteps', 'validationSplit']
+          let params = ['epochs', 'stepsPerEpoch', 'validationSteps']
           params.forEach(param => {
             if (data[param] > 0) {
               args[param] = data[param]
             }
           })
-          let history = await model.fit(inputTensor, outputTensor, args)
+          let history = await model.fitDataset(trainingData, args)
           return { model, history }
         } catch(error) {
           console.error(error)

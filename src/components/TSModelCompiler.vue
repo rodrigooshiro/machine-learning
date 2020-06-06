@@ -70,7 +70,7 @@
             v-model="epochs"
             min="1"
             max="9999"
-            placeholder="--"
+            :formatter-fn="positiveFormatter"
             :disabled="editActionDisabled"
           ></b-form-spinbutton>
         </div>
@@ -79,9 +79,9 @@
           <label>Batch Size</label>
           <b-form-spinbutton
             v-model="batchSize"
-            min="1"
+            min="0"
             max="9999"
-            placeholder="--"
+            :formatter-fn="positiveFormatter"
             :disabled="editActionDisabled"
           ></b-form-spinbutton>
         </div>
@@ -90,9 +90,9 @@
           <label>Steps Per Epoch</label>
           <b-form-spinbutton
             v-model="stepsPerEpoch"
-            min="1"
+            min="0"
             max="9999"
-            placeholder="--"
+            :formatter-fn="positiveFormatter"
             :disabled="editActionDisabled"
           ></b-form-spinbutton>
         </div>
@@ -101,9 +101,9 @@
           <label>Validation Steps</label>
           <b-form-spinbutton
             v-model="validationSteps"
-            min="1"
+            min="0"
             max="9999"
-            placeholder="--"
+            :formatter-fn="positiveFormatter"
             :disabled="editActionDisabled"
           ></b-form-spinbutton>
         </div>
@@ -181,7 +181,7 @@ export default {
       utilities: utilities,
       shuffle: true,
       epochs: 0,
-      batchSize: 0,
+      batchSize: 1,
       stepsPerEpoch: 0,
       validationSteps: 0,
       validationSplit: 0,

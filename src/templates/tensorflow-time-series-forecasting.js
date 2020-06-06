@@ -8,7 +8,7 @@ module.exports = [
       '[series forecasting](https://www.tensorflow.org/tutorials/structured_data/time_series). Still ' +
       'working on this, please come back later...',
     data: {
-      remoteFile: 'https://raw.githubusercontent.com/crlsierra/Eclipse2015/master/mpi_roof.csv'
+      remoteFile: '/machine-learning/jena_climate_2009.csv'
     }
   },
   {
@@ -89,10 +89,11 @@ module.exports = [
     title: 'Train the Model',
     data: {
       epochs: 10,
-      batchSize: 32,
+      batchSize: 256,
       stepsPerEpoch: 200,
       validationSteps: 50,
       validationSplit: 0.15,
+      shuffle: false,
       inputUnitsNormalize: true,
       outputUnitsNormalize: true,
       compilerOptimizerSelected: 'rmsprop',
