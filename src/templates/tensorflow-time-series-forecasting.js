@@ -4,9 +4,10 @@ module.exports = [
     type: 'DatasetLoader',
     title: 'The weather dataset',
     description:
-      'This pipeline is based on the tutorial from tensorflow about ' +
-      '[series forecasting](https://www.tensorflow.org/tutorials/structured_data/time_series). Still ' +
-      'working on this, please come back later...',
+    'This pipeline is based on the tutorial from tensorflow about ' +
+    '[series forecasting](https://www.tensorflow.org/tutorials/structured_data/time_series). The ' +
+    'sample set was reduced to a year to avoid memory limitations when dealing with large datasets ' +
+    'on javascript.',
     data: {
       remoteFile: '/machine-learning/jena_climate_2009.csv'
     }
@@ -26,6 +27,10 @@ module.exports = [
     input_ref: 'pipeline_1',
     type: 'DatasetSplitter',
     title: 'Dataset Splitter',
+    description:
+    'The dataset used for a series prediction needs to be created accordingly. There is a window of ' +
+    '720 samples with a step of 6, so the input will be created every 6 samples and then an output ' +
+    'of 72 samples will be created to forecast these inputs.',
     data: {
       sampleSplit: 1,
       shuffle: true,
