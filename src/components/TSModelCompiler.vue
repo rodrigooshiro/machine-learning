@@ -156,7 +156,6 @@
 import ComponentLayout from './ComponentLayout'
 import { mixin } from './mixin'
 import jquery from 'jquery'
-import lodash from 'lodash'
 import * as utilities from '../config/utilities.js'
 
 export default {
@@ -235,68 +234,12 @@ export default {
       this.fileChart = false
       this.output = null
     },
-    plugActionEvent(event) {
-      let inputTensor = null
-      let outputTensor = null
-      let inputMatrix = this.global.inputMatrix
-      let outputMatrix = this.global.outputMatrix
-      let normalizationData = {
-        inputUnitsNormalize: this.inputUnitsNormalize,
-        outputUnitsNormalize: this.outputUnitsNormalize
-      }
-
-      let inputShape = lodash.cloneDeep(this.global.inputShape)
-      if (this.global.training !== null) {
-        inputMatrix = this.global.training.inputMatrix
-      }
-      inputShape.unshift(inputMatrix.length)
-      inputTensor = this.$tf.tensor(inputMatrix, inputShape)
-
-      let outputShape = lodash.cloneDeep(this.global.outputShape)
-      if (this.global.training !== null) {
-        outputMatrix = this.global.training.outputMatrix
-      }
-      outputShape.unshift(outputMatrix.length)
-      outputTensor = this.$tf.tensor(outputMatrix, outputShape)
-      this.global.loss = this.compilerLossSelected
-
-      if (this.inputUnitsNormalize) {
-        let { normal, min, max } = utilities.tasks.normalizeTensor(this.$tf, inputTensor)
-        inputTensor.dispose()
-        inputTensor = normal
-        normalizationData.inputMin = min
-        normalizationData.inputMax = max
-      }
-      if (this.outputUnitsNormalize) {
-        let { normal, min, max } = utilities.tasks.normalizeTensor(this.$tf, outputTensor)
-        outputTensor.dispose()
-        outputTensor = normal
-        normalizationData.outputMin = min
-        normalizationData.outputMax = max
-      }
-
+    plugActionNext(normalizationData, inputTensorJSON, outputTensorJSON) {
       let callbacks = this.$tfvis.show.fitCallbacks(this.$refs['draw'], ['loss', 'mse'], {
         width: 700,
         height: 200,
         callbacks: ['onEpochEnd']
       })
-
-      let inputTensorData = inputTensor.dataSync()
-      let inputTensorJSON = {
-        data: {
-          type: inputTensorData.constructor.toString().replace(/.* (.*)\(\)(.|\n)*/g, '$1'),
-          data: Object.values(inputTensorData)
-        },
-        shape: inputTensor.shape
-      }
-      let outputTensorData = outputTensor.dataSync()
-      let outputTensorJSON = {
-        data: {
-          type: outputTensorData.constructor.toString().replace(/.* (.*)\(\)(.|\n)*/g, '$1'),
-          data: Object.values(outputTensorData)
-        },
-        shape: outputTensor.shape
-      }
 
       this.$options.sockets.onerror = function() {
         let worker = new Worker('worker.js')
@@ -336,8 +279,6 @@ export default {
         this.global.model.save('indexeddb://model').then(
           function() {
             worker.postMessage(['compiler', this.getData(), inputTensorJSON, outputTensorJSON])
-            inputTensor.dispose()
-            outputTensor.dispose()
           }.bind(this)
         )
       }.bind(this)
@@ -348,8 +289,6 @@ export default {
             this.$socket.sendObj({
               data: ['compiler', this.getData(), inputTensorJSON, outputTensorJSON]
             })
-            inputTensor.dispose()
-            outputTensor.dispose()
           }.bind(this)
         )
       }.bind(this)
@@ -391,6 +330,36 @@ export default {
       } else {
         this.$options.sockets.onerror()
       }
+    },
+    plugActionEvent(event) {
+      let inputMatrix = this.global.inputMatrix
+      let outputMatrix = this.global.outputMatrix
+      if (this.global.training !== null) {
+        inputMatrix = this.global.training.inputMatrix
+      }
+      if (this.global.training !== null) {
+        outputMatrix = this.global.training.outputMatrix
+      }
+      this.global.loss = this.compilerLossSelected
+
+      let worker = new Worker('worker.js')
+      worker.onmessage = function(event) {
+        if (event.data[0] === 'compilerActionEvent') {
+          let normalizationData = event.data[1]
+          let inputTensorJSON = event.data[2]
+          let outputTensorJSON = event.data[3]
+          this.plugActionNext(normalizationData, inputTensorJSON, outputTensorJSON)
+          worker.terminate()
+        }
+      }.bind(this)
+      worker.postMessage([
+        'compilerActionEvent',
+        this.getData(),
+        inputMatrix,
+        outputMatrix,
+        this.global.inputShape,
+        this.global.outputShape
+      ])
     }
   }
 }

@@ -54,12 +54,13 @@
       size="lg"
       @show="onShowModal"
     >
-      <b-carousel :interval="0"
+      <b-carousel
+        :interval="0"
         :indicators="scatterPlot || perClassAccuracy || confusionMatrix"
         :controls="seriesPlot"
         :class="'carousel-loading-' + loading"
         ref="dataset-view-carousel"
-        >
+      >
         <b-carousel-slide :img-blank="true" v-if="scatterPlot">
           <template v-slot:img>
             <div ref="scatterPlot"></div>
@@ -211,10 +212,7 @@ export default {
       ].concat(this.output[this.imagePage].slice(inputSize, inputSize + outputSize))
       let seriesPredictX = this.global.evaluation.timestamps[this.imagePage].slice(-outputSize)
       let seriesPredictY = [
-        ...this.output[this.imagePage].slice(
-          inputSize + outputSize,
-          inputSize + outputSize + outputSize
-        )
+        ...this.output[this.imagePage].slice(inputSize + outputSize, inputSize + outputSize + outputSize)
       ]
 
       let traceOutput = {
@@ -485,45 +483,7 @@ export default {
       this.inputTensor.dispose()
       this.output = output
     },
-    plugActionEvent(event) {
-      this.fileChart = false
-      this.scatterPlot = true
-      this.perClassAccuracy = true
-      this.confusionMatrix = true
-      this.seriesPlot = true
-
-      let { normalizationData } = this.inputData
-      let inputMatrix = this.global.inputMatrix
-      let inputShape = lodash.cloneDeep(this.global.inputShape)
-      if (this.global.evaluation !== null) {
-        inputMatrix = this.global.evaluation.inputMatrix
-      } else if (this.global.evaluation === null && this.global.training !== null) {
-        inputMatrix = this.global.training.inputMatrix
-      }
-      inputShape.unshift(inputMatrix.length)
-      let inputTensor = this.$tf.tensor(inputMatrix, inputShape)
-
-      if (normalizationData.inputMin && normalizationData.inputMax) {
-        let { normal } = utilities.tasks.normalizeTensor(
-          this.$tf,
-          inputTensor,
-          normalizationData.inputMin,
-          normalizationData.inputMax
-        )
-        inputTensor.dispose()
-        inputTensor = normal
-      }
-
-      let inputTensorData = inputTensor.dataSync()
-      let inputTensorJSON = {
-        data: {
-          type: inputTensorData.constructor.toString().replace(/.* (.*)\(\)(.|\n)*/g, '$1'),
-          data: Object.values(inputTensorData)
-        },
-        shape: inputTensor.shape
-      }
-      inputTensor.dispose()
-
+    plugActionNext(inputTensorJSON) {
       this.$options.sockets.onerror = function() {
         let worker = new Worker('worker.js')
         worker.onmessage = function(event) {
@@ -573,6 +533,37 @@ export default {
       } else {
         this.$options.sockets.onerror()
       }
+    },
+    plugActionEvent(event) {
+      this.fileChart = false
+      this.scatterPlot = true
+      this.perClassAccuracy = true
+      this.confusionMatrix = true
+      this.seriesPlot = true
+
+      let { normalizationData } = this.inputData
+      let inputMatrix = this.global.inputMatrix
+      if (this.global.evaluation !== null) {
+        inputMatrix = this.global.evaluation.inputMatrix
+      } else if (this.global.evaluation === null && this.global.training !== null) {
+        inputMatrix = this.global.training.inputMatrix
+      }
+
+      let worker = new Worker('worker.js')
+      worker.onmessage = function(event) {
+        if (event.data[0] === 'predictorActionEvent') {
+          let inputTensorJSON = event.data[1]
+          this.plugActionNext(inputTensorJSON)
+          worker.terminate()
+        }
+      }.bind(this)
+      worker.postMessage([
+        'predictorActionEvent',
+        this.getData(),
+        inputMatrix,
+        this.global.inputShape,
+        normalizationData
+      ])
     }
   }
 }
